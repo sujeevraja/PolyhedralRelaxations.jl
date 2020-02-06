@@ -31,7 +31,7 @@ struct VariableInfo
     independent_variable_id::Int64
     dependent_variable_id::Int64
     partitions::Vector{Tuple{Real,Real}}
-    indicator_variable_ids::Vector{Int64, Nothing}
+    indicator_variable_ids::Union{Int64, Nothing}
     continuous_variable_ids::Vector{Tuple{Int64,Int64}}
 end
 
