@@ -16,13 +16,13 @@ module PolyhedralRelaxations
         Memento.info(_LOGGER, "Suppressing information and warning messages for the rest of this session.  Use the Memento package for more fine-grained control of logging.")
         Memento.setlevel!(Memento.getlogger(PolyhedralRelaxations), "error")
     end
-    
+
     "alows the user to set the logging level without the need to add Memento"
     function logger_config!(level)
         Memento.config!(Memento.getlogger("PolyhedralRelaxations"), level)
     end
 
-    include("main.jl")
     include("typedefs.jl")
+    include("main.jl")
 
-end 
+end
