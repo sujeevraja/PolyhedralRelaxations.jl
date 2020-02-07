@@ -1,4 +1,5 @@
 using Memento
+using SparseArrays
 
 # logger_config!("debug")
 
@@ -40,11 +41,45 @@ function collect_vertices(uf::UnivariateFunction)
         y_new = v0.y + (d0*(x_new - v0.x))
         curve_new = uf.f(x_new)
         push!(tangent_vertices, Vertex(x_new, y_new))
-        info(_LOGGER, "x0: $(v0.x) x1: $(v1.x) x_new: $x_new y_new: $y_new, curve_new: $curve_new")
+        info(_LOGGER, string(
+            "x0: $(v0.x) x1: $(v1.x) x_new: $x_new y_new: $y_new, ",
+            "curve_new: $curve_new"))
     end
     info(_LOGGER, "collected tangent vertices.")
 
     return Pair(secant_vertices, tangent_vertices)
+end
+
+function build_model(
+        uf::UnivariateFunction,
+        secant_vertices::Vector{Vertex},
+        tangent_vertices::Vector{Vertex})
+    info(_LOGGER, "starting to build model...")
+    # constraint data
+    crow_indices = Int64[]
+    ccol_indices = Int64[]
+    ccoefs = Real[]
+
+    # RHS data
+    rrow_indices = Int64[]
+    rrhs_values = Real[]
+
+    # Indices to recover variable values from model. Indices of delta_1^i,
+    # delta_2^i and z_i start from 1.
+    x_index = 0
+    y_index = 1
+    delta_1_indices = Int64[]
+    delta_2_indices = Int64[]
+    z_indices = Int64[]
+
+    # Populate constraints and RHS here
+
+    A = sparse(crow_indices, ccol_indices, ccoefs)
+    b = sparsevec(rrow_indices, rrhs_values)
+    info(_LOGGER, "completed building model.")
+
+    return Model(A, b, x_index, y_index,
+        delta_1_indices, delta_2_indices, z_indices)
 end
 
 function main()
@@ -58,5 +93,6 @@ function main()
         inflection_points = Array{Real}(collect(-2:0.25:2)))
 
     (secant_vertices, tangent_vertices) = collect_vertices(uf)
+    model = build_model(uf, secant_vertices, tangent_vertices)
     info(_LOGGER, "completed model generation.")
 end

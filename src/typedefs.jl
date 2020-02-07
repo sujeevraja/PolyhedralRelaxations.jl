@@ -1,3 +1,5 @@
+using SparseArrays
+
 struct UnivariateFunction
     f::Function
     f_dash::Function
@@ -50,4 +52,19 @@ end
 struct Vertex
     x::Real
     y::Real
+end
+
+"""
+Constraint coefficients and right-hand-side of MIP relaxation.
+
+Variables are ordered as: x, y, delta_1^i, delta_2^i, z_i
+"""
+struct Model
+    A::SparseMatrixCSC{Real,Int64}
+    b::SparseVector{Real,Int64}
+    x_index::Int64
+    y_index::Int64
+    delta_1_indices::Array{Int64,1}
+    delta_2_indices::Array{Int64,1}
+    z_indices::Array{Int64,1}
 end
