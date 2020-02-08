@@ -55,6 +55,27 @@ function build_model(
         secant_vertices::Vector{Vertex},
         tangent_vertices::Vector{Vertex})
     info(_LOGGER, "starting to build model...")
+    info(_LOGGER, "building indices...")
+    # Indices to recover variable values from model. Indices of delta_1^i,
+    # delta_2^i and z_i start from 1.
+    x_index = 1
+    y_index = 2
+    num_points = length(secant_vertices)
+    info(_LOGGER, "number of partition points: $num_points")
+
+    start = 3
+    delta_1_indices = collect(start:(num_points+start))
+    info(_LOGGER, "delta_1_indices: $start to $(delta_1_indices[end])")
+
+    start = delta_1_indices[end]+1
+    delta_2_indices = collect(start:(num_points+start))
+    info(_LOGGER, "delta_2_indices: $start to $(delta_2_indices[end])")
+
+    start = delta_2_indices[end]+1
+    z_indices = collect(start:(num_points+start))
+    info(_LOGGER, "z_indices: $start to $(z_indices[end])")
+    info(_LOGGER, "built indices.")
+
     # constraint data
     crow_indices = Int64[]
     ccol_indices = Int64[]
@@ -64,13 +85,6 @@ function build_model(
     rrow_indices = Int64[]
     rrhs_values = Real[]
 
-    # Indices to recover variable values from model. Indices of delta_1^i,
-    # delta_2^i and z_i start from 1.
-    x_index = 0
-    y_index = 1
-    delta_1_indices = Int64[]
-    delta_2_indices = Int64[]
-    z_indices = Int64[]
 
     # Populate constraints and RHS here
 
