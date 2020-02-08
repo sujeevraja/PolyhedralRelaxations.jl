@@ -99,6 +99,7 @@ function build_model(
         tangent_vertices)
     add_y_constraint(constraint_data, index_data, secant_vertices,
         tangent_vertices)
+    add_first_delta_constraint(constraint_data, index_data)
 
     # constraint rows are ordered as:
     # \delta_1^1 + \delta_2^1 <= 1
@@ -199,6 +200,8 @@ function add_first_delta_constraint(
     row = constraint_data.num_constraints + 1
     add_coef(constraint_data, row, index_data.delta_1_indices[1], 1.0)
     add_coef(constraint_data, row, index_data.delta_2_indices[1], 1.0)
+    push!(constraint_data.constraint_senses, :leq)
+    add_rhs(constraint_data, row, 1.0)
     constraint_data.num_constraints += 1
     info(_LOGGER, "built delta_1^1 + delta_2^1 <= 1 constraint.")
 end
