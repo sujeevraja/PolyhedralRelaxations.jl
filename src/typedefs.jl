@@ -48,11 +48,7 @@ end
 @inline get_indicator_variable_ids(vi::VariableInfo)::Vector{Int64, Nothing} = vi.indicator_variable_ids
 @inline get_continuous_variable_ids(vi::VariableInfo)::Vector{Tuple{Int64,Int64}} = vi.continuous_variable_ids
 
-"Vertices in 2D used to build the polyhedral relaxation sequence"
-struct Vertex
-    x::Real
-    y::Real
-end
+const Vertex = Pair{Real,Real}
 
 const possible_senses = Set([:eq, :geq, :leq])
 
@@ -66,20 +62,20 @@ struct Model
     b::SparseVector{Real,Int64}
     x_index::Int64
     y_index::Int64
-    delta_1_indices::Array{Int64,1}
-    delta_2_indices::Array{Int64,1}
-    z_indices::Array{Int64,1}
-    constraint_senses::Array{Symbol,1}
+    delta_1_indices::Vector{Int64}
+    delta_2_indices::Vector{Int64}
+    z_indices::Vector{Int64}
+    constraint_senses::Vector{Symbol}
 end
 
 mutable struct ConstraintData
-    constraint_row_indices::Array{Int64,1}
-    constraint_column_indices::Array{Int64,1}
-    constraint_coefficients::Array{Real,1}
-    rhs_row_indices::Array{Int64,1}
-    rhs_values::Array{Real,1}
+    constraint_row_indices::Vector{Int64}
+    constraint_column_indices::Vector{Int64}
+    constraint_coefficients::Vector{Real}
+    rhs_row_indices::Vector{Int64}
+    rhs_values::Vector{Real}
     num_constraints::Int64
-    constraint_senses::Array{Symbol,1}
+    constraint_senses::Vector{Symbol}
 end
 
 function ConstraintData()::ConstraintData
@@ -101,9 +97,9 @@ and z_i start from 1.
 mutable struct IndexData
     x_index::Int64
     y_index::Int64
-    delta_1_indices::Array{Int64,1}
-    delta_2_indices::Array{Int64,1}
-    z_indices::Array{Int64,1}
+    delta_1_indices::Vector{Int64}
+    delta_2_indices::Vector{Int64}
+    z_indices::Vector{Int64}
 end
 
 function IndexData(num_points::Int64)::IndexData
