@@ -11,7 +11,7 @@ Evaluate the value of the univariate function `f` at each point x in
 Vertex objects.
 """
 function collect_secant_vertices(
-    f::Function, partition_points::Array{Real,1})::Array{Vertex,1}
+        f::Function, partition_points::Array{Real,1})::Array{Vertex,1}
     secant_vertices = Vertex[]
     num_points = length(partition_points)
     for x in partition_points
@@ -30,8 +30,8 @@ adjacent vertices in `secant_vertices`. Then, return the generated tangent
 vertices as a list of Vertex objects.
 """
 function collect_tangent_vertices(
-    f_dash::Function,
-    secant_vertices::Array{Vertex,1})::Array{Vertex,1}
+        f_dash::Function,
+        secant_vertices::Array{Vertex,1})::Array{Vertex,1}
     # tangent_vertices[i] is the vertex formed by the intersection of tangents
     # of the given curve f at the partition interval formed by thex
     # x-coordinates of secant_vertices[i] and secant_vertices[i+1].
@@ -105,6 +105,11 @@ function build_model(
     # \delta_1^i + \delta_2^i <= z_{i-1}
     # z_{i-1} <= \delta_2^{i-1}
 
+    # Ensure that constraint symbols are valid.
+    for s in constraint_data.constraint_senses:
+        @assert s in possible_senses
+    end
+
     # Store constraint data into a Model object and return it.
     A = sparse(constraint_data.constraint_row_indices,
         constraint_data.constraint_column_indices,
@@ -117,14 +122,15 @@ function build_model(
         index_data.y_index,
         index_data.delta_1_indices,
         index_data.delta_2_indices,
-        index_data.z_indices)
+        index_data.z_indices,
+        constraint_data.constraint_senses)
 end
 
 function add_x_constraint(
-    constraint_data::ConstraintData,
-    index_data::IndexData,
-    secant_vertices::Vector{Vertex},
-    tangent_vertices::Vector{Vertex})
+        constraint_data::ConstraintData,
+        index_data::IndexData,
+        secant_vertices::Vector{Vertex},
+        tangent_vertices::Vector{Vertex})
     row = constraint_data.num_constraints+1
 
     # Add x variable to constraint.
@@ -143,9 +149,11 @@ function add_x_constraint(
         add_coef(constraint_data, row, column, value)
     end
 
+    # Add sense
+    push!(constraint_data.constraint_senses, :eq)
+
     # Add right hand side.
-    push!(constraint_data.rhs_row_indices, row)
-    push!(constraint_data.rhs_values, secant_vertices[1].x)
+    add_rhs(constraint_data, row, secant_vertices[1].x)
 
     constraint_data.num_constraints += 1
     info(_LOGGER, "built x coordinate constraint.")
@@ -153,10 +161,10 @@ end
 
 
 function add_y_constraint(
-    constraint_data::ConstraintData,
-    index_data::IndexData,
-    secant_vertices::Vector{Vertex},
-    tangent_vertices::Vector{Vertex})
+        constraint_data::ConstraintData,
+        index_data::IndexData,
+        secant_vertices::Vector{Vertex},
+        tangent_vertices::Vector{Vertex})
     row = constraint_data.num_constraints+1
 
     # Add y variable to constraint.
@@ -175,19 +183,36 @@ function add_y_constraint(
         add_coef(constraint_data, row, column, value)
     end
 
+    # Add sense
+    push!(constraint_data.constraint_senses, :eq)
+
     # Add right hand side.
-    push!(constraint_data.rhs_row_indices, row)
-    push!(constraint_data.rhs_values, secant_vertices[1].y)
+    add_rhs(constraint_data, row, secant_vertices[1].y)
 
     constraint_data.num_constraints += 1
     info(_LOGGER, "built y coordinate constraint.")
 end
 
+function add_first_delta_constraint(
+        constraint_data::ConstraintData,
+        index_data::IndexData)
+    row = constraint_data.num_constraints + 1
+    add_coef(constraint_data, row, index_data.delta_1_indices[1], 1.0)
+    add_coef(constraint_data, row, index_data.delta_2_indices[1], 1.0)
+    constraint_data.num_constraints += 1
+    info(_LOGGER, "built delta_1^1 + delta_2^1 <= 1 constraint.")
+end
+
 function add_coef(
-    constraint_data::ConstraintData, row::Int64, col::Int64, value::Real)
+        constraint_data::ConstraintData, row::Int64, col::Int64, value::Real)
     push!(constraint_data.constraint_row_indices, row)
     push!(constraint_data.constraint_column_indices, col)
     push!(constraint_data.constraint_coefficients, value)
+end
+
+function add_rhs(constraint_data::ConstraintData, row::Int64, value::Real)
+    push!(constraint_data.rhs_row_indices, row)
+    push!(constraint_data.rhs_values, value)
 end
 
 function main()

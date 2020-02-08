@@ -54,6 +54,8 @@ struct Vertex
     y::Real
 end
 
+const possible_senses = Set([:eq, :geq, :leq])
+
 """
 Constraint coefficients and right-hand-side of MIP relaxation.
 
@@ -67,6 +69,7 @@ struct Model
     delta_1_indices::Array{Int64,1}
     delta_2_indices::Array{Int64,1}
     z_indices::Array{Int64,1}
+    constraint_senses::Array{Symbol,1}
 end
 
 mutable struct ConstraintData
@@ -76,6 +79,7 @@ mutable struct ConstraintData
     rhs_row_indices::Array{Int64,1}
     rhs_values::Array{Real,1}
     num_constraints::Int64
+    constraint_senses::Array{Symbol,1}
 end
 
 function ConstraintData()::ConstraintData
@@ -85,8 +89,9 @@ function ConstraintData()::ConstraintData
     rhs_row_indices = Int64[]
     rhs_values = Real[]
     num_constraints = 0
+    constraint_senses = Symbol[]
     return ConstraintData(row_indices, col_indices, coefs, rhs_row_indices,
-        rhs_values, num_constraints)
+        rhs_values, num_constraints, constraint_senses)
 end
 
 """
