@@ -4,8 +4,10 @@ using SparseArrays
 # logger_config!("debug")
 
 """
-Evaluate the value of the given univariate function `f` at each point `x` in
-the given set of partition points and return a list of vertices ((x,f(x))) as
+    collect_secant_vertices(f, partition_points)
+
+Evaluate the value of the univariate function `f` at each point x in
+`partition_points` and return a list of vertices of the form (x, f(x)) as
 Vertex objects.
 """
 function collect_secant_vertices(
@@ -21,7 +23,10 @@ function collect_secant_vertices(
 end
 
 """
-Use the given derivative function `f_dash` to generate and return tangent
+    collect_tangent_vertices(f_dash, secant_vertices)
+
+Generate tangent vertices for each interval formed by x-coordinates of
+adjacent vertices in `secant_vertices`. Then, return the generated tangent
 vertices as a list of Vertex objects.
 """
 function collect_tangent_vertices(
@@ -59,6 +64,12 @@ function collect_tangent_vertices(
     return tangent_vertices
 end
 
+"""
+    build_model(uf, secant_vertices, tangent_vertices)
+
+Collect constraint data of the MILP formulation of the polyhedral relaxation
+in a Model object and return it.
+"""
 function build_model(
         uf::UnivariateFunction,
         secant_vertices::Vector{Vertex},
@@ -67,52 +78,116 @@ function build_model(
 
     # Indices to recover variable values from model. Indices of delta_1^i,
     # delta_2^i and z_i start from 1.
-    x_index = 1
-    y_index = 2
     num_points = length(secant_vertices)
+    index_data = IndexData(num_points)
     info(_LOGGER, "number of partition points: $num_points")
 
-    start = 3
-    delta_1_indices = collect(start:(num_points+start))
-    info(_LOGGER, "delta_1_indices: $start to $(delta_1_indices[end])")
+    i_start = index_data.delta_1_indices[1]
+    i_end = index_data.delta_1_indices[end]
+    info(_LOGGER, "delta_1_indices: $i_start to $i_end")
 
-    start = delta_1_indices[end]+1
-    delta_2_indices = collect(start:(num_points+start))
-    info(_LOGGER, "delta_2_indices: $start to $(delta_2_indices[end])")
+    i_start = index_data.delta_2_indices[1]
+    i_end = index_data.delta_2_indices[end]
+    info(_LOGGER, "delta_2_indices: $i_start to $i_end")
 
-    start = delta_2_indices[end]+1
-    z_indices = collect(start:(num_points+start))
-    info(_LOGGER, "z_indices: $start to $(z_indices[end])")
+    i_start = index_data.z_indices[1]
+    i_end = index_data.z_indices[end]
+    info(_LOGGER, "z_indices: $i_start to $i_end")
 
-    # Constraint coefficient data
-    row_indices = Int64[]
-    col_indices = Int64[]
-    coefs = Real[]
-
-    # RHS data
-    rhs_row_indices = Int64[]
-    rhs_values = Real[]
+    constraint_data = ConstraintData()
+    add_x_constraint(constraint_data, index_data, secant_vertices,
+        tangent_vertices)
+    add_y_constraint(constraint_data, index_data, secant_vertices,
+        tangent_vertices)
 
     # constraint rows are ordered as:
-    # x constraint
-    # y constraint
     # \delta_1^1 + \delta_2^1 <= 1
     # \delta_1^i + \delta_2^i <= z_{i-1}
     # z_{i-1} <= \delta_2^{i-1}
 
-    # ------ x constraint data ------
-    row = 1
-    push!(row_indices, row)
-    push!(col_indices, x_index)
-    # -------------------------------
-
     # Store constraint data into a Model object and return it.
-    A = sparse(row_indices, col_indices, coefs)
-    b = sparsevec(rhs_row_indices, rhs_values)
+    A = sparse(constraint_data.constraint_row_indices,
+        constraint_data.constraint_column_indices,
+        constraint_data.constraint_coefficients)
+    b = sparsevec(constraint_data.rhs_row_indices, constraint_data.rhs_values)
     info(_LOGGER, "completed building model.")
 
-    return Model(A, b, x_index, y_index,
-        delta_1_indices, delta_2_indices, z_indices)
+    return Model(A, b,
+        index_data.x_index,
+        index_data.y_index,
+        index_data.delta_1_indices,
+        index_data.delta_2_indices,
+        index_data.z_indices)
+end
+
+function add_x_constraint(
+    constraint_data::ConstraintData,
+    index_data::IndexData,
+    secant_vertices::Vector{Vertex},
+    tangent_vertices::Vector{Vertex})
+    row = constraint_data.num_constraints+1
+
+    # Add x variable to constraint.
+    add_coef(constraint_data, row, index_data.x_index, 1.0)
+
+    num_vars = length(secant_vertices) - 1
+    for i in 1:num_vars
+        # Add delta_1 variable to constraint.
+        column = index_data.delta_1_indices[i]
+        value = secant_vertices[i].x - tangent_vertices[i].x
+        add_coef(constraint_data, row, column, value)
+
+        # Add delta_2 variable to constraint.
+        column = index_data.delta_2_indices[i]
+        value = secant_vertices[i].x - secant_vertices[i+1].x
+        add_coef(constraint_data, row, column, value)
+    end
+
+    # Add right hand side.
+    push!(constraint_data.rhs_row_indices, row)
+    push!(constraint_data.rhs_values, secant_vertices[1].x)
+
+    constraint_data.num_constraints += 1
+    info(_LOGGER, "built x coordinate constraint.")
+end
+
+
+function add_y_constraint(
+    constraint_data::ConstraintData,
+    index_data::IndexData,
+    secant_vertices::Vector{Vertex},
+    tangent_vertices::Vector{Vertex})
+    row = constraint_data.num_constraints+1
+
+    # Add y variable to constraint.
+    add_coef(constraint_data, row, index_data.y_index, 1.0)
+
+    num_vars = length(secant_vertices) - 1
+    for i in 1:num_vars
+        # Add delta_1 variable to constraint.
+        column = index_data.delta_1_indices[i]
+        value = secant_vertices[i].y - tangent_vertices[i].y
+        add_coef(constraint_data, row, column, value)
+
+        # Add delta_2 variable to constraint.
+        column = index_data.delta_2_indices[i]
+        value = secant_vertices[i].y - secant_vertices[i+1].y
+        add_coef(constraint_data, row, column, value)
+    end
+
+    # Add right hand side.
+    push!(constraint_data.rhs_row_indices, row)
+    push!(constraint_data.rhs_values, secant_vertices[1].y)
+
+    constraint_data.num_constraints += 1
+    info(_LOGGER, "built y coordinate constraint.")
+end
+
+function add_coef(
+    constraint_data::ConstraintData, row::Int64, col::Int64, value::Real)
+    push!(constraint_data.constraint_row_indices, row)
+    push!(constraint_data.constraint_column_indices, col)
+    push!(constraint_data.constraint_coefficients, value)
 end
 
 function main()
@@ -133,6 +208,6 @@ function main()
     tan_vertices = collect_tangent_vertices(uf.f_dash, sec_vertices)
     info(_LOGGER, "collected $(length(tan_vertices)) tangent vertices.")
 
-    # model = build_model(uf, secant_vertices, tangent_vertices)
+    model = build_model(uf, sec_vertices, tan_vertices)
     info(_LOGGER, "completed model generation.")
 end

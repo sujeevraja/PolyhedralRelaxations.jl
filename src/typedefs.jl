@@ -68,3 +68,58 @@ struct Model
     delta_2_indices::Array{Int64,1}
     z_indices::Array{Int64,1}
 end
+
+mutable struct ConstraintData
+    constraint_row_indices::Array{Int64,1}
+    constraint_column_indices::Array{Int64,1}
+    constraint_coefficients::Array{Real,1}
+    rhs_row_indices::Array{Int64,1}
+    rhs_values::Array{Real,1}
+    num_constraints::Int64
+end
+
+function ConstraintData()::ConstraintData
+    row_indices = Int64[]
+    col_indices = Int64[]
+    coefs = Real[]
+    rhs_row_indices = Int64[]
+    rhs_values = Real[]
+    num_constraints = 0
+    return ConstraintData(row_indices, col_indices, coefs, rhs_row_indices,
+        rhs_values, num_constraints)
+end
+
+"""
+Indices to recover variable values from model. Indices of delta_1^i, delta_2^i
+and z_i start from 1.
+"""
+mutable struct IndexData
+    x_index::Int64
+    y_index::Int64
+    delta_1_indices::Array{Int64,1}
+    delta_2_indices::Array{Int64,1}
+    z_indices::Array{Int64,1}
+end
+
+function IndexData(num_points::Int64)::IndexData
+    x_index = 1
+    y_index = 2
+
+    # If there are k partition points, there are k-1 intervals, with each
+    # interval corresponding to a triangle. As we need one delta_1 variable,
+    # delta_2 variable and z variable for each triangle, we need k-1 of
+    # each of these variables in total. This is why num_vars is set to k-1.
+    num_vars = num_points - 1
+
+    start = 3
+    delta_1_indices = collect(start:(start+num_vars))
+
+    start = delta_1_indices[end]+1
+    delta_2_indices = collect(start:(start+num_vars))
+
+    start = delta_2_indices[end]+1
+    z_indices = collect(start:(start+num_vars))
+
+    return IndexData(x_index, y_index, delta_1_indices, delta_2_indices,
+        z_indices)
+end
