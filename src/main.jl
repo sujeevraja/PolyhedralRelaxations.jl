@@ -124,6 +124,15 @@ function build_model(
         constraint_data.constraint_senses)
 end
 
+"""
+    add_x_constraint(constraint_data, index_data, secant_vertices,
+        tangent_vertices)
+
+Add constraint that links the x coordinate to the delta and z variables to
+`constraint_data` using variable indices from `index_data`. The lists of
+vertices `secant_vertices` and `tangent_vertices` are used to compute
+constraint coefficients.
+"""
 function add_x_constraint(
         constraint_data::ConstraintData,
         index_data::IndexData,
@@ -154,7 +163,15 @@ function add_x_constraint(
     info(_LOGGER, "built x coordinate constraint.")
 end
 
+"""
+    add_y_constraint(constraint_data, index_data, secant_vertices,
+        tangent_vertices)
 
+Add constraint that links the y coordinate to the delta and z variables to
+`constraint_data` using variable indices from `index_data`. The lists of
+vertices `secant_vertices` and `tangent_vertices` are used to compute
+constraint coefficients.
+"""
 function add_y_constraint(
         constraint_data::ConstraintData,
         index_data::IndexData,
@@ -185,6 +202,12 @@ function add_y_constraint(
     info(_LOGGER, "built y coordinate constraint.")
 end
 
+"""
+    add_first_delta_constraint(constraint_data, index_data)
+
+Add the constraint "delta_1^1 + delta_2^1 <= 1 to `constraint_data` using
+variable indices from `index_data`.
+"""
 function add_first_delta_constraint(
         constraint_data::ConstraintData,
         index_data::IndexData)
@@ -197,11 +220,23 @@ function add_first_delta_constraint(
     info(_LOGGER, "built delta_1^1 + delta_2^1 <= 1 constraint.")
 end
 
+"""
+    add_linking_constraint(constraint_data, index_data, num_vars)
+
+Add the constraint families
+
+    delta_1^i + delta_2^i - z_{i-1} <= 0
+    delta_2^{i-1} >= z_{i-1}
+
+to `constraint_data` using variable indices from `index_data`. The number of
+each of these constraints corresponds to the number of triangles specified by
+`num_triangles`.
+"""
 function add_linking_constraints(
         constraint_data::ConstraintData,
         index_data::IndexData,
-        num_vars::Int64)
-    for i in 2:num_vars
+        num_triangles::Int64)
+    for i in 2:num_triangles
         constraint_data.num_constraints += 1
         row = constraint_data.num_constraints
 
@@ -223,6 +258,12 @@ function add_linking_constraints(
     info(_LOGGER, "added linking constraints.")
 end
 
+"""
+    add_coef(constraint_data, row, col, value)
+
+Add the coefficient `value` of the variable with index `col` to the constraint
+with index `row` to `constraint_data`.
+"""
 function add_coef(
         constraint_data::ConstraintData,
         row::Int64,
@@ -233,6 +274,11 @@ function add_coef(
     push!(constraint_data.constraint_coefficients, value)
 end
 
+"""
+    add_rhs(constraint_data, row, value)
+
+Add the right-hand-side `value` for row `row` to `constraint_data`.
+"""
 function add_rhs(
         constraint_data::ConstraintData,
         row::Int64,
@@ -241,6 +287,11 @@ function add_rhs(
     push!(constraint_data.rhs_values, value)
 end
 
+"""
+    main()
+
+Generate model data for the polyhedral relaxation of a univariate function.
+"""
 function main()
     info(_LOGGER, "starting model generation...")
 
