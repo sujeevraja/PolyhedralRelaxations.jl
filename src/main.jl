@@ -102,10 +102,7 @@ function build_model(
     info(_LOGGER, "z_indices: $i_start to $i_end")
 
     constraint_data = ConstraintData()
-    add_x_constraint(constraint_data, index_data, secant_vertices,
-        tangent_vertices)
-    add_y_constraint(constraint_data, index_data, secant_vertices,
-        tangent_vertices)
+    add_vertex_constraints(constraint_data, index_data, secant_vertices, tangent_vertices)
     add_first_delta_constraint(constraint_data, index_data)
     add_linking_constraints(constraint_data, index_data, num_points-1)
 
@@ -131,81 +128,49 @@ function build_model(
 end
 
 """
-    add_x_constraint(constraint_data, index_data, secant_vertices,
+    add_vertex_constraints(constraint_data, index_data, secant_vertices,
         tangent_vertices)
 
-Add constraint that links the x coordinate to the delta and z variables to
-`constraint_data` using variable indices from `index_data`. The lists of
-vertices `secant_vertices` and `tangent_vertices` are used to compute
-constraint coefficients.
+Add vertex constraints to `constraint_data` using variable indices from
+`index_data`.
+
+These constraints link the x and y coordinate variables to the delta variables.
+The lists `secant_vertices` and `tangent_vertices` are used to compute
+coefficients of delta variables.
 """
-function add_x_constraint(
+function add_vertex_constraints(
         constraint_data::ConstraintData,
         index_data::IndexData,
         secant_vertices::Vector{Vertex},
         tangent_vertices::Vector{Vertex})
-    row = constraint_data.num_constraints+1
-
-    # Add x variable to constraint.
-    add_coef(constraint_data, row, index_data.x_index, 1)
-
+    indices = [index_data.x_index, index_data.y_index]
     num_vars = length(secant_vertices) - 1
-    for i in 1:num_vars
-        # Add delta_1 variable to constraint.
-        column = index_data.delta_1_indices[i]
-        value = secant_vertices[i][1] - tangent_vertices[i][1]
-        add_coef(constraint_data, row, column, value)
 
-        # Add delta_2 variable to constraint.
-        column = index_data.delta_2_indices[i]
-        value = secant_vertices[i][1] - secant_vertices[i+1][1]
-        add_coef(constraint_data, row, column, value)
+    for c in [1,2]  # c is the coordinate index (1 for x, 2 for y).
+        row = constraint_data.num_constraints+1
+
+        # Add coordinate variable to constraint.
+        add_coef(constraint_data, row, indices[c], 1)
+
+        for i in 1:num_vars
+            # Add delta_1 variable to constraint.
+            column = index_data.delta_1_indices[i]
+            value = secant_vertices[i][c] - tangent_vertices[i][c]
+            add_coef(constraint_data, row, column, value)
+
+            # Add delta_2 variable to constraint.
+            column = index_data.delta_2_indices[i]
+            value = secant_vertices[i][c] - secant_vertices[i+1][c]
+            add_coef(constraint_data, row, column, value)
+        end
+
+        # Complete the constraint.
+        push!(constraint_data.constraint_senses, :eq)
+        add_rhs(constraint_data, row, secant_vertices[1][c])
+        constraint_data.num_constraints += 1
     end
 
-    # Complete the constraint.
-    push!(constraint_data.constraint_senses, :eq)
-    add_rhs(constraint_data, row, secant_vertices[1][1])
-    constraint_data.num_constraints += 1
-    info(_LOGGER, "built x coordinate constraint.")
-end
-
-"""
-    add_y_constraint(constraint_data, index_data, secant_vertices,
-        tangent_vertices)
-
-Add constraint that links the y coordinate to the delta and z variables to
-`constraint_data` using variable indices from `index_data`. The lists of
-vertices `secant_vertices` and `tangent_vertices` are used to compute
-constraint coefficients.
-"""
-function add_y_constraint(
-        constraint_data::ConstraintData,
-        index_data::IndexData,
-        secant_vertices::Vector{Vertex},
-        tangent_vertices::Vector{Vertex})
-    row = constraint_data.num_constraints+1
-
-    # Add y variable to constraint.
-    add_coef(constraint_data, row, index_data.y_index, 1)
-
-    num_vars = length(secant_vertices) - 1
-    for i in 1:num_vars
-        # Add delta_1 variable to constraint.
-        column = index_data.delta_1_indices[i]
-        value = secant_vertices[i][2] - tangent_vertices[i][2]
-        add_coef(constraint_data, row, column, value)
-
-        # Add delta_2 variable to constraint.
-        column = index_data.delta_2_indices[i]
-        value = secant_vertices[i][1] - secant_vertices[i+1][1]
-        add_coef(constraint_data, row, column, value)
-    end
-
-    # Complete the constraint.
-    push!(constraint_data.constraint_senses, :eq)
-    add_rhs(constraint_data, row, secant_vertices[1][1])
-    constraint_data.num_constraints += 1
-    info(_LOGGER, "built y coordinate constraint.")
+    info(_LOGGER, "built vertex constraints.")
 end
 
 """
