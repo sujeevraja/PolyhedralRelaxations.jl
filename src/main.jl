@@ -6,19 +6,23 @@ using SparseArrays
 """
     collect_secant_vertices(f, partition_points)
 
-Evaluate the value of the univariate function `f` at each point x in
-`partition_points` and return a list of vertices of the form (x, f(x)) as
-Vertex objects.
+Return a list of (x,y) coordinates of secant vertices as Pair objects.
+
+The x value of each coordinate is an element of `partition_points`.
+The y value of each coordinate is the evaluation of the given univariate
+function `f` at x, i.e. y = f(x).
+
+In terms of notation in the paper, the returned vertices are v_i values.
 """
 function collect_secant_vertices(
         f::Function,
-        partition_points::Array{Real,1})::Array{Vertex,1}
+        partition_points::Vector{Real})::Vector{Vertex}
     secant_vertices = Vertex[]
     num_points = length(partition_points)
     for x in partition_points
-        push!(secant_vertices, Vertex(x, f(x)))
+        push!(secant_vertices, Pair(x, f(x)))
         v = secant_vertices[end]
-        info(_LOGGER, "x: $x v_x: $(v.x) v_y: $(v.y) ")
+        info(_LOGGER, "x: $x v_x: $(v[1]) v_y: $(v[2]) ")
     end
     return secant_vertices
 end
@@ -26,41 +30,43 @@ end
 """
     collect_tangent_vertices(f_dash, secant_vertices)
 
-Generate tangent vertices for each interval formed by x-coordinates of
-adjacent vertices in `secant_vertices`. Then, return the generated tangent
-vertices as a list of Vertex objects.
+Return a list of (x,y) coordinates of tangent intersections as Pair objects.
+
+Each position i of the returned list contains the (x,y) coordinate of the
+vertex formed by intersection of tangents of the required curve y = f(x) at
+`secant_vertices[i]` and `secant_vertices[i+1]`. The function `f_dash` is the
+derivative of f(x).
+
+In terms of notation in the paper, `secant_vertices[i]` is the vertex v_i,
+`secant_vertices[i+1]` is the vertex v_{i+1} and `tangent_vertices[i]` is
+the vertex v_{i,i+1}.
 """
 function collect_tangent_vertices(
         f_dash::Function,
-        secant_vertices::Array{Vertex,1})::Array{Vertex,1}
-    # tangent_vertices[i] is the vertex formed by the intersection of tangents
-    # of the given curve f at the partition interval formed by thex
-    # x-coordinates of secant_vertices[i] and secant_vertices[i+1].
-    # In terms of the notation in the paper, if secant_vertices[i] is the
-    # vertex v_i and secant_vertices[i+1] is the vertex v_{i+1},
-    # tangent_vertices[i] is the vertex v_{i,i+1}.
+        secant_vertices::Vector{Vertex})::Vector{Vertex}
     num_points = length(secant_vertices)
     tangent_vertices = Vertex[]
 
     for i in 1:num_points-1
-        v0 = secant_vertices[i]
-        v1 = secant_vertices[i+1]
+        v1 = secant_vertices[i]
+        v2 = secant_vertices[i+1]
 
-        # Find derivative values at secant points. By definition, the partition
-        # cannot have
-        d0 = f_dash(v0.x)
-        d1 = f_dash(v1.x)
-        @assert !isapprox(d0, d1, atol=1e-5)
+        # Find derivative values at secant points. Validate that successive
+        # partition points cannot have the same derivative, as if so, the
+        # tangents at these points will be parallel and won't form a triangle.
+        d1 = f_dash(v1[1])
+        d2 = f_dash(v2[1])
+        @assert !isapprox(d1, d2, atol=1e-5)
 
-        # Compute x-coordinate of tangent vertex. This is the intersection of
-        # the tangents to the curve at v0.x and v1.x.
-        x_new = (v1.y - v0.y + (d0*v0.x) - (d1*v1.x)) / (d0 - d1)
-        @assert x_new >= v0.x
-        @assert x_new <= v1.x
+        # Compute x-coordinate of the tangent vertex. This is the intersection
+        # of tangents to the curve at v1[1] and v2[1].
+        x_new = (v2[2] - v1[2] + (d1*v1[1]) - (d2*v2[1])) / (d1 - d2)
+        @assert x_new >= v1[1]
+        @assert x_new <= v2[1]
 
-        y_new = v0.y + (d0*(x_new - v0.x))
-        push!(tangent_vertices, Vertex(x_new, y_new))
-        info(_LOGGER,  "x0: $(v0.x) x1: $(v1.x) x_new: $x_new y_new: $y_new")
+        y_new = v1[2] + (d1*(x_new - v1[1]))
+        push!(tangent_vertices, Pair(x_new, y_new))
+        info(_LOGGER,  "x0: $(v1[1]) x1: $(v2[1]) x_new: $x_new y_new: $y_new")
     end
     return tangent_vertices
 end
@@ -147,18 +153,18 @@ function add_x_constraint(
     for i in 1:num_vars
         # Add delta_1 variable to constraint.
         column = index_data.delta_1_indices[i]
-        value = secant_vertices[i].x - tangent_vertices[i].x
+        value = secant_vertices[i][1] - tangent_vertices[i][1]
         add_coef(constraint_data, row, column, value)
 
         # Add delta_2 variable to constraint.
         column = index_data.delta_2_indices[i]
-        value = secant_vertices[i].x - secant_vertices[i+1].x
+        value = secant_vertices[i][1] - secant_vertices[i+1][1]
         add_coef(constraint_data, row, column, value)
     end
 
     # Complete the constraint.
     push!(constraint_data.constraint_senses, :eq)
-    add_rhs(constraint_data, row, secant_vertices[1].x)
+    add_rhs(constraint_data, row, secant_vertices[1][1])
     constraint_data.num_constraints += 1
     info(_LOGGER, "built x coordinate constraint.")
 end
@@ -186,18 +192,18 @@ function add_y_constraint(
     for i in 1:num_vars
         # Add delta_1 variable to constraint.
         column = index_data.delta_1_indices[i]
-        value = secant_vertices[i].y - tangent_vertices[i].y
+        value = secant_vertices[i][2] - tangent_vertices[i][2]
         add_coef(constraint_data, row, column, value)
 
         # Add delta_2 variable to constraint.
         column = index_data.delta_2_indices[i]
-        value = secant_vertices[i].y - secant_vertices[i+1].y
+        value = secant_vertices[i][1] - secant_vertices[i+1][1]
         add_coef(constraint_data, row, column, value)
     end
 
     # Complete the constraint.
     push!(constraint_data.constraint_senses, :eq)
-    add_rhs(constraint_data, row, secant_vertices[1].y)
+    add_rhs(constraint_data, row, secant_vertices[1][1])
     constraint_data.num_constraints += 1
     info(_LOGGER, "built y coordinate constraint.")
 end
@@ -302,7 +308,7 @@ function main()
         x->3 * (x^2),  # f'
         domain_lb = lb,
         domain_ub = ub,
-        inflection_points = Array{Real}(collect(lb:0.25:ub)))
+        inflection_points = Vector{Real}(collect(lb:0.25:ub)))
 
     sec_vertices = collect_secant_vertices(uf.f, uf.inflection_points)
     info(_LOGGER, "collected $(length(sec_vertices)) secant vertices.")
