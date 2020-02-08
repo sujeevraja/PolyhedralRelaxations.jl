@@ -11,7 +11,8 @@ Evaluate the value of the univariate function `f` at each point x in
 Vertex objects.
 """
 function collect_secant_vertices(
-        f::Function, partition_points::Array{Real,1})::Array{Vertex,1}
+        f::Function,
+        partition_points::Array{Real,1})::Array{Vertex,1}
     secant_vertices = Vertex[]
     num_points = length(partition_points)
     for x in partition_points
@@ -100,14 +101,10 @@ function build_model(
     add_y_constraint(constraint_data, index_data, secant_vertices,
         tangent_vertices)
     add_first_delta_constraint(constraint_data, index_data)
-
-    # constraint rows are ordered as:
-    # \delta_1^1 + \delta_2^1 <= 1
-    # \delta_1^i + \delta_2^i <= z_{i-1}
-    # z_{i-1} <= \delta_2^{i-1}
+    add_linking_constraints(constraint_data, index_data, num_points-1)
 
     # Ensure that constraint symbols are valid.
-    for s in constraint_data.constraint_senses:
+    for s in constraint_data.constraint_senses
         @assert s in possible_senses
     end
 
@@ -135,7 +132,7 @@ function add_x_constraint(
     row = constraint_data.num_constraints+1
 
     # Add x variable to constraint.
-    add_coef(constraint_data, row, index_data.x_index, 1.0)
+    add_coef(constraint_data, row, index_data.x_index, 1)
 
     num_vars = length(secant_vertices) - 1
     for i in 1:num_vars
@@ -150,12 +147,9 @@ function add_x_constraint(
         add_coef(constraint_data, row, column, value)
     end
 
-    # Add sense
+    # Complete the constraint.
     push!(constraint_data.constraint_senses, :eq)
-
-    # Add right hand side.
     add_rhs(constraint_data, row, secant_vertices[1].x)
-
     constraint_data.num_constraints += 1
     info(_LOGGER, "built x coordinate constraint.")
 end
@@ -169,7 +163,7 @@ function add_y_constraint(
     row = constraint_data.num_constraints+1
 
     # Add y variable to constraint.
-    add_coef(constraint_data, row, index_data.y_index, 1.0)
+    add_coef(constraint_data, row, index_data.y_index, 1)
 
     num_vars = length(secant_vertices) - 1
     for i in 1:num_vars
@@ -184,12 +178,9 @@ function add_y_constraint(
         add_coef(constraint_data, row, column, value)
     end
 
-    # Add sense
+    # Complete the constraint.
     push!(constraint_data.constraint_senses, :eq)
-
-    # Add right hand side.
     add_rhs(constraint_data, row, secant_vertices[1].y)
-
     constraint_data.num_constraints += 1
     info(_LOGGER, "built y coordinate constraint.")
 end
@@ -198,22 +189,54 @@ function add_first_delta_constraint(
         constraint_data::ConstraintData,
         index_data::IndexData)
     row = constraint_data.num_constraints + 1
-    add_coef(constraint_data, row, index_data.delta_1_indices[1], 1.0)
-    add_coef(constraint_data, row, index_data.delta_2_indices[1], 1.0)
+    add_coef(constraint_data, row, index_data.delta_1_indices[1], 1)
+    add_coef(constraint_data, row, index_data.delta_2_indices[1], 1)
     push!(constraint_data.constraint_senses, :leq)
-    add_rhs(constraint_data, row, 1.0)
+    add_rhs(constraint_data, row, 1)
     constraint_data.num_constraints += 1
     info(_LOGGER, "built delta_1^1 + delta_2^1 <= 1 constraint.")
 end
 
+function add_linking_constraints(
+        constraint_data::ConstraintData,
+        index_data::IndexData,
+        num_vars::Int64)
+    for i in 2:num_vars
+        constraint_data.num_constraints += 1
+        row = constraint_data.num_constraints
+
+        # Add delta_1^i + delta_2^i - z_{i-1} <= 0 constraint.
+        add_coef(constraint_data, row, index_data.delta_1_indices[i], 1)
+        add_coef(constraint_data, row, index_data.delta_2_indices[i], 1)
+        add_coef(constraint_data, row, index_data.z_indices[i-1], -1)
+        push!(constraint_data.constraint_senses, :leq)
+        add_rhs(constraint_data, row, 0)
+
+        # Add delta_2^{i-1} - z_{i-1} >+ 0 constraint.
+        constraint_data.num_constraints += 1
+        row = constraint_data.num_constraints
+        add_coef(constraint_data, row, index_data.delta_2_indices[i-1], 1)
+        add_coef(constraint_data, row, index_data.z_indices[i-1], -1)
+        push!(constraint_data.constraint_senses, :geq)
+        add_rhs(constraint_data, row, 0)
+    end
+    info(_LOGGER, "added linking constraints.")
+end
+
 function add_coef(
-        constraint_data::ConstraintData, row::Int64, col::Int64, value::Real)
+        constraint_data::ConstraintData,
+        row::Int64,
+        col::Int64,
+        value::Real)
     push!(constraint_data.constraint_row_indices, row)
     push!(constraint_data.constraint_column_indices, col)
     push!(constraint_data.constraint_coefficients, value)
 end
 
-function add_rhs(constraint_data::ConstraintData, row::Int64, value::Real)
+function add_rhs(
+        constraint_data::ConstraintData,
+        row::Int64,
+        value::Real)
     push!(constraint_data.rhs_row_indices, row)
     push!(constraint_data.rhs_values, value)
 end
