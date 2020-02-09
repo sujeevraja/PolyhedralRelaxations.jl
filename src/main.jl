@@ -6,19 +6,23 @@ using SparseArrays
 """
     collect_secant_vertices(f, partition_points)
 
-Evaluate the value of the univariate function `f` at each point x in
-`partition_points` and return a list of vertices of the form (x, f(x)) as
-Vertex objects.
+Return a list of (x,y) coordinates of secant vertices as Pair objects.
+
+The x value of each coordinate is an element of `partition_points`.
+The y value of each coordinate is the evaluation of the given univariate
+function `f` at x, i.e. y = f(x).
+
+In terms of notation in the paper, the returned vertices are v_i values.
 """
 function collect_secant_vertices(
         f::Function,
-        partition_points::Array{Real,1})::Array{Vertex,1}
+        partition_points::Vector{Real})::Vector{Vertex}
     secant_vertices = Vertex[]
     num_points = length(partition_points)
     for x in partition_points
-        push!(secant_vertices, Vertex(x, f(x)))
-        v = secant_vertices[end]
-        info(_LOGGER, "x: $x v_x: $(v.x) v_y: $(v.y) ")
+        push!(secant_vertices, Pair(x, f(x)))
+        s = x >= 0.0 ? "+" : ""
+        info(_LOGGER, "sv at $s$x: $(secant_vertices[end])")
     end
     return secant_vertices
 end
@@ -26,41 +30,47 @@ end
 """
     collect_tangent_vertices(f_dash, secant_vertices)
 
-Generate tangent vertices for each interval formed by x-coordinates of
-adjacent vertices in `secant_vertices`. Then, return the generated tangent
-vertices as a list of Vertex objects.
+Return a list of (x,y) coordinates of tangent intersections as Pair objects.
+
+Each position i of the returned list contains the (x,y) coordinate of the
+vertex formed by intersection of tangents of the required curve y = f(x) at
+`secant_vertices[i]` and `secant_vertices[i+1]`. The function `f_dash` is the
+derivative of f(x).
+
+In terms of notation in the paper, `secant_vertices[i]` is the vertex v_i,
+`secant_vertices[i+1]` is the vertex v_{i+1} and `tangent_vertices[i]` is
+the vertex v_{i,i+1}.
 """
 function collect_tangent_vertices(
         f_dash::Function,
-        secant_vertices::Array{Vertex,1})::Array{Vertex,1}
-    # tangent_vertices[i] is the vertex formed by the intersection of tangents
-    # of the given curve f at the partition interval formed by thex
-    # x-coordinates of secant_vertices[i] and secant_vertices[i+1].
-    # In terms of the notation in the paper, if secant_vertices[i] is the
-    # vertex v_i and secant_vertices[i+1] is the vertex v_{i+1},
-    # tangent_vertices[i] is the vertex v_{i,i+1}.
+        secant_vertices::Vector{Vertex})::Vector{Vertex}
     num_points = length(secant_vertices)
     tangent_vertices = Vertex[]
 
     for i in 1:num_points-1
-        v0 = secant_vertices[i]
-        v1 = secant_vertices[i+1]
+        v1 = secant_vertices[i]
+        v2 = secant_vertices[i+1]
 
-        # Find derivative values at secant points. By definition, the partition
-        # cannot have
-        d0 = f_dash(v0.x)
-        d1 = f_dash(v1.x)
-        @assert !isapprox(d0, d1, atol=1e-5)
+        # Find derivative values at secant points. Validate that successive
+        # partition points cannot have the same derivative, as if so, the
+        # tangents at these points will be parallel and won't form a triangle.
+        d1 = f_dash(v1[1])
+        d2 = f_dash(v2[1])
+        @assert !isapprox(d1, d2, atol=1e-5)
 
-        # Compute x-coordinate of tangent vertex. This is the intersection of
-        # the tangents to the curve at v0.x and v1.x.
-        x_new = (v1.y - v0.y + (d0*v0.x) - (d1*v1.x)) / (d0 - d1)
-        @assert x_new >= v0.x
-        @assert x_new <= v1.x
+        # Compute x-coordinate of the tangent vertex. This is the intersection
+        # of tangents to the curve at v1[1] and v2[1].
+        x_new = (v2[2] - v1[2] + (d1*v1[1]) - (d2*v2[1])) / (d1 - d2)
+        @assert x_new >= v1[1]
+        @assert x_new <= v2[1]
 
-        y_new = v0.y + (d0*(x_new - v0.x))
-        push!(tangent_vertices, Vertex(x_new, y_new))
-        info(_LOGGER,  "x0: $(v0.x) x1: $(v1.x) x_new: $x_new y_new: $y_new")
+        y_new = v1[2] + (d1*(x_new - v1[1]))
+        push!(tangent_vertices, Pair(x_new, y_new))
+
+        s1 = v1[1] >= 0.0 ? "+" : ""
+        s2 = v2[1] >= 0.0 ? "+" : ""
+        tv = tangent_vertices[end]
+        info(_LOGGER, "tv for [$s1$(v1[1]),$s2$(v2[1])]: $tv")
     end
     return tangent_vertices
 end
@@ -82,6 +92,8 @@ function build_model(
     num_points = length(secant_vertices)
     index_data = IndexData(num_points)
     info(_LOGGER, "number of partition points: $num_points")
+    info(_LOGGER, "x index: $(index_data.x_index)")
+    info(_LOGGER, "y index: $(index_data.y_index)")
 
     i_start = index_data.delta_1_indices[1]
     i_end = index_data.delta_1_indices[end]
@@ -96,17 +108,9 @@ function build_model(
     info(_LOGGER, "z_indices: $i_start to $i_end")
 
     constraint_data = ConstraintData()
-    add_x_constraint(constraint_data, index_data, secant_vertices,
-        tangent_vertices)
-    add_y_constraint(constraint_data, index_data, secant_vertices,
-        tangent_vertices)
+    add_vertex_constraints(constraint_data, index_data, secant_vertices, tangent_vertices)
     add_first_delta_constraint(constraint_data, index_data)
     add_linking_constraints(constraint_data, index_data, num_points-1)
-
-    # Ensure that constraint symbols are valid.
-    for s in constraint_data.constraint_senses
-        @assert s in possible_senses
-    end
 
     # Store constraint data into a Model object and return it.
     A = sparse(constraint_data.constraint_row_indices,
@@ -121,85 +125,54 @@ function build_model(
         index_data.delta_1_indices,
         index_data.delta_2_indices,
         index_data.z_indices,
-        constraint_data.constraint_senses)
+        constraint_data.equality_row_indices,
+        constraint_data.num_constraints)
 end
 
 """
-    add_x_constraint(constraint_data, index_data, secant_vertices,
+    add_vertex_constraints(constraint_data, index_data, secant_vertices,
         tangent_vertices)
 
-Add constraint that links the x coordinate to the delta and z variables to
-`constraint_data` using variable indices from `index_data`. The lists of
-vertices `secant_vertices` and `tangent_vertices` are used to compute
-constraint coefficients.
+Add vertex constraints to `constraint_data` using variable indices from
+`index_data`.
+
+These constraints link the x and y coordinate variables to the delta variables.
+The lists `secant_vertices` and `tangent_vertices` are used to compute
+coefficients of delta variables.
 """
-function add_x_constraint(
+function add_vertex_constraints(
         constraint_data::ConstraintData,
         index_data::IndexData,
         secant_vertices::Vector{Vertex},
         tangent_vertices::Vector{Vertex})
-    row = constraint_data.num_constraints+1
-
-    # Add x variable to constraint.
-    add_coef(constraint_data, row, index_data.x_index, 1)
-
+    indices = [index_data.x_index, index_data.y_index]
     num_vars = length(secant_vertices) - 1
-    for i in 1:num_vars
-        # Add delta_1 variable to constraint.
-        column = index_data.delta_1_indices[i]
-        value = secant_vertices[i].x - tangent_vertices[i].x
-        add_coef(constraint_data, row, column, value)
 
-        # Add delta_2 variable to constraint.
-        column = index_data.delta_2_indices[i]
-        value = secant_vertices[i].x - secant_vertices[i+1].x
-        add_coef(constraint_data, row, column, value)
+    for c in [1,2]  # c is the coordinate index (1 for x, 2 for y).
+        row = constraint_data.num_constraints+1
+
+        # Add coordinate variable to constraint.
+        add_coef(constraint_data, row, indices[c], 1)
+
+        for i in 1:num_vars
+            # Add delta_1 variable to constraint.
+            column = index_data.delta_1_indices[i]
+            value = tangent_vertices[i][c] - secant_vertices[i][c]
+            add_coef(constraint_data, row, column, value)
+
+            # Add delta_2 variable to constraint.
+            column = index_data.delta_2_indices[i]
+            value = secant_vertices[i+1][c] - secant_vertices[i][c]
+            add_coef(constraint_data, row, column, value)
+        end
+
+        # Complete the constraint.
+        push!(constraint_data.equality_row_indices, row)
+        add_rhs(constraint_data, row, secant_vertices[1][c])
+        constraint_data.num_constraints += 1
     end
 
-    # Complete the constraint.
-    push!(constraint_data.constraint_senses, :eq)
-    add_rhs(constraint_data, row, secant_vertices[1].x)
-    constraint_data.num_constraints += 1
-    info(_LOGGER, "built x coordinate constraint.")
-end
-
-"""
-    add_y_constraint(constraint_data, index_data, secant_vertices,
-        tangent_vertices)
-
-Add constraint that links the y coordinate to the delta and z variables to
-`constraint_data` using variable indices from `index_data`. The lists of
-vertices `secant_vertices` and `tangent_vertices` are used to compute
-constraint coefficients.
-"""
-function add_y_constraint(
-        constraint_data::ConstraintData,
-        index_data::IndexData,
-        secant_vertices::Vector{Vertex},
-        tangent_vertices::Vector{Vertex})
-    row = constraint_data.num_constraints+1
-
-    # Add y variable to constraint.
-    add_coef(constraint_data, row, index_data.y_index, 1)
-
-    num_vars = length(secant_vertices) - 1
-    for i in 1:num_vars
-        # Add delta_1 variable to constraint.
-        column = index_data.delta_1_indices[i]
-        value = secant_vertices[i].y - tangent_vertices[i].y
-        add_coef(constraint_data, row, column, value)
-
-        # Add delta_2 variable to constraint.
-        column = index_data.delta_2_indices[i]
-        value = secant_vertices[i].y - secant_vertices[i+1].y
-        add_coef(constraint_data, row, column, value)
-    end
-
-    # Complete the constraint.
-    push!(constraint_data.constraint_senses, :eq)
-    add_rhs(constraint_data, row, secant_vertices[1].y)
-    constraint_data.num_constraints += 1
-    info(_LOGGER, "built y coordinate constraint.")
+    info(_LOGGER, "built vertex constraints.")
 end
 
 """
@@ -214,10 +187,9 @@ function add_first_delta_constraint(
     row = constraint_data.num_constraints + 1
     add_coef(constraint_data, row, index_data.delta_1_indices[1], 1)
     add_coef(constraint_data, row, index_data.delta_2_indices[1], 1)
-    push!(constraint_data.constraint_senses, :leq)
     add_rhs(constraint_data, row, 1)
     constraint_data.num_constraints += 1
-    info(_LOGGER, "built delta_1^1 + delta_2^1 <= 1 constraint.")
+    info(_LOGGER, "built first delta constraint.")
 end
 
 """
@@ -244,15 +216,13 @@ function add_linking_constraints(
         add_coef(constraint_data, row, index_data.delta_1_indices[i], 1)
         add_coef(constraint_data, row, index_data.delta_2_indices[i], 1)
         add_coef(constraint_data, row, index_data.z_indices[i-1], -1)
-        push!(constraint_data.constraint_senses, :leq)
         add_rhs(constraint_data, row, 0)
 
-        # Add delta_2^{i-1} - z_{i-1} >+ 0 constraint.
+        # Add z_{i-1} - delta_2^{i-1} <= 0 constraint.
         constraint_data.num_constraints += 1
         row = constraint_data.num_constraints
-        add_coef(constraint_data, row, index_data.delta_2_indices[i-1], 1)
-        add_coef(constraint_data, row, index_data.z_indices[i-1], -1)
-        push!(constraint_data.constraint_senses, :geq)
+        add_coef(constraint_data, row, index_data.z_indices[i-1], 1)
+        add_coef(constraint_data, row, index_data.delta_2_indices[i-1], -1)
         add_rhs(constraint_data, row, 0)
     end
     info(_LOGGER, "added linking constraints.")
@@ -295,14 +265,14 @@ Generate model data for the polyhedral relaxation of a univariate function.
 function main()
     info(_LOGGER, "starting model generation...")
 
-    lb = -2.0
-    ub = 2.0
+    lb = -1.0
+    ub = 1.0
     uf = UnivariateFunction(
         x->x^3,  # f
         x->3 * (x^2),  # f'
         domain_lb = lb,
         domain_ub = ub,
-        inflection_points = Array{Real}(collect(lb:0.25:ub)))
+        inflection_points = Vector{Real}(collect(lb:1.0:ub)))
 
     sec_vertices = collect_secant_vertices(uf.f, uf.inflection_points)
     info(_LOGGER, "collected $(length(sec_vertices)) secant vertices.")
@@ -312,4 +282,12 @@ function main()
 
     model = build_model(uf, sec_vertices, tan_vertices)
     info(_LOGGER, "completed model generation.")
+    info(_LOGGER, string("main() outputs the constraint matrix augmented ",
+      "with the sense column and RHS column."))
+
+    sense_vec = zeros(Int64,model.num_constraints)
+    for i in model.equality_row_indices
+        sense_vec[i] = 1
+    end
+    return hcat(Matrix(model.A), sense_vec, Vector(model.b))
 end

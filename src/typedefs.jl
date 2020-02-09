@@ -48,38 +48,36 @@ end
 @inline get_indicator_variable_ids(vi::VariableInfo)::Vector{Int64, Nothing} = vi.indicator_variable_ids
 @inline get_continuous_variable_ids(vi::VariableInfo)::Vector{Tuple{Int64,Int64}} = vi.continuous_variable_ids
 
-"Vertices in 2D used to build the polyhedral relaxation sequence"
-struct Vertex
-    x::Real
-    y::Real
-end
-
-const possible_senses = Set([:eq, :geq, :leq])
+const Vertex = Pair{Real,Real}
 
 """
 Constraint coefficients and right-hand-side of MIP relaxation.
 
-Variables are ordered as: x, y, delta_1^i, delta_2^i, z_i
+Variables are ordered as: x, y, delta_1^i, delta_2^i, z_i.
+
+All constraints are either equality or less-than-or-equal-to constraints.
+Row indices of equality constraints are stored in `equality_row_indices`.
 """
 struct Model
     A::SparseMatrixCSC{Real,Int64}
     b::SparseVector{Real,Int64}
     x_index::Int64
     y_index::Int64
-    delta_1_indices::Array{Int64,1}
-    delta_2_indices::Array{Int64,1}
-    z_indices::Array{Int64,1}
-    constraint_senses::Array{Symbol,1}
+    delta_1_indices::Vector{Int64}
+    delta_2_indices::Vector{Int64}
+    z_indices::Vector{Int64}
+    equality_row_indices::Set{Int64}
+    num_constraints::Int64
 end
 
 mutable struct ConstraintData
-    constraint_row_indices::Array{Int64,1}
-    constraint_column_indices::Array{Int64,1}
-    constraint_coefficients::Array{Real,1}
-    rhs_row_indices::Array{Int64,1}
-    rhs_values::Array{Real,1}
+    constraint_row_indices::Vector{Int64}
+    constraint_column_indices::Vector{Int64}
+    constraint_coefficients::Vector{Real}
+    rhs_row_indices::Vector{Int64}
+    rhs_values::Vector{Real}
+    equality_row_indices::Set{Int64}
     num_constraints::Int64
-    constraint_senses::Array{Symbol,1}
 end
 
 function ConstraintData()::ConstraintData
@@ -88,10 +86,10 @@ function ConstraintData()::ConstraintData
     coefs = Real[]
     rhs_row_indices = Int64[]
     rhs_values = Real[]
+    equality_row_indices = Set{Int64}()
     num_constraints = 0
-    constraint_senses = Symbol[]
     return ConstraintData(row_indices, col_indices, coefs, rhs_row_indices,
-        rhs_values, num_constraints, constraint_senses)
+        rhs_values, equality_row_indices, num_constraints)
 end
 
 """
@@ -101,9 +99,9 @@ and z_i start from 1.
 mutable struct IndexData
     x_index::Int64
     y_index::Int64
-    delta_1_indices::Array{Int64,1}
-    delta_2_indices::Array{Int64,1}
-    z_indices::Array{Int64,1}
+    delta_1_indices::Vector{Int64}
+    delta_2_indices::Vector{Int64}
+    z_indices::Vector{Int64}
 end
 
 function IndexData(num_points::Int64)::IndexData
@@ -113,8 +111,11 @@ function IndexData(num_points::Int64)::IndexData
     # If there are k partition points, there are k-1 intervals, with each
     # interval corresponding to a triangle. As we need one delta_1 variable,
     # delta_2 variable and z variable for each triangle, we need k-1 of
-    # each of these variables in total. This is why num_vars is set to k-1.
-    num_vars = num_points - 1
+    # each of these variables in total. For instance, if k=3, we need 2 delta_1
+    # variables with indices 3,4. As the collect() function includes both
+    # endpoints, we need to set num_vars to k-2. Then, we will get the correct
+    # count for each variable set.
+    num_vars = num_points - 2
 
     start = 3
     delta_1_indices = collect(start:(start+num_vars))
