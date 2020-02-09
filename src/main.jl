@@ -21,8 +21,8 @@ function collect_secant_vertices(
     num_points = length(partition_points)
     for x in partition_points
         push!(secant_vertices, Pair(x, f(x)))
-        v = secant_vertices[end]
-        info(_LOGGER, "x: $x v_x: $(v[1]) v_y: $(v[2]) ")
+        s = x >= 0.0 ? "+" : ""
+        info(_LOGGER, "sv at $s$x: $(secant_vertices[end])")
     end
     return secant_vertices
 end
@@ -66,7 +66,12 @@ function collect_tangent_vertices(
 
         y_new = v1[2] + (d1*(x_new - v1[1]))
         push!(tangent_vertices, Pair(x_new, y_new))
-        info(_LOGGER,  "x0: $(v1[1]) x1: $(v2[1]) x_new: $x_new y_new: $y_new")
+
+
+        s1 = v1[1] >= 0.0 ? "+" : ""
+        s2 = v2[1] >= 0.0 ? "+" : ""
+        tv = tangent_vertices[end]
+        info(_LOGGER, "tv for [$s1$(v1[1]),$s2$(v2[1])]: $tv")
     end
     return tangent_vertices
 end
@@ -157,12 +162,12 @@ function add_vertex_constraints(
         for i in 1:num_vars
             # Add delta_1 variable to constraint.
             column = index_data.delta_1_indices[i]
-            value = secant_vertices[i][c] - tangent_vertices[i][c]
+            value = tangent_vertices[i][c] - secant_vertices[i][c]
             add_coef(constraint_data, row, column, value)
 
             # Add delta_2 variable to constraint.
             column = index_data.delta_2_indices[i]
-            value = secant_vertices[i][c] - secant_vertices[i+1][c]
+            value = secant_vertices[i+1][c] - secant_vertices[i][c]
             add_coef(constraint_data, row, column, value)
         end
 
