@@ -88,6 +88,8 @@ function build_model(
     num_points = length(secant_vertices)
     index_data = IndexData(num_points)
     info(_LOGGER, "number of partition points: $num_points")
+    info(_LOGGER, "x index: $(index_data.x_index)")
+    info(_LOGGER, "y index: $(index_data.y_index)")
 
     i_start = index_data.delta_1_indices[1]
     i_end = index_data.delta_1_indices[end]
@@ -188,7 +190,7 @@ function add_first_delta_constraint(
     push!(constraint_data.constraint_senses, :leq)
     add_rhs(constraint_data, row, 1)
     constraint_data.num_constraints += 1
-    info(_LOGGER, "built delta_1^1 + delta_2^1 <= 1 constraint.")
+    info(_LOGGER, "built first delta constraint.")
 end
 
 """
@@ -266,14 +268,14 @@ Generate model data for the polyhedral relaxation of a univariate function.
 function main()
     info(_LOGGER, "starting model generation...")
 
-    lb = -2.0
-    ub = 2.0
+    lb = -1.0
+    ub = 1.0
     uf = UnivariateFunction(
         x->x^3,  # f
         x->3 * (x^2),  # f'
         domain_lb = lb,
         domain_ub = ub,
-        inflection_points = Vector{Real}(collect(lb:0.25:ub)))
+        inflection_points = Vector{Real}(collect(lb:1.0:ub)))
 
     sec_vertices = collect_secant_vertices(uf.f, uf.inflection_points)
     info(_LOGGER, "collected $(length(sec_vertices)) secant vertices.")
@@ -283,4 +285,6 @@ function main()
 
     model = build_model(uf, sec_vertices, tan_vertices)
     info(_LOGGER, "completed model generation.")
+    info(_LOGGER, "main() output is constraint matrix augmented with RHS")
+    return hcat(Matrix(model.A),Vector(model.b))
 end
