@@ -81,11 +81,14 @@ end
 Collect constraint data of the MILP formulation of the polyhedral relaxation
 in a Model object and return it.
 """
-function build_model(
-        uf::UnivariateFunction,
-        secant_vertices::Vector{Vertex},
-        tangent_vertices::Vector{Vertex})::Model
+function build_model( uf::UnivariateFunction)::Model
     info(_LOGGER, "starting to build model...")
+
+    secant_vertices = collect_secant_vertices(uf.f, uf.inflection_points)
+    info(_LOGGER, "collected $(length(secant_vertices)) secant vertices.")
+
+    tangent_vertices = collect_tangent_vertices(uf.f_dash, secant_vertices)
+    info(_LOGGER, "collected $(length(tangent_vertices)) tangent vertices.")
 
     # Indices to recover variable values from model. Indices of delta_1^i,
     # delta_2^i and z_i start from 1.
@@ -274,17 +277,11 @@ function main()
         domain_ub = ub,
         inflection_points = Vector{Real}(collect(lb:1.0:ub)))
 
-    sec_vertices = collect_secant_vertices(uf.f, uf.inflection_points)
-    info(_LOGGER, "collected $(length(sec_vertices)) secant vertices.")
-
-    tan_vertices = collect_tangent_vertices(uf.f_dash, sec_vertices)
-    info(_LOGGER, "collected $(length(tan_vertices)) tangent vertices.")
-
-    model = build_model(uf, sec_vertices, tan_vertices)
+    model = build_model(uf)
     info(_LOGGER, "completed model generation.")
+
     info(_LOGGER, string("main() outputs the constraint matrix augmented ",
       "with the sense column and RHS column."))
-
     sense_vec = zeros(Int64,model.num_constraints)
     for i in model.equality_row_indices
         sense_vec[i] = 1
