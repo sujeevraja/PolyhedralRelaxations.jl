@@ -273,12 +273,13 @@ function main()
         inflection_points = Vector{Real}(collect(lb:1.0:ub)))
 
     model = build_model(uf)
-    Memento.info(_LOGGER, "completed model generation.")
-    Memento.info(_LOGGER, string("main() outputs the constraint matrix augmented ",
-      "with the sense column and RHS column."))
-    sense_vec = zeros(Int64,model.num_constraints)
-    for i in model.equality_row_indices
-        sense_vec[i] = 1
-    end
-    return hcat(Matrix(model.A), sense_vec, Vector(model.b))
+    # Memento.info(_LOGGER, "completed model generation.")
+    # Memento.info(_LOGGER, string("main() outputs the constraint matrix augmented ",
+    #   "with the sense column and RHS column."))
+    # sense_vec = zeros(Int64,model.num_constraints)
+    # for i in model.equality_row_indices
+    #     sense_vec[i] = 1
+    # end
+    # return hcat(Matrix(model.A), sense_vec, Vector(model.b))
+    return model
 end
