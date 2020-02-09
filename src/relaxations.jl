@@ -13,7 +13,7 @@ function collect_secant_vertices(
         f::Function,
         partition_points::Vector{Real})::Vector{Vertex}
     secant_vertices = Vertex[]
-    num_points = length(partition_points)G
+    num_points = length(partition_points)
     for x in partition_points
         push!(secant_vertices, Pair(x, f(x)))
         s = x >= 0.0 ? "+" : ""
