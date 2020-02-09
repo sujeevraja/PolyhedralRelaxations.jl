@@ -50,12 +50,13 @@ end
 
 const Vertex = Pair{Real,Real}
 
-const possible_senses = Set([:eq, :geq, :leq])
-
 """
 Constraint coefficients and right-hand-side of MIP relaxation.
 
-Variables are ordered as: x, y, delta_1^i, delta_2^i, z_i
+Variables are ordered as: x, y, delta_1^i, delta_2^i, z_i.
+
+All constraints are either equality or less-than-or-equal-to constraints.
+Row indices of equality constraints are stored in `equality_row_indices`.
 """
 struct Model
     A::SparseMatrixCSC{Real,Int64}
@@ -65,7 +66,8 @@ struct Model
     delta_1_indices::Vector{Int64}
     delta_2_indices::Vector{Int64}
     z_indices::Vector{Int64}
-    constraint_senses::Vector{Symbol}
+    equality_row_indices::Set{Int64}
+    num_constraints::Int64
 end
 
 mutable struct ConstraintData
@@ -74,8 +76,8 @@ mutable struct ConstraintData
     constraint_coefficients::Vector{Real}
     rhs_row_indices::Vector{Int64}
     rhs_values::Vector{Real}
+    equality_row_indices::Set{Int64}
     num_constraints::Int64
-    constraint_senses::Vector{Symbol}
 end
 
 function ConstraintData()::ConstraintData
@@ -84,10 +86,10 @@ function ConstraintData()::ConstraintData
     coefs = Real[]
     rhs_row_indices = Int64[]
     rhs_values = Real[]
+    equality_row_indices = Set{Int64}()
     num_constraints = 0
-    constraint_senses = Symbol[]
     return ConstraintData(row_indices, col_indices, coefs, rhs_row_indices,
-        rhs_values, num_constraints, constraint_senses)
+        rhs_values, equality_row_indices, num_constraints)
 end
 
 """

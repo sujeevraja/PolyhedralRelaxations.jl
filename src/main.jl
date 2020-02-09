@@ -67,7 +67,6 @@ function collect_tangent_vertices(
         y_new = v1[2] + (d1*(x_new - v1[1]))
         push!(tangent_vertices, Pair(x_new, y_new))
 
-
         s1 = v1[1] >= 0.0 ? "+" : ""
         s2 = v2[1] >= 0.0 ? "+" : ""
         tv = tangent_vertices[end]
@@ -113,11 +112,6 @@ function build_model(
     add_first_delta_constraint(constraint_data, index_data)
     add_linking_constraints(constraint_data, index_data, num_points-1)
 
-    # Ensure that constraint symbols are valid.
-    for s in constraint_data.constraint_senses
-        @assert s in possible_senses
-    end
-
     # Store constraint data into a Model object and return it.
     A = sparse(constraint_data.constraint_row_indices,
         constraint_data.constraint_column_indices,
@@ -131,7 +125,8 @@ function build_model(
         index_data.delta_1_indices,
         index_data.delta_2_indices,
         index_data.z_indices,
-        constraint_data.constraint_senses)
+        constraint_data.equality_row_indices,
+        constraint_data.num_constraints)
 end
 
 """
@@ -172,7 +167,7 @@ function add_vertex_constraints(
         end
 
         # Complete the constraint.
-        push!(constraint_data.constraint_senses, :eq)
+        push!(constraint_data.equality_row_indices, row)
         add_rhs(constraint_data, row, secant_vertices[1][c])
         constraint_data.num_constraints += 1
     end
@@ -192,7 +187,6 @@ function add_first_delta_constraint(
     row = constraint_data.num_constraints + 1
     add_coef(constraint_data, row, index_data.delta_1_indices[1], 1)
     add_coef(constraint_data, row, index_data.delta_2_indices[1], 1)
-    push!(constraint_data.constraint_senses, :leq)
     add_rhs(constraint_data, row, 1)
     constraint_data.num_constraints += 1
     info(_LOGGER, "built first delta constraint.")
@@ -222,15 +216,13 @@ function add_linking_constraints(
         add_coef(constraint_data, row, index_data.delta_1_indices[i], 1)
         add_coef(constraint_data, row, index_data.delta_2_indices[i], 1)
         add_coef(constraint_data, row, index_data.z_indices[i-1], -1)
-        push!(constraint_data.constraint_senses, :leq)
         add_rhs(constraint_data, row, 0)
 
-        # Add delta_2^{i-1} - z_{i-1} >+ 0 constraint.
+        # Add z_{i-1} - delta_2^{i-1} <= 0 constraint.
         constraint_data.num_constraints += 1
         row = constraint_data.num_constraints
-        add_coef(constraint_data, row, index_data.delta_2_indices[i-1], 1)
-        add_coef(constraint_data, row, index_data.z_indices[i-1], -1)
-        push!(constraint_data.constraint_senses, :geq)
+        add_coef(constraint_data, row, index_data.z_indices[i-1], 1)
+        add_coef(constraint_data, row, index_data.delta_2_indices[i-1], -1)
         add_rhs(constraint_data, row, 0)
     end
     info(_LOGGER, "added linking constraints.")
@@ -290,6 +282,12 @@ function main()
 
     model = build_model(uf, sec_vertices, tan_vertices)
     info(_LOGGER, "completed model generation.")
-    info(_LOGGER, "main() output is constraint matrix augmented with RHS")
-    return hcat(Matrix(model.A),Vector(model.b))
+    info(_LOGGER, string("main() outputs the constraint matrix augmented ",
+      "with the sense column and RHS column."))
+
+    sense_vec = zeros(Int64,model.num_constraints)
+    for i in model.equality_row_indices
+        sense_vec[i] = 1
+    end
+    return hcat(Matrix(model.A), sense_vec, Vector(model.b))
 end
