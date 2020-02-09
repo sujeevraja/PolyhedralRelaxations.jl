@@ -1,5 +1,3 @@
-using SparseArrays
-
 struct UnivariateFunction
     f::Function
     f_dash::Function
@@ -59,8 +57,8 @@ All constraints are either equality or less-than-or-equal-to constraints.
 Row indices of equality constraints are stored in `equality_row_indices`.
 """
 struct Model
-    A::SparseMatrixCSC{Real,Int64}
-    b::SparseVector{Real,Int64}
+    A::SparseArrays.SparseMatrixCSC{Real,Int64}
+    b::SparseArrays.SparseVector{Real,Int64}
     x_index::Int64
     y_index::Int64
     delta_1_indices::Vector{Int64}
