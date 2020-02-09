@@ -109,8 +109,11 @@ function IndexData(num_points::Int64)::IndexData
     # If there are k partition points, there are k-1 intervals, with each
     # interval corresponding to a triangle. As we need one delta_1 variable,
     # delta_2 variable and z variable for each triangle, we need k-1 of
-    # each of these variables in total. This is why num_vars is set to k-1.
-    num_vars = num_points - 1
+    # each of these variables in total. For instance, if k=3, we need 2 delta_1
+    # variables with indices 3,4. As the collect() function includes both
+    # endpoints, we need to set num_vars to k-2. Then, we will get the correct
+    # count for each variable set.
+    num_vars = num_points - 2
 
     start = 3
     delta_1_indices = collect(start:(start+num_vars))
