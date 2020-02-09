@@ -1,7 +1,7 @@
 module PolyhedralRelaxations
 
     import ForwardDiff
-    import SparseArrays
+    using SparseArrays
     import Memento
 
     # Create our module level logger (this will get precompiled)
@@ -22,7 +22,7 @@ module PolyhedralRelaxations
         Memento.config!(Memento.getlogger("PolyhedralRelaxations"), level)
     end
 
-    include("typedefs.jl")
-    include("main.jl")
+    include("types.jl")
+    include("relaxations.jl")
 
 end

@@ -1,8 +1,3 @@
-using Memento
-using SparseArrays
-
-# logger_config!("debug")
-
 """
     collect_secant_vertices(f, partition_points)
 
@@ -22,7 +17,7 @@ function collect_secant_vertices(
     for x in partition_points
         push!(secant_vertices, Pair(x, f(x)))
         s = x >= 0.0 ? "+" : ""
-        info(_LOGGER, "sv at $s$x: $(secant_vertices[end])")
+        Memento.info(_LOGGER, "sv at $s$x: $(secant_vertices[end])")
     end
     return secant_vertices
 end
@@ -70,7 +65,7 @@ function collect_tangent_vertices(
         s1 = v1[1] >= 0.0 ? "+" : ""
         s2 = v2[1] >= 0.0 ? "+" : ""
         tv = tangent_vertices[end]
-        info(_LOGGER, "tv for [$s1$(v1[1]),$s2$(v2[1])]: $tv")
+        Memento.info(_LOGGER, "tv for [$s1$(v1[1]),$s2$(v2[1])]: $tv")
     end
     return tangent_vertices
 end
@@ -82,33 +77,33 @@ Collect constraint data of the MILP formulation of the polyhedral relaxation
 in a Model object and return it.
 """
 function build_model( uf::UnivariateFunction)::Model
-    info(_LOGGER, "starting to build model...")
+    Memento.info(_LOGGER, "starting to build model...")
 
     secant_vertices = collect_secant_vertices(uf.f, uf.inflection_points)
-    info(_LOGGER, "collected $(length(secant_vertices)) secant vertices.")
+    Memento.info(_LOGGER, "collected $(length(secant_vertices)) secant vertices.")
 
     tangent_vertices = collect_tangent_vertices(uf.f_dash, secant_vertices)
-    info(_LOGGER, "collected $(length(tangent_vertices)) tangent vertices.")
+    Memento.info(_LOGGER, "collected $(length(tangent_vertices)) tangent vertices.")
 
     # Indices to recover variable values from model. Indices of delta_1^i,
     # delta_2^i and z_i start from 1.
     num_points = length(secant_vertices)
     index_data = IndexData(num_points)
-    info(_LOGGER, "number of partition points: $num_points")
-    info(_LOGGER, "x index: $(index_data.x_index)")
-    info(_LOGGER, "y index: $(index_data.y_index)")
+    Memento.info(_LOGGER, "number of partition points: $num_points")
+    Memento.info(_LOGGER, "x index: $(index_data.x_index)")
+    Memento.info(_LOGGER, "y index: $(index_data.y_index)")
 
     i_start = index_data.delta_1_indices[1]
     i_end = index_data.delta_1_indices[end]
-    info(_LOGGER, "delta_1_indices: $i_start to $i_end")
+    Memento.info(_LOGGER, "delta_1_indices: $i_start to $i_end")
 
     i_start = index_data.delta_2_indices[1]
     i_end = index_data.delta_2_indices[end]
-    info(_LOGGER, "delta_2_indices: $i_start to $i_end")
+    Memento.info(_LOGGER, "delta_2_indices: $i_start to $i_end")
 
     i_start = index_data.z_indices[1]
     i_end = index_data.z_indices[end]
-    info(_LOGGER, "z_indices: $i_start to $i_end")
+    Memento.info(_LOGGER, "z_indices: $i_start to $i_end")
 
     constraint_data = ConstraintData()
     add_vertex_constraints(constraint_data, index_data, secant_vertices, tangent_vertices)
@@ -120,7 +115,7 @@ function build_model( uf::UnivariateFunction)::Model
         constraint_data.constraint_column_indices,
         constraint_data.constraint_coefficients)
     b = sparsevec(constraint_data.rhs_row_indices, constraint_data.rhs_values)
-    info(_LOGGER, "completed building model.")
+    Memento.info(_LOGGER, "completed building model.")
 
     return Model(A, b,
         index_data.x_index,
@@ -175,7 +170,7 @@ function add_vertex_constraints(
         constraint_data.num_constraints += 1
     end
 
-    info(_LOGGER, "built vertex constraints.")
+    Memento.info(_LOGGER, "built vertex constraints.")
 end
 
 """
@@ -192,7 +187,7 @@ function add_first_delta_constraint(
     add_coef(constraint_data, row, index_data.delta_2_indices[1], 1)
     add_rhs(constraint_data, row, 1)
     constraint_data.num_constraints += 1
-    info(_LOGGER, "built first delta constraint.")
+    Memento.info(_LOGGER, "built first delta constraint.")
 end
 
 """
@@ -228,7 +223,7 @@ function add_linking_constraints(
         add_coef(constraint_data, row, index_data.delta_2_indices[i-1], -1)
         add_rhs(constraint_data, row, 0)
     end
-    info(_LOGGER, "added linking constraints.")
+    Memento.info(_LOGGER, "added linking constraints.")
 end
 
 """
@@ -266,7 +261,7 @@ end
 Generate model data for the polyhedral relaxation of a univariate function.
 """
 function main()
-    info(_LOGGER, "starting model generation...")
+    Memento.info(_LOGGER, "starting model generation...")
 
     lb = -1.0
     ub = 1.0
@@ -278,13 +273,13 @@ function main()
         inflection_points = Vector{Real}(collect(lb:1.0:ub)))
 
     model = build_model(uf)
-    info(_LOGGER, "completed model generation.")
-
-    info(_LOGGER, string("main() outputs the constraint matrix augmented ",
-      "with the sense column and RHS column."))
-    sense_vec = zeros(Int64,model.num_constraints)
-    for i in model.equality_row_indices
-        sense_vec[i] = 1
-    end
-    return hcat(Matrix(model.A), sense_vec, Vector(model.b))
+    # Memento.info(_LOGGER, "completed model generation.")
+    # Memento.info(_LOGGER, string("main() outputs the constraint matrix augmented ",
+    #   "with the sense column and RHS column."))
+    # sense_vec = zeros(Int64,model.num_constraints)
+    # for i in model.equality_row_indices
+    #     sense_vec[i] = 1
+    # end
+    # return hcat(Matrix(model.A), sense_vec, Vector(model.b))
+    return model
 end
