@@ -40,12 +40,11 @@
             JuMP.@constraint(m, dot(x[indices], values) <= b[i])
         end 
     end 
-    # JuMP.@objective(m, Min, x[1])
-    # JuMP.optimize!(m)
-    # @test JuMP.objective_value(m) == -1.0
+    JuMP.@objective(m, Min, x[1])
+    JuMP.optimize!(m)
+    @test JuMP.objective_value(m) == -1.0
 
     JuMP.@objective(m, Max, x[1])
-    println(m)
     JuMP.optimize!(m)
     @test JuMP.objective_value(m) == 1.0
 end
