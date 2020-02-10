@@ -9,15 +9,13 @@ function `f` at x, i.e. y = f(x).
 
 In terms of notation in the paper, the returned vertices are v_i values.
 """
-function collect_secant_vertices(
-        f::Function,
-        partition_points::Vector{Real})::Vector{Vertex}
+function collect_secant_vertices(f::Function, partition_points::Vector{Real})::Vector{Vertex}
     secant_vertices = Vertex[]
     num_points = length(partition_points)
     for x in partition_points
         push!(secant_vertices, Pair(x, f(x)))
         s = x >= 0.0 ? "+" : ""
-        Memento.info(_LOGGER, "sv at $s$x: $(secant_vertices[end])")
+        Memento.debug(_LOGGER, "sv at $s$x: $(secant_vertices[end])")
     end
     return secant_vertices
 end
@@ -36,9 +34,7 @@ In terms of notation in the paper, `secant_vertices[i]` is the vertex v_i,
 `secant_vertices[i+1]` is the vertex v_{i+1} and `tangent_vertices[i]` is
 the vertex v_{i,i+1}.
 """
-function collect_tangent_vertices(
-        f_dash::Function,
-        secant_vertices::Vector{Vertex})::Vector{Vertex}
+function collect_tangent_vertices(f_dash::Function, secant_vertices::Vector{Vertex})::Vector{Vertex}
     num_points = length(secant_vertices)
     tangent_vertices = Vertex[]
 
@@ -65,7 +61,7 @@ function collect_tangent_vertices(
         s1 = v1[1] >= 0.0 ? "+" : ""
         s2 = v2[1] >= 0.0 ? "+" : ""
         tv = tangent_vertices[end]
-        Memento.info(_LOGGER, "tv for [$s1$(v1[1]),$s2$(v2[1])]: $tv")
+        Memento.debug(_LOGGER, "tv for [$s1$(v1[1]),$s2$(v2[1])]: $tv")
     end
     return tangent_vertices
 end
@@ -76,45 +72,45 @@ end
 Collect constraint data of the MILP formulation of the polyhedral relaxation
 in a Model object and return it.
 """
-function build_model( uf::UnivariateFunction)::Model
-    Memento.info(_LOGGER, "starting to build model...")
+function build_model(uf::UnivariateFunction)::Model
+    Memento.debug(_LOGGER, "starting to build model...")
 
     secant_vertices = collect_secant_vertices(uf.f, uf.inflection_points)
-    Memento.info(_LOGGER, "collected $(length(secant_vertices)) secant vertices.")
+    Memento.debug(_LOGGER, "collected $(length(secant_vertices)) secant vertices.")
 
     tangent_vertices = collect_tangent_vertices(uf.f_dash, secant_vertices)
-    Memento.info(_LOGGER, "collected $(length(tangent_vertices)) tangent vertices.")
+    Memento.debug(_LOGGER, "collected $(length(tangent_vertices)) tangent vertices.")
 
     # Indices to recover variable values from model. Indices of delta_1^i,
     # delta_2^i and z_i start from 1.
     num_points = length(secant_vertices)
     index_data = IndexData(num_points)
-    Memento.info(_LOGGER, "number of partition points: $num_points")
-    Memento.info(_LOGGER, "x index: $(index_data.x_index)")
-    Memento.info(_LOGGER, "y index: $(index_data.y_index)")
+    Memento.debug(_LOGGER, "number of partition points: $num_points")
+    Memento.debug(_LOGGER, "x index: $(index_data.x_index)")
+    Memento.debug(_LOGGER, "y index: $(index_data.y_index)")
 
     i_start = index_data.delta_1_indices[1]
     i_end = index_data.delta_1_indices[end]
-    Memento.info(_LOGGER, "delta_1_indices: $i_start to $i_end")
+    Memento.debug(_LOGGER, "delta_1_indices: $i_start to $i_end")
 
     i_start = index_data.delta_2_indices[1]
     i_end = index_data.delta_2_indices[end]
-    Memento.info(_LOGGER, "delta_2_indices: $i_start to $i_end")
+    Memento.debug(_LOGGER, "delta_2_indices: $i_start to $i_end")
 
     i_start = index_data.z_indices[1]
     i_end = index_data.z_indices[end]
-    Memento.info(_LOGGER, "z_indices: $i_start to $i_end")
+    Memento.debug(_LOGGER, "z_indices: $i_start to $i_end")
 
     constraint_data = ConstraintData()
-    add_vertex_constraints(constraint_data, index_data, secant_vertices, tangent_vertices)
-    add_first_delta_constraint(constraint_data, index_data)
-    add_linking_constraints(constraint_data, index_data, num_points-1)
+    add_vertex_constraints!(constraint_data, index_data, secant_vertices, tangent_vertices)
+    add_first_delta_constraint!(constraint_data, index_data)
+    add_linking_constraints!(constraint_data, index_data, num_points-1)
 
     # Store constraint data into a Model object and return it.
-    A = sparse(constraint_data.constraint_row_indices,
+    A = SparseArrays.sparse(constraint_data.constraint_row_indices,
         constraint_data.constraint_column_indices,
         constraint_data.constraint_coefficients)
-    b = sparsevec(constraint_data.rhs_row_indices, constraint_data.rhs_values)
+    b = SparseArrays.sparsevec(constraint_data.rhs_row_indices, constraint_data.rhs_values)
     Memento.info(_LOGGER, "completed building model.")
 
     return Model(A, b,
@@ -128,7 +124,7 @@ function build_model( uf::UnivariateFunction)::Model
 end
 
 """
-    add_vertex_constraints(constraint_data, index_data, secant_vertices,
+    add_vertex_constraints!(constraint_data, index_data, secant_vertices,
         tangent_vertices)
 
 Add vertex constraints to `constraint_data` using variable indices from
@@ -138,7 +134,7 @@ These constraints link the x and y coordinate variables to the delta variables.
 The lists `secant_vertices` and `tangent_vertices` are used to compute
 coefficients of delta variables.
 """
-function add_vertex_constraints(
+function add_vertex_constraints!(
         constraint_data::ConstraintData,
         index_data::IndexData,
         secant_vertices::Vector{Vertex},
@@ -150,48 +146,48 @@ function add_vertex_constraints(
         row = constraint_data.num_constraints+1
 
         # Add coordinate variable to constraint.
-        add_coef(constraint_data, row, indices[c], 1)
+        add_coeff!(constraint_data, row, indices[c], 1)
 
         for i in 1:num_vars
             # Add delta_1 variable to constraint.
             column = index_data.delta_1_indices[i]
             value = tangent_vertices[i][c] - secant_vertices[i][c]
-            add_coef(constraint_data, row, column, value)
+            add_coeff!(constraint_data, row, column, value)
 
             # Add delta_2 variable to constraint.
             column = index_data.delta_2_indices[i]
             value = secant_vertices[i+1][c] - secant_vertices[i][c]
-            add_coef(constraint_data, row, column, value)
+            add_coeff!(constraint_data, row, column, value)
         end
 
         # Complete the constraint.
         push!(constraint_data.equality_row_indices, row)
-        add_rhs(constraint_data, row, secant_vertices[1][c])
+        add_rhs!(constraint_data, row, secant_vertices[1][c])
         constraint_data.num_constraints += 1
     end
 
-    Memento.info(_LOGGER, "built vertex constraints.")
+    Memento.debug(_LOGGER, "built vertex constraints.")
 end
 
 """
-    add_first_delta_constraint(constraint_data, index_data)
+    add_first_delta_constraint!(constraint_data, index_data)
 
 Add the constraint "delta_1^1 + delta_2^1 <= 1 to `constraint_data` using
 variable indices from `index_data`.
 """
-function add_first_delta_constraint(
+function add_first_delta_constraint!(
         constraint_data::ConstraintData,
         index_data::IndexData)
     row = constraint_data.num_constraints + 1
-    add_coef(constraint_data, row, index_data.delta_1_indices[1], 1)
-    add_coef(constraint_data, row, index_data.delta_2_indices[1], 1)
-    add_rhs(constraint_data, row, 1)
+    add_coeff!(constraint_data, row, index_data.delta_1_indices[1], 1)
+    add_coeff!(constraint_data, row, index_data.delta_2_indices[1], 1)
+    add_rhs!(constraint_data, row, 1)
     constraint_data.num_constraints += 1
-    Memento.info(_LOGGER, "built first delta constraint.")
+    Memento.debug(_LOGGER, "built first delta constraint.")
 end
 
 """
-    add_linking_constraint(constraint_data, index_data, num_vars)
+    add_linking_constraint!(constraint_data, index_data, num_vars)
 
 Add the constraint families
 
@@ -202,7 +198,7 @@ to `constraint_data` using variable indices from `index_data`. The number of
 each of these constraints corresponds to the number of triangles specified by
 `num_triangles`.
 """
-function add_linking_constraints(
+function add_linking_constraints!(
         constraint_data::ConstraintData,
         index_data::IndexData,
         num_triangles::Int64)
@@ -211,28 +207,28 @@ function add_linking_constraints(
         row = constraint_data.num_constraints
 
         # Add delta_1^i + delta_2^i - z_{i-1} <= 0 constraint.
-        add_coef(constraint_data, row, index_data.delta_1_indices[i], 1)
-        add_coef(constraint_data, row, index_data.delta_2_indices[i], 1)
-        add_coef(constraint_data, row, index_data.z_indices[i-1], -1)
-        add_rhs(constraint_data, row, 0)
+        add_coeff!(constraint_data, row, index_data.delta_1_indices[i], 1)
+        add_coeff!(constraint_data, row, index_data.delta_2_indices[i], 1)
+        add_coeff!(constraint_data, row, index_data.z_indices[i-1], -1)
+        add_rhs!(constraint_data, row, 0)
 
         # Add z_{i-1} - delta_2^{i-1} <= 0 constraint.
         constraint_data.num_constraints += 1
         row = constraint_data.num_constraints
-        add_coef(constraint_data, row, index_data.z_indices[i-1], 1)
-        add_coef(constraint_data, row, index_data.delta_2_indices[i-1], -1)
-        add_rhs(constraint_data, row, 0)
+        add_coeff!(constraint_data, row, index_data.z_indices[i-1], 1)
+        add_coeff!(constraint_data, row, index_data.delta_2_indices[i-1], -1)
+        add_rhs!(constraint_data, row, 0)
     end
-    Memento.info(_LOGGER, "added linking constraints.")
+    Memento.debug(_LOGGER, "added linking constraints.")
 end
 
 """
-    add_coef(constraint_data, row, col, value)
+    add_coeff!(constraint_data, row, col, value)
 
 Add the coefficient `value` of the variable with index `col` to the constraint
 with index `row` to `constraint_data`.
 """
-function add_coef(
+function add_coeff!(
         constraint_data::ConstraintData,
         row::Int64,
         col::Int64,
@@ -243,11 +239,11 @@ function add_coef(
 end
 
 """
-    add_rhs(constraint_data, row, value)
+    add_rhs!(constraint_data, row, value)
 
 Add the right-hand-side `value` for row `row` to `constraint_data`.
 """
-function add_rhs(
+function add_rhs!(
         constraint_data::ConstraintData,
         row::Int64,
         value::Real)

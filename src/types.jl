@@ -25,27 +25,6 @@ UnivariateFunction(f::Function, f_dash::Function, lb, ub) =  UnivariateFunction(
 @inline get_domain(uf::UnivariateFunction)::Tuple{Real,Real} = get_domain_lb(uf), get_domain_ub(uf)
 @inline get_inflection_points(uf::UnivariateFunction)::Vector{<:Real} = uf.inflection_points
 
-struct VariableInfo
-    num_variables::Int64
-    variable_bounds::Vector{Tuple{Real,Real}}
-    independent_variable_id::Int64
-    dependent_variable_id::Int64
-    partitions::Vector{Tuple{Real,Real}}
-    indicator_variable_ids::Union{Int64, Nothing}
-    continuous_variable_ids::Vector{Tuple{Int64,Int64}}
-end
-
-"Getters for VariableInfo"
-@inline get_num_variables(vi::VariableInfo)::Int64 = vi.num_variables
-@inline get_variable_bounds(vi::VariableInfo)::Vector{Tuple{<:Real,<:Real}} = vi.variable_bounds
-@inline get_variable_bounds(vi::VariableInfo, id::Int64)::Tuple{<:Real,<:Real} = vi.variable_bounds[id]
-@inline get_independent_variable_id(vi::VariableInfo)::Int64 = vi.independent_variable_id
-@inline get_dependent_variable_id(vi::VariableInfo)::Int64 = vi.dependent_variable_id
-@inline get_partitions(vi::VariableInfo)::Vector{Tuple{<:Real,<:Real}} = vi.partitions
-@inline get_num_partitions(vi::VariableInfo)::Int64 = length(vi.partitions)
-@inline get_indicator_variable_ids(vi::VariableInfo)::Vector{Int64, Nothing} = vi.indicator_variable_ids
-@inline get_continuous_variable_ids(vi::VariableInfo)::Vector{Tuple{Int64,Int64}} = vi.continuous_variable_ids
-
 const Vertex = Pair{Real,Real}
 
 """
@@ -113,6 +92,7 @@ function IndexData(num_points::Int64)::IndexData
     # variables with indices 3,4. As the collect() function includes both
     # endpoints, we need to set num_vars to k-2. Then, we will get the correct
     # count for each variable set.
+    
     num_vars = num_points - 2
 
     start = 3
