@@ -11,11 +11,11 @@ using Test
 import JuMP
 import Ipopt
 import GLPK
-import MathOptInterface 
+import MathOptInterface
 using SparseArrays
 using LinearAlgebra
 
-const MOI = MathOptInterface 
+const MOI = MathOptInterface
 const MOIU = MOI.Utilities
 
 GLPK.jl_set_preemptive_check(false)

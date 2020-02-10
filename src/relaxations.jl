@@ -15,7 +15,7 @@ function collect_secant_vertices(f::Function, partition_points::Vector{Real})::V
     for x in partition_points
         push!(secant_vertices, Pair(x, f(x)))
         s = x >= 0.0 ? "+" : ""
-        Memento.debug(_LOGGER, "sv at $s$x: $(secant_vertices[end])")
+        Memento.info(_LOGGER, "sv at $s$x: $(secant_vertices[end])")
     end
     return secant_vertices
 end
@@ -61,7 +61,7 @@ function collect_tangent_vertices(f_dash::Function, secant_vertices::Vector{Vert
         s1 = v1[1] >= 0.0 ? "+" : ""
         s2 = v2[1] >= 0.0 ? "+" : ""
         tv = tangent_vertices[end]
-        Memento.debug(_LOGGER, "tv for [$s1$(v1[1]),$s2$(v2[1])]: $tv")
+        Memento.info(_LOGGER, "tv for [$s1$(v1[1]),$s2$(v2[1])]: $tv")
     end
     return tangent_vertices
 end
@@ -151,12 +151,12 @@ function add_vertex_constraints!(
         for i in 1:num_vars
             # Add delta_1 variable to constraint.
             column = index_data.delta_1_indices[i]
-            value = tangent_vertices[i][c] - secant_vertices[i][c]
+            value =  secant_vertices[i][c] - tangent_vertices[i][c]
             add_coeff!(constraint_data, row, column, value)
 
             # Add delta_2 variable to constraint.
             column = index_data.delta_2_indices[i]
-            value = secant_vertices[i+1][c] - secant_vertices[i][c]
+            value =  secant_vertices[i][c] - secant_vertices[i+1][c]
             add_coeff!(constraint_data, row, column, value)
         end
 
