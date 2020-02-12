@@ -21,20 +21,20 @@ function collect_secant_vertices(f::Function, partition_points::Vector{Real})::V
 end
 
 """
-    collect_tangent_vertices(f_dash, secant_vertices)
+    collect_tangent_vertices(d, secant_vertices)
 
 Return a list of (x,y) coordinates of tangent intersections as Pair objects.
 
 Each position i of the returned list contains the (x,y) coordinate of the
 vertex formed by intersection of tangents of the required curve y = f(x) at
-`secant_vertices[i]` and `secant_vertices[i+1]`. The function `f_dash` is the
+`secant_vertices[i]` and `secant_vertices[i+1]`. The function `d` is the
 derivative of f(x).
 
 In terms of notation in the paper, `secant_vertices[i]` is the vertex v_i,
 `secant_vertices[i+1]` is the vertex v_{i+1} and `tangent_vertices[i]` is
 the vertex v_{i,i+1}.
 """
-function collect_tangent_vertices(f_dash::Function, secant_vertices::Vector{Vertex})::Vector{Vertex}
+function collect_tangent_vertices(derivative::Function, secant_vertices::Vector{Vertex})::Vector{Vertex}
     num_points = length(secant_vertices)
     tangent_vertices = Vertex[]
 
@@ -45,8 +45,8 @@ function collect_tangent_vertices(f_dash::Function, secant_vertices::Vector{Vert
         # Find derivative values at secant points. Validate that successive
         # partition points cannot have the same derivative, as if so, the
         # tangents at these points will be parallel and won't form a triangle.
-        d1 = f_dash(v1[1])
-        d2 = f_dash(v2[1])
+        d1 = derivative(v1[1])
+        d2 = derivative(v2[1])
         @assert !isapprox(d1, d2, atol=1e-5)
 
         # Compute x-coordinate of the tangent vertex. This is the intersection
@@ -78,7 +78,7 @@ function build_model(function_data::FunctionData)::Model
     secant_vertices = collect_secant_vertices(function_data.f, function_data.partition)
     Memento.debug(_LOGGER, "collected $(length(secant_vertices)) secant vertices.")
 
-    tangent_vertices = collect_tangent_vertices(function_data.f_dash, secant_vertices)
+    tangent_vertices = collect_tangent_vertices(function_data.d, secant_vertices)
     Memento.debug(_LOGGER, "collected $(length(tangent_vertices)) tangent vertices.")
 
     # Indices to recover variable values from model. Indices of delta_1^i,
@@ -259,11 +259,9 @@ Generate model data for the polyhedral relaxation of a univariate function.
 function main()
     Memento.info(_LOGGER, "starting model generation...")
 
-    lb = -1.0
-    ub = 1.0
     function_data = FunctionData(
-        x->x^3,  # f
-        x->3 * (x^2),  # f'
+        x -> x^3,  # f
+        x -> 3*(x^2),  # f'
         Vector{Real}(collect(-1.0:1.0:1.0)))
 
     model = build_model(function_data)

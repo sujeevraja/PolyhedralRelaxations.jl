@@ -1,16 +1,12 @@
 struct FunctionData
     f::Function
-    f_dash::Function
+    d::Function
     partition::Vector{Real}
 end
 
-"Constructor without definition of derivative"
-FunctionData(f::Function, partition::Vector{Real}) =
-    FunctionData(f, x -> ForwardDiff.derivative(f, x), partition)
-
 "Getters for UnivariateFunction"
 @inline get_function(uf::FunctionData)::Function = uf.f
-@inline get_derivative(uf::FunctionData)::Function = uf.f_dash
+@inline get_derivative(uf::FunctionData)::Function = uf.d
 @inline get_domain_lb(uf::FunctionData)::Real = uf.partition[1]
 @inline get_domain_ub(uf::FunctionData)::Real = uf.partition[end]
 @inline get_domain(uf::FunctionData)::Pair{Real,Real} =
