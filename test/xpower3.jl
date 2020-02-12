@@ -1,38 +1,34 @@
 @testset "x^3 test" begin
 
-    function_data = PR.FunctionData(
-        x->x^3,  # f
-        x->3 * (x^2),  # f'
-        Vector{Real}(collect(-1.0:1.0:1.0)))
+    function_data =  PR.construct_milp_relaxation(x -> x^3, collect(-1.0:1.0:1.0))
 
-    model = PR.build_formulation(function_data)
-
-    @test model.x_index == 1
-    @test model.y_index == 2
+    @test function_data.x_index == 1
+    @test function_data.y_index == 2
 
     m = JuMP.Model(glpk_optimizer)
-    num_variables = 2 + length(model.delta_1_indices) + length(model.delta_2_indices) +
-        length(model.z_indices)
+    num_variables = 2 + length(function_data.delta_1_indices) +
+        length(function_data.delta_2_indices) +
+        length(function_data.z_indices)
     JuMP.@variable(m, x[1:num_variables])
     JuMP.set_lower_bound(x[1], -1.0)
     JuMP.set_upper_bound(x[1], 1.0)
-    for i in model.delta_1_indices
+    for i in function_data.delta_1_indices
         JuMP.set_lower_bound(x[i], 0)
         JuMP.set_upper_bound(x[i], 1)
     end
-    for i in model.delta_2_indices
+    for i in function_data.delta_2_indices
         JuMP.set_lower_bound(x[i], 0)
         JuMP.set_upper_bound(x[i], 1)
     end
-    for i in model.z_indices
+    for i in function_data.z_indices
         JuMP.set_lower_bound(x[i], 0)
         JuMP.set_upper_bound(x[i], 1)
     end
-    A = model.A
-    b = model.b
-    for i in 1:model.num_constraints
+    A = function_data.A
+    b = function_data.b
+    for i in 1:function_data.num_constraints
         indices, values = SparseArrays.findnz(A[i, :])
-        if i in model.equality_row_indices
+        if i in function_data.equality_row_indices
             JuMP.@constraint(m, dot(x[indices], values) == b[i])
         else
             JuMP.@constraint(m, dot(x[indices], values) <= b[i])
