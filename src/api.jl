@@ -1,8 +1,8 @@
-function construct_milp_relaxation(f::Function, partition::Vector{Real})::Model
+function construct_milp_relaxation(f::Function, partition::Vector{<:Real})::FormulationData
     return construct_milp_relaxation(f, x -> ForwardDiff(f, x), partition)
 end
 
-function construct_milp_relaxation(f::Function, d::Function, partition::Vector{Real})::Model
+function construct_milp_relaxation(f::Function, d::Function, partition::Vector{<:Real})::FormulationData
     return build_model(FunctionData(f, d, partition))
 end
 

@@ -4,7 +4,7 @@ struct FunctionData
     partition::Vector{Real}
 end
 
-"Getters for UnivariateFunction"
+"Getters for FunctionData"
 @inline get_function(uf::FunctionData)::Function = uf.f
 @inline get_derivative(uf::FunctionData)::Function = uf.d
 @inline get_domain_lb(uf::FunctionData)::Real = uf.partition[1]
@@ -23,7 +23,7 @@ Variables are ordered as: x, y, delta_1^i, delta_2^i, z_i.
 All constraints are either equality or less-than-or-equal-to constraints.
 Row indices of equality constraints are stored in `equality_row_indices`.
 """
-struct Model
+struct FormulationData
     A::SparseArrays.SparseMatrixCSC{Real,Int64}
     b::SparseArrays.SparseVector{Real,Int64}
     x_index::Int64
