@@ -4,9 +4,9 @@ end
 
 function construct_milp_relaxation(
         f::Function,
-        f_dash::Function,
+        d::Function,
         partition::Vector{Real})::Model
-    return build_model(FunctionData(f, f_dash, partition))
+    return build_model(FunctionData(f, d, partition))
 end
 
 # function construct_relaxation(function_data::FunctionData;
