@@ -22,6 +22,8 @@ module PolyhedralRelaxations
         Memento.config!(Memento.getlogger("PolyhedralRelaxations"), level)
     end
 
+    const EPS = 1e-3
+
     include("types.jl")
     include("relaxations.jl")
     include("api.jl")

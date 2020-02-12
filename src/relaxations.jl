@@ -1,4 +1,68 @@
 """
+    collect_vertices(function_data)
+
+Return a pair of lists with secant vertices as the first element and tangent
+vertices as the second element. All vertices
+
+Each element in the secant vertex list is a pair (x,y) where
+* x is an element of `function_data.partition`,
+* y is the value of the given univariate function at x.
+
+Each element in the tangent vertex list is also a pair (x,y). Each position i
+of the list contains the vertex formed by intersection of tangents of the curve
+`y=function_data.f(x)` at `secant_vertices[i]` and `secant_vertices[i+1]`.
+
+In terms of notation in the paper, `secant_vertices[i]` is the vertex v_i,
+`secant_vertices[i+1]` is the vertex v_{i+1} and `tangent_vertices[i]` is
+the vertex v_{i,i+1}.
+"""
+function collect_vertices(function_data::FunctionData)::Pair{Vector{Vertex},Vector{Vertex}}
+    validate_partition(function_data.partition)
+
+    secant_vertices = Vertex[]
+    tangent_vertices = Vertex[]
+
+    return Pair(secant_vertices, tangent_vertices)
+end
+
+function validate_partition(partition::Vector{Real})
+    # Check partition size.
+    num_points = length(partition)
+    if num_points < 2
+        Memento.error(_LOGGER, "partition must have at least 2 points")
+    end
+
+    # Check finiteness of first point.
+    if !isfinite(partition[1])
+        Mement.error(_LOGGER, "all partition points must be finite")
+    end
+
+    for i in 2:num_points
+        x_prev = partition[i-1]
+        x = partition[i]
+
+        # Check finiteness of current point.
+        if !isfinite(x)
+            Mement.error(_LOGGER, "all partition points must be finite")
+        end
+
+        # Check ascending order of partition.
+        if x <= x_prev
+            Memento.error(_LOGGER,
+                "partition must be sorted, violation for $x, $x_prev")
+        end
+
+        # Check length of partition interval.
+        if (x - x_prev) <= EPS
+            Memento.erro(_LOGGER,
+                "partition length from $x_prev to $x shorter than $EPS")
+        end
+    end
+
+    Memento.info(_LOGGER, "partition points are valid.")
+end
+
+"""
     collect_secant_vertices(f, partition_points)
 
 Return a list of (x,y) coordinates of secant vertices as Pair objects.
@@ -264,7 +328,9 @@ function main()
         x -> 3*(x^2),  # f'
         Vector{Real}(collect(-1.0:1.0:1.0)))
 
-    model = build_model(function_data)
+    secant_vertices, tangent_vertices = collect_vertices(function_data)
+
+    # model = build_model(function_data)
     # Memento.info(_LOGGER, "completed model generation.")
     # Memento.info(_LOGGER, string("main() outputs the constraint matrix augmented ",
     #   "with the sense column and RHS column."))
@@ -273,5 +339,5 @@ function main()
     #     sense_vec[i] = 1
     # end
     # return hcat(Matrix(model.A), sense_vec, Vector(model.b))
-    return model
+    # return model
 end
