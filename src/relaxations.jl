@@ -67,18 +67,18 @@ function collect_tangent_vertices(f_dash::Function, secant_vertices::Vector{Vert
 end
 
 """
-    build_model(uf, secant_vertices, tangent_vertices)
+    build_model(function_data, secant_vertices, tangent_vertices)
 
 Collect constraint data of the MILP formulation of the polyhedral relaxation
 in a Model object and return it.
 """
-function build_model(uf::UnivariateFunction)::Model
+function build_model(function_data::FunctionData)::Model
     Memento.debug(_LOGGER, "starting to build model...")
 
-    secant_vertices = collect_secant_vertices(uf.f, uf.inflection_points)
+    secant_vertices = collect_secant_vertices(function_data.f, function_data.partition)
     Memento.debug(_LOGGER, "collected $(length(secant_vertices)) secant vertices.")
 
-    tangent_vertices = collect_tangent_vertices(uf.f_dash, secant_vertices)
+    tangent_vertices = collect_tangent_vertices(function_data.f_dash, secant_vertices)
     Memento.debug(_LOGGER, "collected $(length(tangent_vertices)) tangent vertices.")
 
     # Indices to recover variable values from model. Indices of delta_1^i,
@@ -261,14 +261,12 @@ function main()
 
     lb = -1.0
     ub = 1.0
-    uf = UnivariateFunction(
+    function_data = FunctionData(
         x->x^3,  # f
         x->3 * (x^2),  # f'
-        domain_lb = lb,
-        domain_ub = ub,
-        inflection_points = Vector{Real}(collect(lb:1.0:ub)))
+        Vector{Real}(collect(-1.0:1.0:1.0)))
 
-    model = build_model(uf)
+    model = build_model(function_data)
     # Memento.info(_LOGGER, "completed model generation.")
     # Memento.info(_LOGGER, string("main() outputs the constraint matrix augmented ",
     #   "with the sense column and RHS column."))
