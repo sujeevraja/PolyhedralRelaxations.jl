@@ -1,11 +1,11 @@
 @testset "x^3 test" begin
 
-    uf = PR.FunctionData(
+    function_data = PR.FunctionData(
         x->x^3,  # f
         x->3 * (x^2),  # f'
         Vector{Real}(collect(-1.0:1.0:1.0)))
 
-    model = PR.build_model(uf)
+    model = PR.build_formulation(function_data)
 
     @test model.x_index == 1
     @test model.y_index == 2
