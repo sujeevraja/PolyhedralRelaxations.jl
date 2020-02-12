@@ -11,16 +11,21 @@ module PolyhedralRelaxations
     # NOTE: If this line is not included then the precompiled `PolyhedralRelaxations.LOGGER` won't be registered at runtime.
     __init__() = Memento.register(_LOGGER)
 
-    "Suppresses information and warning messages output by GasModels, for fine grained control use the Memento package"
+    """
+    Suppresses information and warning messages output by PolyhedralRelaxations.
+    For fine grained control use the Memento package
+    """
     function silence()
         Memento.info(_LOGGER, "Suppressing information and warning messages for the rest of this session.  Use the Memento package for more fine-grained control of logging.")
         Memento.setlevel!(Memento.getlogger(PolyhedralRelaxations), "error")
     end
 
-    "alows the user to set the logging level without the need to add Memento"
+    "Allows users to set the logging level without adding Memento."
     function logger_config!(level)
         Memento.config!(Memento.getlogger("PolyhedralRelaxations"), level)
     end
+
+    const EPS = 1e-3
 
     include("types.jl")
     include("relaxations.jl")

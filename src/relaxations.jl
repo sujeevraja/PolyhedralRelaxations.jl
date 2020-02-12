@@ -1,105 +1,156 @@
 """
-    collect_secant_vertices(f, partition_points)
+    collect_vertices(function_data)
 
-Return a list of (x,y) coordinates of secant vertices as Pair objects.
+Return a pair of lists with secant vertices as the first element and tangent
+vertices as the second element. All vertices
 
-The x value of each coordinate is an element of `partition_points`.
-The y value of each coordinate is the evaluation of the given univariate
-function `f` at x, i.e. y = f(x).
+Each element in the secant vertex list is a pair (x,y) where
+* x is an element of `function_data.partition`,
+* y is the value of the given univariate function at x.
 
-In terms of notation in the paper, the returned vertices are v_i values.
-"""
-function collect_secant_vertices(f::Function, partition_points::Vector{Real})::Vector{Vertex}
-    secant_vertices = Vertex[]
-    num_points = length(partition_points)
-    for x in partition_points
-        push!(secant_vertices, Pair(x, f(x)))
-        s = x >= 0.0 ? "+" : ""
-        Memento.info(_LOGGER, "sv at $s$x: $(secant_vertices[end])")
-    end
-    return secant_vertices
-end
-
-"""
-    collect_tangent_vertices(f_dash, secant_vertices)
-
-Return a list of (x,y) coordinates of tangent intersections as Pair objects.
-
-Each position i of the returned list contains the (x,y) coordinate of the
-vertex formed by intersection of tangents of the required curve y = f(x) at
-`secant_vertices[i]` and `secant_vertices[i+1]`. The function `f_dash` is the
-derivative of f(x).
+Each element in the tangent vertex list is also a pair (x,y). Each position i
+of the list contains the vertex formed by intersection of tangents of the curve
+`y=function_data.f(x)` at `secant_vertices[i]` and `secant_vertices[i+1]`.
 
 In terms of notation in the paper, `secant_vertices[i]` is the vertex v_i,
 `secant_vertices[i+1]` is the vertex v_{i+1} and `tangent_vertices[i]` is
 the vertex v_{i,i+1}.
 """
-function collect_tangent_vertices(f_dash::Function, secant_vertices::Vector{Vertex})::Vector{Vertex}
-    num_points = length(secant_vertices)
+function collect_vertices(function_data::FunctionData)::Pair{Vector{Vertex},Vector{Vertex}}
+    validate_partition(function_data.partition)
+
+    secant_vertices = Vertex[]
     tangent_vertices = Vertex[]
 
-    for i in 1:num_points-1
-        v1 = secant_vertices[i]
-        v2 = secant_vertices[i+1]
+    # Add first secant vertex.
+    x_prev = function_data.partition[1]
+    push!(secant_vertices, get_secant_vertex(x_prev, function_data.f))
 
-        # Find derivative values at secant points. Validate that successive
-        # partition points cannot have the same derivative, as if so, the
-        # tangents at these points will be parallel and won't form a triangle.
-        d1 = f_dash(v1[1])
-        d2 = f_dash(v2[1])
-        @assert !isapprox(d1, d2, atol=1e-5)
-
-        # Compute x-coordinate of the tangent vertex. This is the intersection
-        # of tangents to the curve at v1[1] and v2[1].
-        x_new = (v2[2] - v1[2] + (d1*v1[1]) - (d2*v2[1])) / (d1 - d2)
-        @assert x_new >= v1[1]
-        @assert x_new <= v2[1]
-
-        y_new = v1[2] + (d1*(x_new - v1[1]))
-        push!(tangent_vertices, Pair(x_new, y_new))
-
-        s1 = v1[1] >= 0.0 ? "+" : ""
-        s2 = v2[1] >= 0.0 ? "+" : ""
-        tv = tangent_vertices[end]
-        Memento.info(_LOGGER, "tv for [$s1$(v1[1]),$s2$(v2[1])]: $tv")
+    # Add remaining secant vertices and all tangent vertices.
+    for i in 2:length(function_data.partition)
+        x = function_data.partition[i]
+        push!(secant_vertices, get_secant_vertex(x, function_data.f))
+        push!(tangent_vertices, get_tangent_vertex(secant_vertices[end-1],
+            secant_vertices[end], function_data.d))
     end
-    return tangent_vertices
+
+    return Pair(secant_vertices, tangent_vertices)
+end
+
+function validate_partition(partition::Vector{<:Real})
+    # Check partition size.
+    num_points = length(partition)
+    if num_points < 2
+        Memento.error(_LOGGER, "partition must have at least 2 points")
+    end
+
+    # Check finiteness of first point.
+    if !isfinite(partition[1])
+        Memento.error(_LOGGER, "all partition points must be finite")
+    end
+
+    for i in 2:num_points
+        x_prev = partition[i-1]
+        x = partition[i]
+
+        # Check finiteness of current point.
+        if !isfinite(x)
+            Memento.error(_LOGGER, "all partition points must be finite")
+        end
+
+        # Check ascending order of partition.
+        if x <= x_prev
+            Memento.error(_LOGGER,
+                "partition must be sorted, violation for $x, $x_prev")
+        end
+
+        # Check length of partition interval.
+        if (x - x_prev) <= EPS
+            Memento.erro(_LOGGER,
+                "partition length from $x_prev to $x shorter than $EPS")
+        end
+    end
+
+    Memento.info(_LOGGER, "partition points are valid.")
 end
 
 """
-    build_model(uf, secant_vertices, tangent_vertices)
+    get_secant_vertex(x, f)
 
-Collect constraint data of the MILP formulation of the polyhedral relaxation
-in a Model object and return it.
+Return the pair (x,f(x)) after verifying finiteness of f(x).
 """
-function build_model(uf::UnivariateFunction)::Model
-    Memento.debug(_LOGGER, "starting to build model...")
+function get_secant_vertex(x::Real, f::Function)::Vertex
+    fx = f(x)
+    if !isfinite(fx)
+        Memento.error(_LOGGER,
+            "boundedness necessary, function unbounded at $x")
+    end
 
-    secant_vertices = collect_secant_vertices(uf.f, uf.inflection_points)
-    Memento.debug(_LOGGER, "collected $(length(secant_vertices)) secant vertices.")
+    return Pair(x,fx)
+end
 
-    tangent_vertices = collect_tangent_vertices(uf.f_dash, secant_vertices)
-    Memento.debug(_LOGGER, "collected $(length(tangent_vertices)) tangent vertices.")
+"""
+    get_tangent_vertex(prev_secant_vertex, next_secant_vertex, derivative)
+
+Return (x,y) coordinates of the intersection of tangents drawn at
+`prev_secant_vertex` and `next_secant_vertex`.
+"""
+function get_tangent_vertex(prev_secant_vertex::Vertex, next_secant_vertex::Vertex, derivative::Function)::Vertex
+    x_prev = prev_secant_vertex[1]
+    d_prev = derivative(x_prev)
+    if !isfinite(d_prev)
+        Memento.error(_LOGGER, "derivative unbounded at $x_prev")
+    end
+
+    x_next = next_secant_vertex[1]
+    d_next = derivative(x_next)
+    if !isfinite(d_next)
+        Memento.error(_LOGGER, "derivative unbounded at $x_next")
+    end
+
+    if isapprox(d_prev, d_next, atol=EPS)
+        Memento.error(_LOGGER,
+            "$x_prev,$x_next have derivatives with difference less than $EPS")
+    end
+
+    f_prev = prev_secant_vertex[2]
+    f_next = next_secant_vertex[2]
+    x_t = (f_next - f_prev + (d_prev*x_prev) - (d_next*x_next)) / (d_prev - d_next)
+    y_t = f_prev + (d_prev*(x_t - x_prev))
+    return Pair(x_t, y_t)
+end
+
+"""
+    build_formulation(function_data)
+
+Return a FormulationData object with constraint and RHS information of the MILP
+formulation of the polyhedral relaxation.
+"""
+function build_formulation(function_data::FunctionData)::FormulationData
+    Memento.info(_LOGGER, "starting to build formulation data...")
+    secant_vertices, tangent_vertices = collect_vertices(function_data)
+    Memento.info(_LOGGER, "got $(length(secant_vertices)) secant vertices.")
+    Memento.info(_LOGGER, "got $(length(tangent_vertices)) tangent vertices.")
 
     # Indices to recover variable values from model. Indices of delta_1^i,
     # delta_2^i and z_i start from 1.
     num_points = length(secant_vertices)
     index_data = IndexData(num_points)
-    Memento.debug(_LOGGER, "number of partition points: $num_points")
-    Memento.debug(_LOGGER, "x index: $(index_data.x_index)")
-    Memento.debug(_LOGGER, "y index: $(index_data.y_index)")
+    Memento.info(_LOGGER, "number of partition points: $num_points")
+    Memento.info(_LOGGER, "x index: $(index_data.x_index)")
+    Memento.info(_LOGGER, "y index: $(index_data.y_index)")
 
     i_start = index_data.delta_1_indices[1]
     i_end = index_data.delta_1_indices[end]
-    Memento.debug(_LOGGER, "delta_1_indices: $i_start to $i_end")
+    Memento.info(_LOGGER, "delta_1_indices: $i_start to $i_end")
 
     i_start = index_data.delta_2_indices[1]
     i_end = index_data.delta_2_indices[end]
-    Memento.debug(_LOGGER, "delta_2_indices: $i_start to $i_end")
+    Memento.info(_LOGGER, "delta_2_indices: $i_start to $i_end")
 
     i_start = index_data.z_indices[1]
     i_end = index_data.z_indices[end]
-    Memento.debug(_LOGGER, "z_indices: $i_start to $i_end")
+    Memento.info(_LOGGER, "z_indices: $i_start to $i_end")
 
     constraint_data = ConstraintData()
     add_vertex_constraints!(constraint_data, index_data, secant_vertices, tangent_vertices)
@@ -111,9 +162,9 @@ function build_model(uf::UnivariateFunction)::Model
         constraint_data.constraint_column_indices,
         constraint_data.constraint_coefficients)
     b = SparseArrays.sparsevec(constraint_data.rhs_row_indices, constraint_data.rhs_values)
-    Memento.info(_LOGGER, "completed building model.")
+    Memento.info(_LOGGER, "built formulation data.")
 
-    return Model(A, b,
+    return FormulationData(A, b,
         index_data.x_index,
         index_data.y_index,
         index_data.delta_1_indices,
@@ -166,7 +217,7 @@ function add_vertex_constraints!(
         constraint_data.num_constraints += 1
     end
 
-    Memento.debug(_LOGGER, "built vertex constraints.")
+    Memento.info(_LOGGER, "built vertex constraints.")
 end
 
 """
@@ -183,7 +234,7 @@ function add_first_delta_constraint!(
     add_coeff!(constraint_data, row, index_data.delta_2_indices[1], 1)
     add_rhs!(constraint_data, row, 1)
     constraint_data.num_constraints += 1
-    Memento.debug(_LOGGER, "built first delta constraint.")
+    Memento.info(_LOGGER, "built first delta constraint.")
 end
 
 """
@@ -219,7 +270,7 @@ function add_linking_constraints!(
         add_coeff!(constraint_data, row, index_data.delta_2_indices[i-1], -1)
         add_rhs!(constraint_data, row, 0)
     end
-    Memento.debug(_LOGGER, "added linking constraints.")
+    Memento.info(_LOGGER, "added linking constraints.")
 end
 
 """
@@ -257,25 +308,9 @@ end
 Generate model data for the polyhedral relaxation of a univariate function.
 """
 function main()
-    Memento.info(_LOGGER, "starting model generation...")
-
-    lb = -1.0
-    ub = 1.0
-    uf = UnivariateFunction(
-        x->x^3,  # f
-        x->3 * (x^2),  # f'
-        domain_lb = lb,
-        domain_ub = ub,
-        inflection_points = Vector{Real}(collect(lb:1.0:ub)))
-
-    model = build_model(uf)
-    # Memento.info(_LOGGER, "completed model generation.")
-    # Memento.info(_LOGGER, string("main() outputs the constraint matrix augmented ",
-    #   "with the sense column and RHS column."))
-    # sense_vec = zeros(Int64,model.num_constraints)
-    # for i in model.equality_row_indices
-    #     sense_vec[i] = 1
-    # end
-    # return hcat(Matrix(model.A), sense_vec, Vector(model.b))
-    return model
+    function_data = FunctionData(
+        x -> x^3,  # f
+        x -> 3*(x^2),  # f'
+        Vector{Real}(collect(-1.0:1.0:1.0)))
+    return build_formulation(function_data)
 end
