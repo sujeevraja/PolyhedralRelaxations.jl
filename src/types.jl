@@ -58,8 +58,7 @@ function ConstraintData()::ConstraintData
 end
 
 """
-Indices to recover variable values from model. Indices of delta_1^i, delta_2^i
-and z_i start from 1.
+Indices to recover variable values from model. Indices of delta_1^i, delta_2^i and z_i start from 1.
 """
 mutable struct IndexData
     x_index::Int64
