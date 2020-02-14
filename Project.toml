@@ -4,6 +4,7 @@ authors = ["Kaarthik Sundar <kaarthik01sundar@gmail.com>"]
 version = "0.1.0"
 
 [deps]
+DataStructures = "864edb3b-99cc-5e75-8d2d-829cb0a9cfe8"
 ForwardDiff = "f6369f11-7733-5829-9624-2563aa707210"
 GLPK = "60bf3e95-4087-53dc-ae20-288a0d20c6a6"
 JuMP = "4076af6c-e467-56ae-b986-b466b2749572"
