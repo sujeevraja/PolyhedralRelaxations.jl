@@ -95,7 +95,8 @@ end
 Return (x,y) coordinates of the intersection of tangents drawn at
 `prev_secant_vertex` and `next_secant_vertex`.
 """
-function get_tangent_vertex(prev_secant_vertex::Vertex, next_secant_vertex::Vertex, derivative::Function)::Vertex
+function get_tangent_vertex(prev_secant_vertex::Vertex,
+        next_secant_vertex::Vertex, derivative::Function)::Vertex
     x_prev = prev_secant_vertex[1]
     d_prev = derivative(x_prev)
     if !isfinite(d_prev)
@@ -309,7 +310,47 @@ function refine_partition(function_data::FunctionData;
     if isinf(error_tolerance) && num_additional_binary_variables <= 0
         return function_data
     end
+
+    # Refine the partition until one of 3 constraints are met:
+    # - If error_tolerance is finite, stop when error bound goes below it.
+    # - If num_additional_binary_variables is positive, stop when the number
+    #   of new variables reaches it.
+    # - If the difference between adjacent partition points or adjacent
+    #   derivative goes below the global limit of EPS, stop refining.
+    error_queue = get_error_queue(function_data)
+
     return function_data
+end
+
+"""
+    get_error_queue(function_data)
+
+Build a max-priority-queue holding errors of each partition interval in
+`function_data.partition`. Keys of the queue are indices of starting positions
+of the partition interval in `function_data.partition`. Priorities are error
+bounds of partition intervals. The queue is built as a max-queue for easy
+access to the  maximum error.
+"""
+function get_error_queue(function_data::FunctionData)::PriorityQueue
+    pq = PriorityQueue{Int64,Float64}(Base.Order.Reverse)
+    for i in 1:length(function_data.partition)
+        pq[i] = compute_error_bound(function_data, i)
+    end
+    return pq
+end
+
+"""
+    compute_error_bound(function_data, start_index)
+
+Get error bound of the polyhedral relaxation for `function_data.f` for the
+partition interval with endpoints `partition[start_index]` and
+`partition[start_index+1]`.
+"""
+function compute_error_bound(function_data::FunctionData, start_index::Int64)
+    @assert start_index >= 1 and start_index <= length(function_data.partition)
+    a = function_data.partition[start_index]
+    b = function_data.partition[start_index+1]
+    return (b - a) * abs(function_data.d(b) - function_data.d(a)) / 4.0
 end
 
 """
