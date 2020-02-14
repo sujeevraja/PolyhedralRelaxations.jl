@@ -16,16 +16,13 @@ In terms of notation in the paper, `secant_vertices[i]` is the vertex v_i, `seca
 is the vertex v_{i+1} and `tangent_vertices[i]` is the vertex v_{i,i+1}.
 """
 function collect_vertices(function_data::FunctionData)::Pair{Vector{Vertex},Vector{Vertex}}
-    validate_partition(function_data.partition)
-
-    secant_vertices = Vertex[]
-    tangent_vertices = Vertex[]
-
     # Add first secant vertex.
+    secant_vertices = Vertex[]
     x_prev = function_data.partition[1]
     push!(secant_vertices, get_secant_vertex(x_prev, function_data.f))
 
     # Add remaining secant vertices and all tangent vertices.
+    tangent_vertices = Vertex[]
     for i in 2:length(function_data.partition)
         x = function_data.partition[i]
         push!(secant_vertices, get_secant_vertex(x, function_data.f))
@@ -36,7 +33,7 @@ function collect_vertices(function_data::FunctionData)::Pair{Vector{Vertex},Vect
     return Pair(secant_vertices, tangent_vertices)
 end
 
-function validate_partition(partition::Vector{<:Real})
+function validate_partition(partition::Vector{<:Real}, tolerance::Real)
     # Check partition size.
     num_points = length(partition)
     if num_points < 2
@@ -59,14 +56,12 @@ function validate_partition(partition::Vector{<:Real})
 
         # Check ascending order of partition.
         if x <= x_prev
-            Memento.error(_LOGGER,
-                "partition must be sorted, violation for $x, $x_prev")
+            Memento.error(_LOGGER, "partition must be sorted, violation for $x, $x_prev")
         end
 
         # Check length of partition interval.
-        if (x - x_prev) <= EPS
-            Memento.erro(_LOGGER,
-                "partition length from $x_prev to $x shorter than $EPS")
+        if (x - x_prev) <= tolerance
+            Memento.error(_LOGGER, "$x_prev and $x closer than $(function_data.length_tolerance)")
         end
     end
 
@@ -81,10 +76,8 @@ Return the pair (x,f(x)) after verifying finiteness of f(x).
 function get_secant_vertex(x::Real, f::Function)::Vertex
     fx = f(x)
     if !isfinite(fx)
-        Memento.error(_LOGGER,
-            "boundedness necessary, function unbounded at $x")
+        Memento.error(_LOGGER, "boundedness necessary, function unbounded at $x")
     end
-
     return Pair(x,fx)
 end
 
@@ -94,8 +87,10 @@ end
 Return (x,y) coordinates of the intersection of tangents drawn at `prev_secant_vertex` and
 `next_secant_vertex`.
 """
-function get_tangent_vertex(prev_secant_vertex::Vertex,
-        next_secant_vertex::Vertex, derivative::Function)::Vertex
+function get_tangent_vertex(
+    prev_secant_vertex::Vertex,
+    next_secant_vertex::Vertex,
+        derivative::Function)::Vertex
     x_prev = prev_secant_vertex[1]
     d_prev = derivative(x_prev)
     if !isfinite(d_prev)
@@ -106,11 +101,6 @@ function get_tangent_vertex(prev_secant_vertex::Vertex,
     d_next = derivative(x_next)
     if !isfinite(d_next)
         Memento.error(_LOGGER, "derivative unbounded at $x_next")
-    end
-
-    if isapprox(d_prev, d_next, atol=EPS)
-        Memento.error(_LOGGER,
-            "$x_prev,$x_next have derivatives with difference less than $EPS")
     end
 
     f_prev = prev_secant_vertex[2]
@@ -128,6 +118,7 @@ polyhedral relaxation.
 """
 function build_formulation(function_data::FunctionData)::FormulationData
     Memento.info(_LOGGER, "starting to build formulation data...")
+    validate_partition(function_data.partition, function_data.length_tolerance)
     secant_vertices, tangent_vertices = collect_vertices(function_data)
     Memento.info(_LOGGER, "got $(length(secant_vertices)) secant vertices.")
     Memento.info(_LOGGER, "got $(length(tangent_vertices)) tangent vertices.")
@@ -277,9 +268,9 @@ Add the coefficient `value` of the variable with index `col` to the constraint w
 `constraint_data`.
 """
 function add_coeff!(
-        constraint_data::ConstraintData,
-        row::Int64,
-        col::Int64,
+    constraint_data::ConstraintData,
+    row::Int64,
+    col::Int64,
         value::Real)
     push!(constraint_data.constraint_row_indices, row)
     push!(constraint_data.constraint_column_indices, col)
@@ -299,86 +290,84 @@ function add_rhs!(
     push!(constraint_data.rhs_values, value)
 end
 
-function refine_partition(function_data::FunctionData;
-        error_tolerance::Float64=Inf,
-        num_additional_binary_variables::Int64=0)::FunctionData
+function refine_partition!(function_data::FunctionData)
     # Don't refine the partition if no additional constraints are specified.
-    if isinf(error_tolerance) && num_additional_binary_variables <= 0
-        return function_data
+    if isnan(function_data.error_tolerance) && function_data.num_additional_binary_variables <= 0
+        return
     end
 
     error_queue = get_error_queue(function_data)
     num_partitions_added = 0
-    refined_partition = copy(function_data.partition)
-
+    partition = function_data.partition
     while true
+        if !is_refinement_feasible(function_data, error_queue)
+            Memento.info(_LOGGER, "stopping refinement")
+            return
+        end
+
         start, max_error = peek(error_queue)
-        x_start = refined_partition[start]
-        x_end = refined_partition[start+1]
+        x_start = partition[start]
+        x_end = partition[start+1]
         Memento.info(_LOGGER, "max error: $max_error between $x_start, $x_end")
-
-        # If error_tolerance is finite, stop when error bound is smaller than the specified
-        # tolerance.
-        if !isinf(error_tolerance) && max_error <= error_tolerance
-            Memento.info(_LOGGER, "error: $max_error less than limit: $error_tolerance")
-            Memento.info(_LOGGER, "stopping refinement")
-            break
-        end
-
-        # If num_additional_binary_variables is positive and the number of new partitions added
-        # reaches this limit, stop refining.
-        if (num_additional_binary_variables > 0 &&
-                num_partitions_added >= num_additional_binary_variables)
-            Memento.info(_LOGGER, "number of new binary variables: $num_partitions_added")
-            Memento.info(_LOGGER, "budget: $num_additional_binary_variables")
-            Memento.info(_LOGGER, "stopping refinement")
-            break
-        end
-
-        # Check feasibility of refiniing the partition between positions i,i+1.
-        x_new = 0.5 * (x_start + x_end)
-
-        # Stop if endpoints of the new partitions will be too close.
-        if (x_new - x_start <= EPS) || (x_end - x_new <= EPS)
-            Memento.info(_LOGGER, "start: $x_start, new: $x_new, end: $x_end")
-            Memento.info(_LOGGER, "a new interval is too short")
-            Memento.info(_LOGGER, "stopping refinement")
-            break
-        end
-
-        # Stop if derivatives at endpoints of the new partitions will be too close.
-        d_start = function_data.d(x_start)
-        d_new = function_data.d(x_new)
-        d_end = function_data.d(x_end)
-        if (abs(d_new - d_start) <= EPS || abs(d_end - d_new) <= EPS)
-            Memento.info(_LOGGER,
-                "d_start: $d_start, d_new: $d_new, d_end: $d_end")
-            Memento.info(_LOGGER, "adjacent derivatives too close to each other")
-            Memento.info(_LOGGER, "stopping refinement")
-            break
-        end
 
         # Errors of partition intervals in `error_queue` are indexed by positions of interval
         # starts in `refined_partition`. As we will be inserting `x_new` into `refined_partition`
         # between positions `start` and `start+1`, the positions of interval-starts after `x_new`
         # will all increase by 1 after the insertions. Upade the queue with this new indexing.
-        num_starts = length(refined_partition) - 1
+        num_starts = length(partition)
         for i in num_starts:-1:start+1
             error_queue[i] = error_queue[i-1]
         end
 
         # Add errors of the new partition intervals to the queue.
+        x_new = 0.5 * (x_start + x_end)
         error_queue[start] = get_error_bound(function_data.d, x_start, x_new)
         error_queue[start+1] = get_error_bound(function_data.d, x_new, x_end)
 
         # Add `x_new` to `refined_partition`.
-        splice!(refined_partition, start+1:start, x_new)
-
+        splice!(partition, start+1:start, x_new)
         num_partitions_added += 1
-        # Memento.info(_LOGGER, "added $x_new between $x_start and $x_end")
+    end
+end
+
+function is_refinement_feasible(function_data::FunctionData, error_queue::PriorityQueue)::Bool
+    # Check if error bound is below tolerance.
+    start, max_error = peek(error_queue)
+    if !isnan(function_data.error_tolerance) && max_error <= function_data.error_tolerance
+        Memento.info(_LOGGER, "error: $max_error less than limit: $(function_data.error_tolerance)")
+        return false
     end
 
-    return FunctionData(function_data.f, function_data.d, refined_partition)
+    # Check if the maximum allowed number of binary variables have been added.
+    if function_data.num_additional_binary_variables > 0
+        num_added = length(function_data.partition) - length(function_data.base_partition)
+        if num_added >= function_data.num_additional_binary_variables
+            Memento.info(_LOGGER, "number of new binary variables: $num_added")
+            Memento.info(_LOGGER, "budget: $(function_data.num_additional_binary_variables)")
+            return false
+        end
+    end
+
+    # Check if new partition lengths are smaller than allowed.
+    x_start, x_end = function_data.partition[start], function_data.partition[start+1]
+    if x_end - x_start <= (2 * function_data.length_tolerance)
+        Memento.info(_LOGGER, "start: $x_start, end: $x_end")
+        Memento.info(_LOGGER, "new interval length will be too small")
+        return false
+    end
+
+    # Check if derivative differences at endpoints of new partitions are smaller than allowed.
+    d_start, d_end = function_data.d(x_start), function_data.d(x_end)
+    x_new = 0.5 * (x_start + x_end)
+    d_new = function_data.d(x_new)
+    if (abs(d_new - d_start) <= function_data.derivative_tolerance ||
+        abs(d_end - d_new) <= function_data.derivative_tolerance)
+        Memento.info(_LOGGER, "d_start: $d_start, d_new: $d_new, d_end: $d_end")
+        Memento.info(_LOGGER, "adjacent derivative difference will be too small")
+        return false
+    end
+
+    return true
 end
 
 """
@@ -416,6 +405,6 @@ Generate model data for the polyhedral relaxation of a univariate function.
 function main()
     f = x -> x^3
     partition = Vector{Real}(collect(-1.0:1.0:1.0))
-    return construct_milp_relaxation(f, partition, error_tolerance=1e-7,
-        num_additional_binary_variables=500)
+    return construct_milp_relaxation(f, partition, error_tolerance=0.01,
+        num_additional_binary_variables=10)
 end
