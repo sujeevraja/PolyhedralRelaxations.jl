@@ -13,11 +13,12 @@ module PolyhedralRelaxations
     __init__() = Memento.register(_LOGGER)
 
     """
-    Suppresses information and warning messages output by PolyhedralRelaxations.
-    For fine grained control use the Memento package
+    Suppresses information and warning messages output by PolyhedralRelaxations. For fine grained
+    control use the Memento package.
     """
     function silence()
-        Memento.info(_LOGGER, "Suppressing information and warning messages for the rest of this session.  Use the Memento package for more fine-grained control of logging.")
+        Memento.info(_LOGGER, string("Suppressing information and warning messages for the rest ",
+            "of this session.  Use the Memento package for more fine-grained control of logging."))
         Memento.setlevel!(Memento.getlogger(PolyhedralRelaxations), "error")
     end
 
