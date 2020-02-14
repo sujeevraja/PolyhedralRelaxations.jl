@@ -302,6 +302,16 @@ function add_rhs!(
     push!(constraint_data.rhs_values, value)
 end
 
+function refine_partition(function_data::FunctionData;
+        error_tolerance::Float64=Inf,
+        num_additional_binary_variables::Int64=0)::FunctionData
+    # Don't refine the partition if no additional constraints are specified.
+    if isinf(error_tolerance) && num_additional_binary_variables <= 0
+        return function_data
+    end
+    return function_data
+end
+
 """
     main()
 
