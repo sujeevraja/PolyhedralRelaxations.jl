@@ -1,7 +1,12 @@
 struct FunctionData
     f::Function
     d::Function
-    partition::Vector{Real}
+    base_partition::Vector{Real}
+    partition::Vector{Real}  # refinement of `base_partition` based on specified limits
+    error_tolerance::Real  # maximum allowed error bound
+    length_tolerance::Real  # maximum allowed distance between successive partition points
+    derivative_tolerance::Real  # maximum difference between successive derivative values
+    num_additional_binary_variables::Int64  # maximum number of additional partition intervals
 end
 
 "Getters for FunctionData"
@@ -9,8 +14,7 @@ end
 @inline get_derivative(uf::FunctionData)::Function = uf.d
 @inline get_domain_lb(uf::FunctionData)::Real = uf.partition[1]
 @inline get_domain_ub(uf::FunctionData)::Real = uf.partition[end]
-@inline get_domain(uf::FunctionData)::Pair{Real,Real} =
-    get_domain_lb(uf), get_domain_ub(uf)
+@inline get_domain(uf::FunctionData)::Pair{Real,Real} = get_domain_lb(uf), get_domain_ub(uf)
 @inline get_partition(uf::FunctionData)::Vector{<:Real} = uf.partition
 
 const Vertex = Pair{Real,Real}
@@ -20,8 +24,8 @@ Constraint coefficients and right-hand-side of MIP relaxation.
 
 Variables are ordered as: x, y, delta_1^i, delta_2^i, z_i.
 
-All constraints are either equality or less-than-or-equal-to constraints.
-Row indices of equality constraints are stored in `equality_row_indices`.
+All constraints are either equality or less-than-or-equal-to constraints. Row indices of equality
+constraints are stored in `equality_row_indices`.
 """
 struct FormulationData
     A::SparseArrays.SparseMatrixCSC{Real,Int64}
@@ -58,8 +62,7 @@ function ConstraintData()::ConstraintData
 end
 
 """
-Indices to recover variable values from model. Indices of delta_1^i, delta_2^i
-and z_i start from 1.
+Indices to recover variable values from model. Indices of delta_1^i, delta_2^i and z_i start from 1.
 """
 mutable struct IndexData
     x_index::Int64
@@ -73,14 +76,11 @@ function IndexData(num_points::Int64)::IndexData
     x_index = 1
     y_index = 2
 
-    # If there are k partition points, there are k-1 intervals, with each
-    # interval corresponding to a triangle. As we need one delta_1 variable,
-    # delta_2 variable and z variable for each triangle, we need k-1 of
-    # each of these variables in total. For instance, if k=3, we need 2 delta_1
-    # variables with indices 3,4. As the collect() function includes both
-    # endpoints, we need to set num_vars to k-2. Then, we will get the correct
-    # count for each variable set.
-
+    # If there are k partition points, there are k-1 intervals, with each interval corresponding to
+    # a triangle. As we need one delta_1 variable, delta_2 variable and z variable for each triangle,
+    # we need k-1 of each of these variables in total. For instance, if k=3, we need 2 delta_1
+    # variables with indices 3,4. As the collect() function includes both endpoints, we need to set
+    # num_vars to k-2. Then, we will get the correct count for each variable set.
     num_vars = num_points - 2
 
     start = 3
