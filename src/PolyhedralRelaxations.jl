@@ -1,6 +1,6 @@
 module PolyhedralRelaxations
 
-    import DataStructures
+    using DataStructures
     import ForwardDiff
     import SparseArrays
     import Memento

@@ -1,20 +1,19 @@
 """
     collect_vertices(function_data)
 
-Return a pair of lists with secant vertices as the first element and tangent
-vertices as the second element. All vertices
+Return a pair of lists with secant vertices as the first element and tangent vertices as the second
+element.
 
 Each element in the secant vertex list is a pair (x,y) where
 * x is an element of `function_data.partition`,
 * y is the value of the given univariate function at x.
 
-Each element in the tangent vertex list is also a pair (x,y). Each position i
-of the list contains the vertex formed by intersection of tangents of the curve
-`y=function_data.f(x)` at `secant_vertices[i]` and `secant_vertices[i+1]`.
+Each element in the tangent vertex list is also a pair (x,y). Each position i of the list contains
+the vertex formed by intersection of tangents of the curve `y=function_data.f(x)` at
+`secant_vertices[i]` and `secant_vertices[i+1]`.
 
-In terms of notation in the paper, `secant_vertices[i]` is the vertex v_i,
-`secant_vertices[i+1]` is the vertex v_{i+1} and `tangent_vertices[i]` is
-the vertex v_{i,i+1}.
+In terms of notation in the paper, `secant_vertices[i]` is the vertex v_i, `secant_vertices[i+1]`
+is the vertex v_{i+1} and `tangent_vertices[i]` is the vertex v_{i,i+1}.
 """
 function collect_vertices(function_data::FunctionData)::Pair{Vector{Vertex},Vector{Vertex}}
     validate_partition(function_data.partition)
@@ -92,8 +91,8 @@ end
 """
     get_tangent_vertex(prev_secant_vertex, next_secant_vertex, derivative)
 
-Return (x,y) coordinates of the intersection of tangents drawn at
-`prev_secant_vertex` and `next_secant_vertex`.
+Return (x,y) coordinates of the intersection of tangents drawn at `prev_secant_vertex` and
+`next_secant_vertex`.
 """
 function get_tangent_vertex(prev_secant_vertex::Vertex,
         next_secant_vertex::Vertex, derivative::Function)::Vertex
@@ -124,8 +123,8 @@ end
 """
     build_formulation(function_data)
 
-Return a FormulationData object with constraint and RHS information of the MILP
-formulation of the polyhedral relaxation.
+Return a FormulationData object with constraint and RHS information of the MILP formulation of the
+polyhedral relaxation.
 """
 function build_formulation(function_data::FunctionData)::FormulationData
     Memento.info(_LOGGER, "starting to build formulation data...")
@@ -179,12 +178,10 @@ end
     add_vertex_constraints!(constraint_data, index_data, secant_vertices,
         tangent_vertices)
 
-Add vertex constraints to `constraint_data` using variable indices from
-`index_data`.
+Add vertex constraints to `constraint_data` using variable indices from `index_data`.
 
-These constraints link the x and y coordinate variables to the delta variables.
-The lists `secant_vertices` and `tangent_vertices` are used to compute
-coefficients of delta variables.
+These constraints link the x and y coordinate variables to the delta variables. The lists
+`secant_vertices` and `tangent_vertices` are used to compute coefficients of delta variables.
 """
 function add_vertex_constraints!(
         constraint_data::ConstraintData,
@@ -224,8 +221,8 @@ end
 """
     add_first_delta_constraint!(constraint_data, index_data)
 
-Add the constraint "delta_1^1 + delta_2^1 <= 1 to `constraint_data` using
-variable indices from `index_data`.
+Add the constraint "delta_1^1 + delta_2^1 <= 1 to `constraint_data` using variable indices from
+`index_data`.
 """
 function add_first_delta_constraint!(
         constraint_data::ConstraintData,
@@ -246,9 +243,8 @@ Add the constraint families
     delta_1^i + delta_2^i - z_{i-1} <= 0
     delta_2^{i-1} >= z_{i-1}
 
-to `constraint_data` using variable indices from `index_data`. The number of
-each of these constraints corresponds to the number of triangles specified by
-`num_triangles`.
+to `constraint_data` using variable indices from `index_data`. The number of each of these
+constraints corresponds to the number of triangles specified by `num_triangles`.
 """
 function add_linking_constraints!(
         constraint_data::ConstraintData,
@@ -277,8 +273,8 @@ end
 """
     add_coeff!(constraint_data, row, col, value)
 
-Add the coefficient `value` of the variable with index `col` to the constraint
-with index `row` to `constraint_data`.
+Add the coefficient `value` of the variable with index `col` to the constraint with index `row` to
+`constraint_data`.
 """
 function add_coeff!(
         constraint_data::ConstraintData,
@@ -311,46 +307,108 @@ function refine_partition(function_data::FunctionData;
         return function_data
     end
 
-    # Refine the partition until one of 3 constraints are met:
-    # - If error_tolerance is finite, stop when error bound goes below it.
-    # - If num_additional_binary_variables is positive, stop when the number
-    #   of new variables reaches it.
-    # - If the difference between adjacent partition points or adjacent
-    #   derivative goes below the global limit of EPS, stop refining.
     error_queue = get_error_queue(function_data)
+    num_partitions_added = 0
+    refined_partition = copy(function_data.partition)
 
-    return function_data
+    while true
+        start, max_error = peek(error_queue)
+        x_start = refined_partition[start]
+        x_end = refined_partition[start+1]
+        Memento.info(_LOGGER, "max error: $max_error between $x_start, $x_end")
+
+        # If error_tolerance is finite, stop when error bound is smaller than
+        # the specified tolerance.
+        if !isinf(error_tolerance) && max_error <= error_tolerance
+            Memento.info(_LOGGER, "error: $max_error less than limit: $error_tolerance")
+            Memento.info(_LOGGER, "stopping refinement")
+            break
+        end
+
+        # If num_additional_binary_variables is positive and the number of
+        # new partitions added reaches this limit, stop refining.
+        if (num_additional_binary_variables > 0 &&
+                num_partitions_added >= num_additional_binary_variables)
+            Memento.info(_LOGGER, "number of new binary variables: $num_partitions_added")
+            Memento.info(_LOGGER, "budget: $num_additional_binary_variables")
+            Memento.info(_LOGGER, "stopping refinement")
+            break
+        end
+
+        # Check feasibility of refiniing the partition between positions i,i+1.
+        x_new = 0.5 * (x_start + x_end)
+
+        # Stop if endpoints of the new partitions will be too close.
+        if (x_new - x_start <= EPS) || (x_end - x_new <= EPS)
+            Memento.info(_LOGGER, "start: $x_start, new: $x_new, end: $x_end")
+            Memento.info(_LOGGER, "a new interval is too short")
+            Memento.info(_LOGGER, "stopping refinement")
+            break
+        end
+
+        # Stop if derivatives at endpoints of the new partitions will be too
+        # close.
+        d_start = function_data.d(x_start)
+        d_new = function_data.d(x_new)
+        d_end = function_data.d(x_end)
+        if (abs(d_new - d_start) <= EPS || abs(d_end - d_new) <= EPS)
+            Memento.info(_LOGGER,
+                "d_start: $d_start, d_new: $d_new, d_end: $d_end")
+            Memento.info(_LOGGER, "adjacent derivatives too close to each other")
+            Memento.info(_LOGGER, "stopping refinement")
+            break
+        end
+
+        # Errors of partition intervals in `error_queue` are indexed by
+        # positions of interval starts in `refined_partition`. As we will be
+        # inserting `x_new` into `refined_partition` between positions
+        # `start` and `start+1`, the positions of interval-starts after `x_new`
+        # will all increase by 1 after the insertions. Upade the queue with
+        # this new indexing.
+        num_starts = length(refined_partition) - 1
+        for i in num_starts:-1:start+1
+            error_queue[i] = error_queue[i-1]
+        end
+
+        # Add errors of the new partition intervals to the queue.
+        error_queue[start] = get_error_bound(function_data.d, x_start, x_new)
+        error_queue[start+1] = get_error_bound(function_data.d, x_new, x_end)
+
+        # Add `x_new` to `refined_partition`.
+        splice!(refined_partition, start+1:start, x_new)
+
+        num_partitions_added += 1
+        # Memento.info(_LOGGER, "added $x_new between $x_start and $x_end")
+    end
+
+    return FunctionData(function_data.f, function_data.d, refined_partition)
 end
 
 """
     get_error_queue(function_data)
 
-Build a max-priority-queue holding errors of each partition interval in
-`function_data.partition`. Keys of the queue are indices of starting positions
-of the partition interval in `function_data.partition`. Priorities are error
-bounds of partition intervals. The queue is built as a max-queue for easy
-access to the  maximum error.
+Build a max-priority-queue holding errors of each partition interval in `function_data.partition`.
+Keys of the queue are indices of starting positions of the partition interval in
+`function_data.partition`. Priorities are error bounds of partition intervals. The queue is built as
+a max-queue for easy access to the  maximum error.
 """
 function get_error_queue(function_data::FunctionData)::PriorityQueue
     pq = PriorityQueue{Int64,Float64}(Base.Order.Reverse)
-    for i in 1:length(function_data.partition)
-        pq[i] = compute_error_bound(function_data, i)
+    for i in 1:length(function_data.partition)-1
+        lb = function_data.partition[i]
+        ub = function_data.partition[i+1]
+        pq[i] = get_error_bound(function_data.d, lb, ub)
     end
     return pq
 end
 
 """
-    compute_error_bound(function_data, start_index)
+    get_error_bound(derivative, lb, ub)
 
-Get error bound of the polyhedral relaxation for `function_data.f` for the
-partition interval with endpoints `partition[start_index]` and
-`partition[start_index+1]`.
+Get error bound of a function with derivative `derivative` in the closed interval `[lb,ub]`.
 """
-function compute_error_bound(function_data::FunctionData, start_index::Int64)
-    @assert start_index >= 1 and start_index <= length(function_data.partition)
-    a = function_data.partition[start_index]
-    b = function_data.partition[start_index+1]
-    return (b - a) * abs(function_data.d(b) - function_data.d(a)) / 4.0
+function get_error_bound(derivative::Function, lb::Real, ub::Real)
+    return (ub-lb) * abs(derivative(ub) - derivative(lb)) / 4.0
 end
 
 """
@@ -359,9 +417,8 @@ end
 Generate model data for the polyhedral relaxation of a univariate function.
 """
 function main()
-    function_data = FunctionData(
-        x -> x^3,  # f
-        x -> 3*(x^2),  # f'
-        Vector{Real}(collect(-1.0:1.0:1.0)))
-    return build_formulation(function_data)
+    f = x -> x^3
+    partition = Vector{Real}(collect(-1.0:1.0:1.0))
+    return construct_milp_relaxation(f, partition, error_tolerance=1e-7,
+        num_additional_binary_variables=500)
 end
