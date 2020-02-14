@@ -132,8 +132,8 @@ function build_formulation(function_data::FunctionData)::FormulationData
     Memento.info(_LOGGER, "got $(length(secant_vertices)) secant vertices.")
     Memento.info(_LOGGER, "got $(length(tangent_vertices)) tangent vertices.")
 
-    # Indices to recover variable values from model. Indices of delta_1^i,
-    # delta_2^i and z_i start from 1.
+    # Indices to recover variable values from model. Indices of delta_1^i, delta_2^i and z_i start
+    # from 1.
     num_points = length(secant_vertices)
     index_data = IndexData(num_points)
     Memento.info(_LOGGER, "number of partition points: $num_points")
@@ -317,16 +317,16 @@ function refine_partition(function_data::FunctionData;
         x_end = refined_partition[start+1]
         Memento.info(_LOGGER, "max error: $max_error between $x_start, $x_end")
 
-        # If error_tolerance is finite, stop when error bound is smaller than
-        # the specified tolerance.
+        # If error_tolerance is finite, stop when error bound is smaller than the specified
+        # tolerance.
         if !isinf(error_tolerance) && max_error <= error_tolerance
             Memento.info(_LOGGER, "error: $max_error less than limit: $error_tolerance")
             Memento.info(_LOGGER, "stopping refinement")
             break
         end
 
-        # If num_additional_binary_variables is positive and the number of
-        # new partitions added reaches this limit, stop refining.
+        # If num_additional_binary_variables is positive and the number of new partitions added
+        # reaches this limit, stop refining.
         if (num_additional_binary_variables > 0 &&
                 num_partitions_added >= num_additional_binary_variables)
             Memento.info(_LOGGER, "number of new binary variables: $num_partitions_added")
@@ -346,8 +346,7 @@ function refine_partition(function_data::FunctionData;
             break
         end
 
-        # Stop if derivatives at endpoints of the new partitions will be too
-        # close.
+        # Stop if derivatives at endpoints of the new partitions will be too close.
         d_start = function_data.d(x_start)
         d_new = function_data.d(x_new)
         d_end = function_data.d(x_end)
@@ -359,12 +358,10 @@ function refine_partition(function_data::FunctionData;
             break
         end
 
-        # Errors of partition intervals in `error_queue` are indexed by
-        # positions of interval starts in `refined_partition`. As we will be
-        # inserting `x_new` into `refined_partition` between positions
-        # `start` and `start+1`, the positions of interval-starts after `x_new`
-        # will all increase by 1 after the insertions. Upade the queue with
-        # this new indexing.
+        # Errors of partition intervals in `error_queue` are indexed by positions of interval
+        # starts in `refined_partition`. As we will be inserting `x_new` into `refined_partition`
+        # between positions `start` and `start+1`, the positions of interval-starts after `x_new`
+        # will all increase by 1 after the insertions. Upade the queue with this new indexing.
         num_starts = length(refined_partition) - 1
         for i in num_starts:-1:start+1
             error_queue[i] = error_queue[i-1]
