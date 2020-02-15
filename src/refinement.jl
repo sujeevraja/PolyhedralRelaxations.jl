@@ -64,9 +64,12 @@ function is_refinement_feasible(function_data::FunctionData, error_queue::Priori
         return false
     end
 
+    # Check if function and derivative are well-defined at the new point.
+    x_new = 0.5 * (x_start + x_end)
+    validate_point(function_data, x_new)
+
     # Check if derivative differences at endpoints of new partitions are smaller than allowed.
     d_start, d_end = function_data.d(x_start), function_data.d(x_end)
-    x_new = 0.5 * (x_start + x_end)
     d_new = function_data.d(x_new)
     if (abs(d_new - d_start) <= function_data.derivative_tolerance ||
         abs(d_end - d_new) <= function_data.derivative_tolerance)
