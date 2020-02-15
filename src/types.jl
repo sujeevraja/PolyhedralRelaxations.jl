@@ -49,13 +49,13 @@ end
 
 """
 Column indices of variables in constraint matrix of polyhedral relaxation.
-Indices of delta_1^i, delta_2^i and z_i start from 1.
+Indices of δ_1^i, δ_2^i and z_i start from 1.
 """
 mutable struct IndexData
     x_index::Int64
     y_index::Int64
-    delta_1_indices::Vector{Int64}
-    delta_2_indices::Vector{Int64}
+    δ_1_indices::Vector{Int64}
+    δ_2_indices::Vector{Int64}
     z_indices::Vector{Int64}
 end
 
@@ -76,27 +76,27 @@ function IndexData(num_points::Int64)::IndexData
     num_vars = num_points - 1
 
     start = 3
-    delta_1_indices = collect(start:(start+num_vars-1))
+    δ_1_indices = collect(start:(start+num_vars-1))
 
-    start = delta_1_indices[end]+1
-    delta_2_indices = collect(start:(start+num_vars-1))
+    start = δ_1_indices[end]+1
+    δ_2_indices = collect(start:(start+num_vars-1))
 
-    start = delta_2_indices[end]+1
+    start = δ_2_indices[end]+1
     z_indices = collect(start:(start+num_vars-1))
 
-    return IndexData(x_index, y_index, delta_1_indices, delta_2_indices, z_indices)
+    return IndexData(x_index, y_index, δ_1_indices, δ_2_indices, z_indices)
 end
 
 "Getters for IndexData"
 function get_num_variables(index_data::IndexData)::Int64
-    return length(index_data.delta_1_indices) + length(index_data.delta_2_indices) +
+    return length(index_data.δ_1_indices) + length(index_data.δ_2_indices) +
         length(index_data.z_indices) + 2
 end
 
 """
 Constraint coefficients and right-hand-side of MIP relaxation.
 
-Variables are ordered as: x, y, delta_1^i, delta_2^i, z_i.
+Variables are ordered as: x,y,δ_1^i,δ_2^i,z_i.
 
 All constraints are either equality or less-than-or-equal-to constraints. Row indices of equality
 constraints are stored in `equality_row_indices`.
@@ -110,8 +110,8 @@ struct FormulationData
     num_leq_constraints::Int64
     x_index::Int64
     y_index::Int64
-    delta_1_indices::Vector{Int64}
-    delta_2_indices::Vector{Int64}
+    δ_1_indices::Vector{Int64}
+    δ_2_indices::Vector{Int64}
     z_indices::Vector{Int64}
     lower_bounds::Vector{Real}
     upper_bounds::Vector{Real}
@@ -140,9 +140,9 @@ function FormulationData(
     variable_names::Vector{String} = ["" for _ in 1:num_variables]
     variable_names[index_data.x_index] = "x"
     variable_names[index_data.y_index] = "y"
-    for i in 1:length(index_data.delta_1_indices)
-        variable_names[index_data.delta_1_indices[i]] = "delta_1_$i"
-        variable_names[index_data.delta_2_indices[i]] = "delta_2_$i"
+    for i in 1:length(index_data.δ_1_indices)
+        variable_names[index_data.δ_1_indices[i]] = "delta_1_$i"
+        variable_names[index_data.δ_2_indices[i]] = "delta_2_$i"
         variable_names[index_data.z_indices[i]] = "z_$i"
     end
 
@@ -151,8 +151,8 @@ function FormulationData(
         A_leq, b_leq, leq_constraint_data.num_constraints,
         index_data.x_index,
         index_data.y_index,
-        index_data.delta_1_indices,
-        index_data.delta_2_indices,
+        index_data.δ_1_indices,
+        index_data.δ_2_indices,
         index_data.z_indices,
         lower_bounds,
         upper_bounds,
@@ -161,7 +161,7 @@ function FormulationData(
 end
 
 function get_num_variables(formulation_data::FormulationData)
-    return length(formulation_data.delta_1_indices) + length(formulation_data.delta_2_indices) +
+    return length(formulation_data.δ_1_indices) + length(formulation_data.δ_2_indices) +
         length(formulation_data.z_indices) + 2
 end
 

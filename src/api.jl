@@ -2,8 +2,8 @@ function construct_milp_relaxation(
     f::Function,
     base_partition::Vector{<:Real};
     error_tolerance::Real=NaN64,
-    length_tolerance::Real=EPS,
-    derivative_tolerance::Real=EPS,
+    length_tolerance::Real=ϵ,
+    derivative_tolerance::Real=ϵ,
         num_additional_binary_variables::Int=0)::Pair{FormulationData, FunctionData}
     return construct_milp_relaxation(
         f,
@@ -20,8 +20,8 @@ function construct_milp_relaxation(
     d::Function,
     base_partition::Vector{<:Real};
     error_tolerance::Real=NaN64,
-    length_tolerance::Real=EPS,
-    derivative_tolerance::Real=EPS,
+    length_tolerance::Real=ϵ,
+    derivative_tolerance::Real=ϵ,
         num_additional_binary_variables::Int=0)::Pair{FormulationData,FunctionData}
     function_data = FunctionData(f, d, base_partition, copy(base_partition), error_tolerance,
         length_tolerance, derivative_tolerance, num_additional_binary_variables)

@@ -58,7 +58,7 @@ function build_formulation(function_data::FunctionData)::Pair{FormulationData, F
     eq_constraint_data = ConstraintData()
     add_vertex_constraints!(eq_constraint_data, index_data, secant_vertices, tangent_vertices)
     leq_constraint_data = ConstraintData()
-    add_first_delta_constraint!(leq_constraint_data, index_data)
+    add_first_δ_constraint!(leq_constraint_data, index_data)
     add_linking_constraints!(leq_constraint_data, index_data, num_points-1)
     formulation_data = FormulationData(function_data, index_data, eq_constraint_data,
         leq_constraint_data)
@@ -71,8 +71,8 @@ end
 
 Add vertex constraints to `constraint_data` using variable indices from `index_data`.
 
-These constraints link the x and y coordinate variables to the delta variables. The lists
-`secant_vertices` and `tangent_vertices` are used to compute coefficients of delta variables.
+These constraints link the x and y coordinate variables to the δ variables. The lists
+`secant_vertices` and `tangent_vertices` are used to compute coefficients of δ variables.
 """
 function add_vertex_constraints!(
     constraint_data::ConstraintData,
@@ -89,13 +89,13 @@ function add_vertex_constraints!(
         add_coeff!(constraint_data, row, indices[c], 1)
 
         for i in 1:num_vars
-            # Add delta_1 variable to constraint.
-            column = index_data.delta_1_indices[i]
+            # Add δ_1 variable to constraint.
+            column = index_data.δ_1_indices[i]
             value =  secant_vertices[i][c] - tangent_vertices[i][c]
             add_coeff!(constraint_data, row, column, value)
 
-            # Add delta_2 variable to constraint.
-            column = index_data.delta_2_indices[i]
+            # Add δ_2 variable to constraint.
+            column = index_data.δ_2_indices[i]
             value =  secant_vertices[i][c] - secant_vertices[i+1][c]
             add_coeff!(constraint_data, row, column, value)
         end
@@ -108,18 +108,18 @@ function add_vertex_constraints!(
 end
 
 """
-    add_first_delta_constraint!(constraint_data, index_data)
+    add_first_δ_constraint!(constraint_data, index_data)
 
-Add the constraint "delta_1^1 + delta_2^1 <= 1 to `constraint_data` using variable indices from
+Add the constraint "δ_1^1 + δ_2^1 <= 1 to `constraint_data` using variable indices from
 `index_data`.
 """
-function add_first_delta_constraint!(constraint_data::ConstraintData, index_data::IndexData)
+function add_first_δ_constraint!(constraint_data::ConstraintData, index_data::IndexData)
     row = constraint_data.num_constraints + 1
-    add_coeff!(constraint_data, row, index_data.delta_1_indices[1], 1)
-    add_coeff!(constraint_data, row, index_data.delta_2_indices[1], 1)
+    add_coeff!(constraint_data, row, index_data.δ_1_indices[1], 1)
+    add_coeff!(constraint_data, row, index_data.δ_2_indices[1], 1)
     add_rhs!(constraint_data, row, 1)
     constraint_data.num_constraints += 1
-    Memento.info(_LOGGER, "built first delta constraint.")
+    Memento.info(_LOGGER, "built first δ constraint.")
 end
 
 """
@@ -127,8 +127,8 @@ end
 
 Add the constraint families
 
-    delta_1^i + delta_2^i - z_{i-1} <= 0
-    delta_2^{i-1} >= z_{i-1}
+    δ_1^i + δ_2^i - z_{i-1} <= 0
+    δ_2^{i-1} >= z_{i-1}
 
 to `constraint_data` using variable indices from `index_data`. The number of each of these
 constraints corresponds to the number of triangles specified by `num_triangles`.
@@ -141,17 +141,17 @@ function add_linking_constraints!(
         constraint_data.num_constraints += 1
         row = constraint_data.num_constraints
 
-        # Add delta_1^i + delta_2^i - z_{i-1} <= 0 constraint.
-        add_coeff!(constraint_data, row, index_data.delta_1_indices[i], 1)
-        add_coeff!(constraint_data, row, index_data.delta_2_indices[i], 1)
+        # Add δ_1^i + δ_2^i - z_{i-1} <= 0 constraint.
+        add_coeff!(constraint_data, row, index_data.δ_1_indices[i], 1)
+        add_coeff!(constraint_data, row, index_data.δ_2_indices[i], 1)
         add_coeff!(constraint_data, row, index_data.z_indices[i-1], -1)
         add_rhs!(constraint_data, row, 0)
 
-        # Add z_{i-1} - delta_2^{i-1} <= 0 constraint.
+        # Add z_{i-1} - δ_2^{i-1} <= 0 constraint.
         constraint_data.num_constraints += 1
         row = constraint_data.num_constraints
         add_coeff!(constraint_data, row, index_data.z_indices[i-1], 1)
-        add_coeff!(constraint_data, row, index_data.delta_2_indices[i-1], -1)
+        add_coeff!(constraint_data, row, index_data.δ_2_indices[i-1], -1)
         add_rhs!(constraint_data, row, 0)
     end
     Memento.info(_LOGGER, "added linking constraints.")
