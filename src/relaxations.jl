@@ -59,7 +59,7 @@ function build_formulation(function_data::FunctionData)::Pair{FormulationData, F
     add_vertex_constraints!(constraint_data, index_data, secant_vertices, tangent_vertices)
     add_first_delta_constraint!(constraint_data, index_data)
     add_linking_constraints!(constraint_data, index_data, num_points-1)
-    return Pair(FormulationData(constraint_data, index_data), function_data)
+    return Pair(FormulationData(function_data, constraint_data, index_data), function_data)
 end
 
 """
