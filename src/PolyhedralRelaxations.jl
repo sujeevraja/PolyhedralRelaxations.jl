@@ -4,6 +4,7 @@ module PolyhedralRelaxations
     import ForwardDiff
     import SparseArrays
     import Memento
+    using LinearAlgebra
 
     # Create our module level logger (this will get precompiled)
     const _LOGGER = Memento.getlogger(@__MODULE__)
