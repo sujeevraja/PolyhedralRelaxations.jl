@@ -25,6 +25,7 @@ function construct_milp_relaxation(
         num_additional_binary_variables::Int=0)::FormulationData
     function_data = FunctionData(f, d, base_partition, copy(base_partition), error_tolerance,
         length_tolerance, derivative_tolerance, num_additional_binary_variables)
+    validate(function_data)
     refine_partition!(function_data)
     return build_formulation(function_data)
 end
