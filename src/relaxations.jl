@@ -51,7 +51,7 @@ end
 Return a FormulationData object with constraint and RHS information of the MILP formulation of the
 polyhedral relaxation.
 """
-function build_formulation(function_data::FunctionData)::FormulationData
+function build_formulation(function_data::FunctionData)::Pair{FormulationData, FunctionData}
     num_points = length(function_data.partition)
     index_data = IndexData(num_points)
     secant_vertices, tangent_vertices = collect_vertices(function_data)
@@ -59,7 +59,7 @@ function build_formulation(function_data::FunctionData)::FormulationData
     add_vertex_constraints!(constraint_data, index_data, secant_vertices, tangent_vertices)
     add_first_delta_constraint!(constraint_data, index_data)
     add_linking_constraints!(constraint_data, index_data, num_points-1)
-    return FormulationData(constraint_data, index_data)
+    return Pair(FormulationData(constraint_data, index_data), function_data)
 end
 
 """
@@ -186,5 +186,6 @@ Generate model data for the polyhedral relaxation of a univariate function.
 function main()
     f = x -> x^3
     partition = Vector{Real}(collect(-1.0:1.0:1.0))
-    return construct_milp_relaxation(f, partition)
+    formulation_data, function_data = construct_milp_relaxation(f, partition)
+    println(formulation_data)
 end
