@@ -39,11 +39,14 @@ end
 
 const ConstraintMatrix = Pair{SparseArrays.SparseMatrixCSC{Real,Int64},SparseArrays.SparseVector{Real,Int64}}
 
-function get_constraint_matrix(constraint_data::ConstraintData)::ConstraintMatrix
+function get_constraint_matrix(constraint_data::ConstraintData, num_columns::Int64)::ConstraintMatrix
     A = SparseArrays.sparse(constraint_data.constraint_row_indices,
         constraint_data.constraint_column_indices,
-        constraint_data.constraint_coefficients)
-    b = SparseArrays.sparsevec(constraint_data.rhs_row_indices, constraint_data.rhs_values)
+        constraint_data.constraint_coefficients, 
+        constraint_data.num_constraints, num_columns)
+    b = SparseArrays.sparsevec(constraint_data.rhs_row_indices, 
+        constraint_data.rhs_values, 
+        constraint_data.num_constraints)
     return Pair(A,b)
 end
 
@@ -124,10 +127,10 @@ function FormulationData(
     index_data::IndexData,
     eq_constraint_data::ConstraintData,
         leq_constraint_data::ConstraintData)::FormulationData
-    A_eq, b_eq = get_constraint_matrix(eq_constraint_data)
-    A_leq, b_leq = get_constraint_matrix(leq_constraint_data)
-
     num_variables = get_num_variables(index_data)
+    A_eq, b_eq = get_constraint_matrix(eq_constraint_data, num_variables)
+    A_leq, b_leq = get_constraint_matrix(leq_constraint_data, num_variables)
+
     lower_bounds::Vector{Real} = zeros(num_variables)
     upper_bounds::Vector{Real} = ones(num_variables)
 
@@ -135,7 +138,7 @@ function FormulationData(
     upper_bounds[index_data.x_index] = function_data.partition[end]
     lower_bounds[index_data.y_index] = -Inf
     upper_bounds[index_data.y_index] = Inf
-    binary = SparseArrays.sparsevec(index_data.z_indices, ones(length(index_data.z_indices)))
+    binary = SparseArrays.sparsevec(index_data.z_indices, ones(length(index_data.z_indices)), num_variables)
 
     variable_names::Vector{String} = ["" for _ in 1:num_variables]
     variable_names[index_data.x_index] = "x"
