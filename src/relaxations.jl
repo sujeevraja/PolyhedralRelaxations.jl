@@ -1,3 +1,43 @@
+function validate(function_data::FunctionData)
+    if length(function_data.partition) < 2
+        Memento.error(_LOGGER, "partition must have at least 2 points")
+    end
+
+    x_prev::Float64 = NaN64
+    d_prev::Float64 = NaN64
+    for x in function_data.partition
+        if !isfinite(x) || abs(x) >= INFINITY
+            Memento.error(_LOGGER, "all partition points must be finite")
+        end
+
+        fx = function_data.f(x)
+        if abs(fx) >= INFINITY
+            Memento.error(_LOGGER, "absolute function value at $x larger than $INFINITY")
+        end
+
+        dx = function_data.d(x)
+        if abs(dx) >= INFINITY
+            Memento.error(_LOGGER, "derivative value at $x larger than $INFINITY")
+        end
+
+        if !isnan(x_prev)
+            if x <= x_prev
+                Memento.error(_LOGGER, "partition must be sorted, violation for $x, $x_prev")
+            end
+            if x - x_prev <= function_data.length_tolerance
+                Memento.error(_LOGGER, "$x_prev and $x difference less than $(function_data.length_tolerance)")
+            end
+            if abs(dx - d_prev) <= function_data.derivative_tolerance
+                Memento.error(_LOGGER, "difference of derivatives at $x and $x_prev less than $(function_data.derivative_tolerance)")
+            end
+        end
+        x_prev = x
+        d_prev = dx
+    end
+
+    Memento.info(_LOGGER, "input data valid.")
+end
+
 """
     collect_vertices(function_data)
 
@@ -16,69 +56,15 @@ In terms of notation in the paper, `secant_vertices[i]` is the vertex v_i, `seca
 is the vertex v_{i+1} and `tangent_vertices[i]` is the vertex v_{i,i+1}.
 """
 function collect_vertices(function_data::FunctionData)::Pair{Vector{Vertex},Vector{Vertex}}
-    # Add first secant vertex.
-    secant_vertices = Vertex[]
-    x_prev = function_data.partition[1]
-    push!(secant_vertices, get_secant_vertex(x_prev, function_data.f))
-
-    # Add remaining secant vertices and all tangent vertices.
-    tangent_vertices = Vertex[]
-    for i in 2:length(function_data.partition)
-        x = function_data.partition[i]
-        push!(secant_vertices, get_secant_vertex(x, function_data.f))
-        push!(tangent_vertices, get_tangent_vertex(secant_vertices[end-1],
-            secant_vertices[end], function_data.d))
+    secant_vertices, tangent_vertices = Vertex[], Vertex[]
+    for x in function_data.partition
+        push!(secant_vertices, Pair(x, function_data.f(x)))
+        if length(secant_vertices) >= 2
+            tv = get_tangent_vertex(secant_vertices[end-1], secant_vertices[end], function_data.d)
+            push!(tangent_vertices, tv)
+        end
     end
-
     return Pair(secant_vertices, tangent_vertices)
-end
-
-function validate_partition(partition::Vector{<:Real}, tolerance::Real)
-    # Check partition size.
-    num_points = length(partition)
-    if num_points < 2
-        Memento.error(_LOGGER, "partition must have at least 2 points")
-    end
-
-    # Check finiteness of first point.
-    if !isfinite(partition[1])
-        Memento.error(_LOGGER, "all partition points must be finite")
-    end
-
-    for i in 2:num_points
-        x_prev = partition[i-1]
-        x = partition[i]
-
-        # Check finiteness of current point.
-        if !isfinite(x)
-            Memento.error(_LOGGER, "all partition points must be finite")
-        end
-
-        # Check ascending order of partition.
-        if x <= x_prev
-            Memento.error(_LOGGER, "partition must be sorted, violation for $x, $x_prev")
-        end
-
-        # Check length of partition interval.
-        if (x - x_prev) <= tolerance
-            Memento.error(_LOGGER, "$x_prev and $x closer than $(function_data.length_tolerance)")
-        end
-    end
-
-    Memento.info(_LOGGER, "partition points are valid.")
-end
-
-"""
-    get_secant_vertex(x, f)
-
-Return the pair (x,f(x)) after verifying finiteness of f(x).
-"""
-function get_secant_vertex(x::Real, f::Function)::Vertex
-    fx = f(x)
-    if !isfinite(fx)
-        Memento.error(_LOGGER, "boundedness necessary, function unbounded at $x")
-    end
-    return Pair(x,fx)
 end
 
 """
@@ -91,20 +77,9 @@ function get_tangent_vertex(
     prev_secant_vertex::Vertex,
     next_secant_vertex::Vertex,
         derivative::Function)::Vertex
-    x_prev = prev_secant_vertex[1]
-    d_prev = derivative(x_prev)
-    if !isfinite(d_prev)
-        Memento.error(_LOGGER, "derivative unbounded at $x_prev")
-    end
-
-    x_next = next_secant_vertex[1]
-    d_next = derivative(x_next)
-    if !isfinite(d_next)
-        Memento.error(_LOGGER, "derivative unbounded at $x_next")
-    end
-
-    f_prev = prev_secant_vertex[2]
-    f_next = next_secant_vertex[2]
+    x_prev, f_prev = prev_secant_vertex
+    x_next, f_next = next_secant_vertex
+    d_prev, d_next = derivative(x_prev), derivative(x_next)
     x_t = (f_next - f_prev + (d_prev*x_prev) - (d_next*x_next)) / (d_prev - d_next)
     y_t = f_prev + (d_prev*(x_t - x_prev))
     return Pair(x_t, y_t)
@@ -117,7 +92,6 @@ Return a FormulationData object with constraint and RHS information of the MILP 
 polyhedral relaxation.
 """
 function build_formulation(function_data::FunctionData)::FormulationData
-    validate_partition(function_data.partition, function_data.length_tolerance)
     num_points = length(function_data.partition)
     index_data = IndexData(num_points)
     secant_vertices, tangent_vertices = collect_vertices(function_data)
@@ -261,5 +235,5 @@ Generate model data for the polyhedral relaxation of a univariate function.
 function main()
     f = x -> x^3
     partition = Vector{Real}(collect(-1.0:1.0:1.0))
-    return construct_milp_relaxation(f, partition, error_tolerance=0.01)
+    return construct_milp_relaxation(f, partition)
 end

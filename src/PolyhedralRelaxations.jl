@@ -30,6 +30,7 @@ module PolyhedralRelaxations
     end
 
     const EPS = 1e-3
+    const INFINITY=1e12
 
     include("types.jl")
     include("refinement.jl")
