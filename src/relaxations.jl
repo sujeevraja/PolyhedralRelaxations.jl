@@ -117,52 +117,15 @@ Return a FormulationData object with constraint and RHS information of the MILP 
 polyhedral relaxation.
 """
 function build_formulation(function_data::FunctionData)::FormulationData
-    Memento.info(_LOGGER, "starting to build formulation data...")
     validate_partition(function_data.partition, function_data.length_tolerance)
-    secant_vertices, tangent_vertices = collect_vertices(function_data)
-    Memento.info(_LOGGER, "got $(length(secant_vertices)) secant vertices.")
-    Memento.info(_LOGGER, "got $(length(tangent_vertices)) tangent vertices.")
-
-    # Indices to recover variable values from model. Indices of delta_1^i, delta_2^i and z_i start
-    # from 1.
-    num_points = length(secant_vertices)
+    num_points = length(function_data.partition)
     index_data = IndexData(num_points)
-    Memento.info(_LOGGER, "number of partition points: $num_points")
-    Memento.info(_LOGGER, "x index: $(index_data.x_index)")
-    Memento.info(_LOGGER, "y index: $(index_data.y_index)")
-
-    i_start = index_data.delta_1_indices[1]
-    i_end = index_data.delta_1_indices[end]
-    Memento.info(_LOGGER, "delta_1_indices: $i_start to $i_end")
-
-    i_start = index_data.delta_2_indices[1]
-    i_end = index_data.delta_2_indices[end]
-    Memento.info(_LOGGER, "delta_2_indices: $i_start to $i_end")
-
-    i_start = index_data.z_indices[1]
-    i_end = index_data.z_indices[end]
-    Memento.info(_LOGGER, "z_indices: $i_start to $i_end")
-
+    secant_vertices, tangent_vertices = collect_vertices(function_data)
     constraint_data = ConstraintData()
     add_vertex_constraints!(constraint_data, index_data, secant_vertices, tangent_vertices)
     add_first_delta_constraint!(constraint_data, index_data)
     add_linking_constraints!(constraint_data, index_data, num_points-1)
-
-    # Store constraint data into a Model object and return it.
-    A = SparseArrays.sparse(constraint_data.constraint_row_indices,
-        constraint_data.constraint_column_indices,
-        constraint_data.constraint_coefficients)
-    b = SparseArrays.sparsevec(constraint_data.rhs_row_indices, constraint_data.rhs_values)
-    Memento.info(_LOGGER, "built formulation data.")
-
-    return FormulationData(A, b,
-        index_data.x_index,
-        index_data.y_index,
-        index_data.delta_1_indices,
-        index_data.delta_2_indices,
-        index_data.z_indices,
-        constraint_data.equality_row_indices,
-        constraint_data.num_constraints)
+    return FormulationData(constraint_data, index_data)
 end
 
 """
@@ -405,6 +368,5 @@ Generate model data for the polyhedral relaxation of a univariate function.
 function main()
     f = x -> x^3
     partition = Vector{Real}(collect(-1.0:1.0:1.0))
-    return construct_milp_relaxation(f, partition, error_tolerance=0.01,
-        num_additional_binary_variables=10)
+    return construct_milp_relaxation(f, partition)
 end
