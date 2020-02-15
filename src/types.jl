@@ -79,6 +79,11 @@ function IndexData(num_points::Int64)::IndexData
     return IndexData(x_index, y_index, delta_1_indices, delta_2_indices, z_indices)
 end
 
+"Getters for IndexData"
+@inline get_num_variables(index_data::IndexData) =
+    length(index_data.delta_1_indices) + length(index_data.delta_2_indices) +
+    length(index_data.z_indices) + 2
+
 """
 Constraint coefficients and right-hand-side of MIP relaxation.
 
@@ -95,16 +100,33 @@ struct FormulationData
     delta_1_indices::Vector{Int64}
     delta_2_indices::Vector{Int64}
     z_indices::Vector{Int64}
-    equality_row_indices::Set{Int64}
+    lower_bounds::Vector{Real}
+    upper_bounds::Vector{Real}
+    binary::SparseArrays.SparseVector{Int64}
+    equality_row_indices::SparseArrays.SparseVector{Int64}
     num_constraints::Int64
 end
 
-function FormulationData(constraint_data::ConstraintData, index_data::IndexData)::FormulationData
+function FormulationData(
+    function_data::FunctionData,
+    constraint_data::ConstraintData,
+        index_data::IndexData)::FormulationData
     A = SparseArrays.sparse(constraint_data.constraint_row_indices,
         constraint_data.constraint_column_indices,
         constraint_data.constraint_coefficients)
     b = SparseArrays.sparsevec(constraint_data.rhs_row_indices, constraint_data.rhs_values)
-    Memento.info(_LOGGER, "built formulation data.")
+
+    num_variables = get_num_variables(index_data)
+    lower_bounds::Vector{Real} = zeros(num_variables)
+    upper_bounds::Vector{Real} = ones(num_variables)
+
+    lower_bounds[index_data.x_index] = function_data.partition[1]
+    upper_bounds[index_data.x_index] = function_data.partition[end]
+    binary = SparseArrays.sparsevec(index_data.z_indices, ones(length(index_data.z_indices)))
+
+    eq_row_index_vec = Vector{Real}()
+    append!(eq_row_index_vec, constraint_data.equality_row_indices)
+    equality_row_indices = SparseArrays.sparsevec(eq_row_index_vec, ones(length(eq_row_index_vec)))
 
     return FormulationData(A, b,
         index_data.x_index,
@@ -112,12 +134,17 @@ function FormulationData(constraint_data::ConstraintData, index_data::IndexData)
         index_data.delta_1_indices,
         index_data.delta_2_indices,
         index_data.z_indices,
-        constraint_data.equality_row_indices,
+        lower_bounds,
+        upper_bounds,
+        binary,
+        equality_row_indices,
         constraint_data.num_constraints)
 end
 
 "Getters for FormulationData"
 @inline get_num_variables(formulation_data::FormulationData) =
-    length(delta_1_indices) + length(delta_2_indices) + length(z_indices) + 2
+    length(formulation_data.delta_1_indices) + length(formulation_data.delta_2_indices) +
+    length(formulation_data.z_indices) + 2
+
 
 const Vertex = Pair{Real,Real}
