@@ -29,8 +29,8 @@ module PolyhedralRelaxations
         Memento.config!(Memento.getlogger("PolyhedralRelaxations"), level)
     end
 
-    const EPS = 1e-3
-    const INFINITY=1e12
+    const ϵ = 1e-3
+    const ∞ = 1e12
 
     include("types.jl")
     include("validation.jl")

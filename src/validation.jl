@@ -1,17 +1,17 @@
 
 function validate_point(function_data::FunctionData, x::Real)
-    if !isfinite(x) || abs(x) >= INFINITY
+    if !isfinite(x) || abs(x) >= ∞
         Memento.error(_LOGGER, "all partition points must be finite")
     end
 
     fx = function_data.f(x)
-    if abs(fx) >= INFINITY
-        Memento.error(_LOGGER, "absolute function value at $x larger than $INFINITY")
+    if abs(fx) >= ∞
+        Memento.error(_LOGGER, "absolute function value at $x larger than $∞")
     end
 
     dx = function_data.d(x)
-    if abs(dx) >= INFINITY
-        Memento.error(_LOGGER, "absolute derivative value at $x larger than $INFINITY")
+    if abs(dx) >= ∞
+        Memento.error(_LOGGER, "absolute derivative value at $x larger than $∞")
     end
 end
 
