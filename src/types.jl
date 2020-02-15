@@ -17,28 +17,6 @@ end
 @inline get_domain(uf::FunctionData)::Pair{Real,Real} = get_domain_lb(uf), get_domain_ub(uf)
 @inline get_partition(uf::FunctionData)::Vector{<:Real} = uf.partition
 
-const Vertex = Pair{Real,Real}
-
-"""
-Constraint coefficients and right-hand-side of MIP relaxation.
-
-Variables are ordered as: x, y, delta_1^i, delta_2^i, z_i.
-
-All constraints are either equality or less-than-or-equal-to constraints. Row indices of equality
-constraints are stored in `equality_row_indices`.
-"""
-struct FormulationData
-    A::SparseArrays.SparseMatrixCSC{Real,Int64}
-    b::SparseArrays.SparseVector{Real,Int64}
-    x_index::Int64
-    y_index::Int64
-    delta_1_indices::Vector{Int64}
-    delta_2_indices::Vector{Int64}
-    z_indices::Vector{Int64}
-    equality_row_indices::Set{Int64}
-    num_constraints::Int64
-end
-
 mutable struct ConstraintData
     constraint_row_indices::Vector{Int64}
     constraint_column_indices::Vector{Int64}
@@ -62,7 +40,8 @@ function ConstraintData()::ConstraintData
 end
 
 """
-Indices to recover variable values from model. Indices of delta_1^i, delta_2^i and z_i start from 1.
+Column indices of variables in constraint matrix of polyhedral relaxation.
+Indices of delta_1^i, delta_2^i and z_i start from 1.
 """
 mutable struct IndexData
     x_index::Int64
@@ -72,26 +51,73 @@ mutable struct IndexData
     z_indices::Vector{Int64}
 end
 
-function IndexData(num_points::Int64)::IndexData
-    x_index = 1
-    y_index = 2
+"""
+    IndexData(num_points)
 
-    # If there are k partition points, there are k-1 intervals, with each interval corresponding to
-    # a triangle. As we need one delta_1 variable, delta_2 variable and z variable for each triangle,
-    # we need k-1 of each of these variables in total. For instance, if k=3, we need 2 delta_1
-    # variables with indices 3,4. As the collect() function includes both endpoints, we need to set
-    # num_vars to k-2. Then, we will get the correct count for each variable set.
-    num_vars = num_points - 2
+Return the collection of column indices of all variables in the constraint matrix of the polyhedral
+relaxation.
+
+If there are k partition points, there are k-1 intervals, with each interval corresponding to a
+triangle. As we need one delta_1 variable, delta_2 variable and z variable for each triangle, we
+need k-1 of each of these variables in total. For instance, if k=3, we need 2 delta_1 variables with
+indices 3,4. As the collect() function includes both endpoints, we should collect only up to
+num_vars-1. Then, we will get the correct count for each variable set.
+"""
+function IndexData(num_points::Int64)::IndexData
+    x_index, y_index = 1, 2
+    num_vars = num_points - 1
 
     start = 3
-    delta_1_indices = collect(start:(start+num_vars))
+    delta_1_indices = collect(start:(start+num_vars-1))
 
     start = delta_1_indices[end]+1
-    delta_2_indices = collect(start:(start+num_vars))
+    delta_2_indices = collect(start:(start+num_vars-1))
 
     start = delta_2_indices[end]+1
-    z_indices = collect(start:(start+num_vars))
+    z_indices = collect(start:(start+num_vars-1))
 
-    return IndexData(x_index, y_index, delta_1_indices, delta_2_indices,
-        z_indices)
+    return IndexData(x_index, y_index, delta_1_indices, delta_2_indices, z_indices)
 end
+
+"""
+Constraint coefficients and right-hand-side of MIP relaxation.
+
+Variables are ordered as: x, y, delta_1^i, delta_2^i, z_i.
+
+All constraints are either equality or less-than-or-equal-to constraints. Row indices of equality
+constraints are stored in `equality_row_indices`.
+"""
+struct FormulationData
+    A::SparseArrays.SparseMatrixCSC{Real,Int64}
+    b::SparseArrays.SparseVector{Real,Int64}
+    x_index::Int64
+    y_index::Int64
+    delta_1_indices::Vector{Int64}
+    delta_2_indices::Vector{Int64}
+    z_indices::Vector{Int64}
+    equality_row_indices::Set{Int64}
+    num_constraints::Int64
+end
+
+function FormulationData(constraint_data::ConstraintData, index_data::IndexData)::FormulationData
+    A = SparseArrays.sparse(constraint_data.constraint_row_indices,
+        constraint_data.constraint_column_indices,
+        constraint_data.constraint_coefficients)
+    b = SparseArrays.sparsevec(constraint_data.rhs_row_indices, constraint_data.rhs_values)
+    Memento.info(_LOGGER, "built formulation data.")
+
+    return FormulationData(A, b,
+        index_data.x_index,
+        index_data.y_index,
+        index_data.delta_1_indices,
+        index_data.delta_2_indices,
+        index_data.z_indices,
+        constraint_data.equality_row_indices,
+        constraint_data.num_constraints)
+end
+
+"Getters for FormulationData"
+@inline get_num_variables(formulation_data::FormulationData) =
+    length(delta_1_indices) + length(delta_2_indices) + length(z_indices) + 2
+
+const Vertex = Pair{Real,Real}
