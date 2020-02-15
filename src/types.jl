@@ -23,7 +23,6 @@ mutable struct ConstraintData
     constraint_coefficients::Vector{Real}
     rhs_row_indices::Vector{Int64}
     rhs_values::Vector{Real}
-    equality_row_indices::Set{Int64}
     num_constraints::Int64
 end
 
@@ -33,10 +32,19 @@ function ConstraintData()::ConstraintData
     coefs = Real[]
     rhs_row_indices = Int64[]
     rhs_values = Real[]
-    equality_row_indices = Set{Int64}()
     num_constraints = 0
     return ConstraintData(row_indices, col_indices, coefs, rhs_row_indices,
-        rhs_values, equality_row_indices, num_constraints)
+        rhs_values, num_constraints)
+end
+
+const ConstraintMatrix = Pair{SparseArrays.SparseMatrixCSC{Real,Int64},SparseArrays.SparseVector{Real,Int64}}
+
+function get_constraint_matrix(constraint_data::ConstraintData)::ConstraintMatrix
+    A = SparseArrays.sparse(constraint_data.constraint_row_indices,
+        constraint_data.constraint_column_indices,
+        constraint_data.constraint_coefficients)
+    b = SparseArrays.sparsevec(constraint_data.rhs_row_indices, constraint_data.rhs_values)
+    return Pair(A,b)
 end
 
 """
@@ -94,8 +102,12 @@ All constraints are either equality or less-than-or-equal-to constraints. Row in
 constraints are stored in `equality_row_indices`.
 """
 struct FormulationData
-    A::SparseArrays.SparseMatrixCSC{Real,Int64}
-    b::SparseArrays.SparseVector{Real,Int64}
+    A_eq::SparseArrays.SparseMatrixCSC{Real,Int64}
+    b_eq::SparseArrays.SparseVector{Real,Int64}
+    num_eq_constraints::Int64
+    A_leq::SparseArrays.SparseMatrixCSC{Real,Int64}
+    b_leq::SparseArrays.SparseVector{Real,Int64}
+    num_leq_constraints::Int64
     x_index::Int64
     y_index::Int64
     delta_1_indices::Vector{Int64}
@@ -104,18 +116,15 @@ struct FormulationData
     lower_bounds::Vector{Real}
     upper_bounds::Vector{Real}
     binary::SparseArrays.SparseVector{Int64}
-    equality_row_indices::SparseArrays.SparseVector{Int64}
-    num_constraints::Int64
 end
 
 function FormulationData(
     function_data::FunctionData,
-    constraint_data::ConstraintData,
-        index_data::IndexData)::FormulationData
-    A = SparseArrays.sparse(constraint_data.constraint_row_indices,
-        constraint_data.constraint_column_indices,
-        constraint_data.constraint_coefficients)
-    b = SparseArrays.sparsevec(constraint_data.rhs_row_indices, constraint_data.rhs_values)
+    index_data::IndexData,
+    eq_constraint_data::ConstraintData,
+        leq_constraint_data::ConstraintData)::FormulationData
+    A_eq, b_eq = get_constraint_matrix(eq_constraint_data)
+    A_leq, b_leq = get_constraint_matrix(leq_constraint_data)
 
     num_variables = get_num_variables(index_data)
     lower_bounds::Vector{Real} = zeros(num_variables)
@@ -127,11 +136,9 @@ function FormulationData(
     upper_bounds[index_data.y_index] = Inf
     binary = SparseArrays.sparsevec(index_data.z_indices, ones(length(index_data.z_indices)))
 
-    eq_row_index_vec = Vector{Real}()
-    append!(eq_row_index_vec, constraint_data.equality_row_indices)
-    equality_row_indices = SparseArrays.sparsevec(eq_row_index_vec, ones(length(eq_row_index_vec)))
-
-    return FormulationData(A, b,
+    return FormulationData(
+        A_eq, b_eq, eq_constraint_data.num_constraints,
+        A_leq, b_leq, leq_constraint_data.num_constraints,
         index_data.x_index,
         index_data.y_index,
         index_data.delta_1_indices,
@@ -139,9 +146,7 @@ function FormulationData(
         index_data.z_indices,
         lower_bounds,
         upper_bounds,
-        binary,
-        equality_row_indices,
-        constraint_data.num_constraints)
+        binary)
 end
 
 function get_num_variables(formulation_data::FormulationData)
