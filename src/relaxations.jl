@@ -55,11 +55,14 @@ function build_formulation(function_data::FunctionData)::Pair{FormulationData, F
     num_points = length(function_data.partition)
     index_data = IndexData(num_points)
     secant_vertices, tangent_vertices = collect_vertices(function_data)
-    constraint_data = ConstraintData()
-    add_vertex_constraints!(constraint_data, index_data, secant_vertices, tangent_vertices)
-    add_first_delta_constraint!(constraint_data, index_data)
-    add_linking_constraints!(constraint_data, index_data, num_points-1)
-    return Pair(FormulationData(function_data, constraint_data, index_data), function_data)
+    eq_constraint_data = ConstraintData()
+    add_vertex_constraints!(eq_constraint_data, index_data, secant_vertices, tangent_vertices)
+    leq_constraint_data = ConstraintData()
+    add_first_delta_constraint!(leq_constraint_data, index_data)
+    add_linking_constraints!(leq_constraint_data, index_data, num_points-1)
+    formulation_data = FormulationData(function_data, index_data, eq_constraint_data,
+        leq_constraint_data)
+    return Pair(formulation_data, function_data)
 end
 
 """
@@ -97,8 +100,6 @@ function add_vertex_constraints!(
             add_coeff!(constraint_data, row, column, value)
         end
 
-        # Complete the constraint.
-        push!(constraint_data.equality_row_indices, row)
         add_rhs!(constraint_data, row, secant_vertices[1][c])
         constraint_data.num_constraints += 1
     end

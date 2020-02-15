@@ -15,19 +15,20 @@
     m = JuMP.Model(glpk_optimizer)
     JuMP.@variable(m, lb[i] <= x[i=1:num_variables] <= ub[i])
 
-    A = formulation_data.A
-    b = formulation_data.b
-    eq_indices, _ = SparseArrays.findnz(formulation_data.equality_row_indices)
-    @test eq_indices == [formulation_data.x_index,formulation_data.y_index]
-
-    for i in 1:formulation_data.num_constraints
-        indices, values = SparseArrays.findnz(A[i, :])
-        if i in eq_indices
-            JuMP.@constraint(m, dot(x[indices], values) == b[i])
-        else
-            JuMP.@constraint(m, dot(x[indices], values) <= b[i])
-        end
+    # Add equality constraints
+    A_eq, b_eq = formulation_data.A_eq, formulation_data.b_eq
+    for i in 1:formulation_data.num_eq_constraints
+        eq_indices, eq_values = SparseArrays.findnz(A_eq[i, :])
+        JuMP.@constraint(m, dot(x[eq_indices], eq_values) == b_eq[i])
     end
+
+    # Add inequality constraints
+    A_leq, b_leq = formulation_data.A_leq, formulation_data.b_leq
+    for i in 1:formulation_data.num_leq_constraints
+        leq_indices, leq_values = SparseArrays.findnz(A_leq[i, :])
+        JuMP.@constraint(m, dot(x[leq_indices], leq_values) <= b_leq[i])
+    end
+
     JuMP.@objective(m, Min, x[formulation_data.x_index])
     JuMP.optimize!(m)
     @test JuMP.objective_value(m) == -1.0
