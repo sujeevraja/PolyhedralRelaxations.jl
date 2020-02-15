@@ -33,6 +33,7 @@ module PolyhedralRelaxations
     const INFINITY=1e12
 
     include("types.jl")
+    include("validation.jl")
     include("refinement.jl")
     include("relaxations.jl")
     include("api.jl")

@@ -1,43 +1,3 @@
-function validate(function_data::FunctionData)
-    if length(function_data.partition) < 2
-        Memento.error(_LOGGER, "partition must have at least 2 points")
-    end
-
-    x_prev::Float64 = NaN64
-    d_prev::Float64 = NaN64
-    for x in function_data.partition
-        if !isfinite(x) || abs(x) >= INFINITY
-            Memento.error(_LOGGER, "all partition points must be finite")
-        end
-
-        fx = function_data.f(x)
-        if abs(fx) >= INFINITY
-            Memento.error(_LOGGER, "absolute function value at $x larger than $INFINITY")
-        end
-
-        dx = function_data.d(x)
-        if abs(dx) >= INFINITY
-            Memento.error(_LOGGER, "derivative value at $x larger than $INFINITY")
-        end
-
-        if !isnan(x_prev)
-            if x <= x_prev
-                Memento.error(_LOGGER, "partition must be sorted, violation for $x, $x_prev")
-            end
-            if x - x_prev <= function_data.length_tolerance
-                Memento.error(_LOGGER, "$x_prev and $x difference less than $(function_data.length_tolerance)")
-            end
-            if abs(dx - d_prev) <= function_data.derivative_tolerance
-                Memento.error(_LOGGER, "difference of derivatives at $x and $x_prev less than $(function_data.derivative_tolerance)")
-            end
-        end
-        x_prev = x
-        d_prev = dx
-    end
-
-    Memento.info(_LOGGER, "input data valid.")
-end
-
 """
     collect_vertices(function_data)
 
@@ -112,9 +72,9 @@ These constraints link the x and y coordinate variables to the delta variables. 
 `secant_vertices` and `tangent_vertices` are used to compute coefficients of delta variables.
 """
 function add_vertex_constraints!(
-        constraint_data::ConstraintData,
-        index_data::IndexData,
-        secant_vertices::Vector{Vertex},
+    constraint_data::ConstraintData,
+    index_data::IndexData,
+    secant_vertices::Vector{Vertex},
         tangent_vertices::Vector{Vertex})
     indices = [index_data.x_index, index_data.y_index]
     num_vars = length(secant_vertices) - 1
@@ -152,9 +112,7 @@ end
 Add the constraint "delta_1^1 + delta_2^1 <= 1 to `constraint_data` using variable indices from
 `index_data`.
 """
-function add_first_delta_constraint!(
-        constraint_data::ConstraintData,
-        index_data::IndexData)
+function add_first_delta_constraint!(constraint_data::ConstraintData, index_data::IndexData)
     row = constraint_data.num_constraints + 1
     add_coeff!(constraint_data, row, index_data.delta_1_indices[1], 1)
     add_coeff!(constraint_data, row, index_data.delta_2_indices[1], 1)
@@ -175,8 +133,8 @@ to `constraint_data` using variable indices from `index_data`. The number of eac
 constraints corresponds to the number of triangles specified by `num_triangles`.
 """
 function add_linking_constraints!(
-        constraint_data::ConstraintData,
-        index_data::IndexData,
+    constraint_data::ConstraintData,
+    index_data::IndexData,
         num_triangles::Int64)
     for i in 2:num_triangles
         constraint_data.num_constraints += 1
@@ -204,11 +162,7 @@ end
 Add the coefficient `value` of the variable with index `col` to the constraint with index `row` to
 `constraint_data`.
 """
-function add_coeff!(
-    constraint_data::ConstraintData,
-    row::Int64,
-    col::Int64,
-        value::Real)
+function add_coeff!(constraint_data::ConstraintData, row::Int64, col::Int64, value::Real)
     push!(constraint_data.constraint_row_indices, row)
     push!(constraint_data.constraint_column_indices, col)
     push!(constraint_data.constraint_coefficients, value)
@@ -219,10 +173,7 @@ end
 
 Add the right-hand-side `value` for row `row` to `constraint_data`.
 """
-function add_rhs!(
-        constraint_data::ConstraintData,
-        row::Int64,
-        value::Real)
+function add_rhs!(constraint_data::ConstraintData, row::Int64, value::Real)
     push!(constraint_data.rhs_row_indices, row)
     push!(constraint_data.rhs_values, value)
 end
