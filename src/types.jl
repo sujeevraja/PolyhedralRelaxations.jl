@@ -80,9 +80,10 @@ function IndexData(num_points::Int64)::IndexData
 end
 
 "Getters for IndexData"
-@inline get_num_variables(index_data::IndexData) =
-    length(index_data.delta_1_indices) + length(index_data.delta_2_indices) +
-    length(index_data.z_indices) + 2
+function get_num_variables(index_data::IndexData)::Int64
+    return length(index_data.delta_1_indices) + length(index_data.delta_2_indices) +
+        length(index_data.z_indices) + 2
+end
 
 """
 Constraint coefficients and right-hand-side of MIP relaxation.
@@ -122,6 +123,8 @@ function FormulationData(
 
     lower_bounds[index_data.x_index] = function_data.partition[1]
     upper_bounds[index_data.x_index] = function_data.partition[end]
+    lower_bounds[index_data.y_index] = -Inf
+    upper_bounds[index_data.y_index] = Inf
     binary = SparseArrays.sparsevec(index_data.z_indices, ones(length(index_data.z_indices)))
 
     eq_row_index_vec = Vector{Real}()
@@ -141,10 +144,9 @@ function FormulationData(
         constraint_data.num_constraints)
 end
 
-"Getters for FormulationData"
-@inline get_num_variables(formulation_data::FormulationData) =
-    length(formulation_data.delta_1_indices) + length(formulation_data.delta_2_indices) +
-    length(formulation_data.z_indices) + 2
-
+function get_num_variables(formulation_data::FormulationData)
+    return length(formulation_data.delta_1_indices) + length(formulation_data.delta_2_indices) +
+        length(formulation_data.z_indices) + 2
+end
 
 const Vertex = Pair{Real,Real}
