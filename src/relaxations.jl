@@ -145,14 +145,12 @@ function add_linking_constraints!(
         add_coeff!(constraint_data, row, index_data.δ_1_indices[i], 1)
         add_coeff!(constraint_data, row, index_data.δ_2_indices[i], 1)
         add_coeff!(constraint_data, row, index_data.z_indices[i-1], -1)
-        add_rhs!(constraint_data, row, 0)
 
         # Add z_{i-1} - δ_2^{i-1} <= 0 constraint.
         constraint_data.num_constraints += 1
         row = constraint_data.num_constraints
         add_coeff!(constraint_data, row, index_data.z_indices[i-1], 1)
         add_coeff!(constraint_data, row, index_data.δ_2_indices[i-1], -1)
-        add_rhs!(constraint_data, row, 0)
     end
     Memento.info(_LOGGER, "added linking constraints.")
 end

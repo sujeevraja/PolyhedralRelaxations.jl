@@ -17,6 +17,7 @@ using LinearAlgebra
 
 const MOI = MathOptInterface
 const MOIU = MOI.Utilities
+const LP = MOI.FileFormats.LP
 
 GLPK.jl_set_preemptive_check(false)
 glpk_optimizer = JuMP.with_optimizer(GLPK.Optimizer, tm_lim = 100.0, msg_lev = GLPK.OFF)

@@ -13,24 +13,22 @@
     @test num_variables == 8
 
     m = JuMP.Model(glpk_optimizer)
-    JuMP.@variable(m, lb[i] <= x[i=1:num_variables] <= ub[i])
+    JuMP.@variable(m, lb[i] <= x[i=1:num_variables] <= ub[i], 
+        binary=Bool(formulation_data.binary[i]), 
+        base_name=formulation_data.variable_names[i])
 
     # Add equality constraints
     A_eq, b_eq = formulation_data.A_eq, formulation_data.b_eq
-    for i in 1:formulation_data.num_eq_constraints
-        eq_indices, eq_values = SparseArrays.findnz(A_eq[i, :])
-        JuMP.@constraint(m, dot(x[eq_indices], eq_values) == b_eq[i])
-    end
-
+    JuMP.@constraint(m, A_eq * x .== b_eq)
+    
     # Add inequality constraints
     A_leq, b_leq = formulation_data.A_leq, formulation_data.b_leq
-    for i in 1:formulation_data.num_leq_constraints
-        leq_indices, leq_values = SparseArrays.findnz(A_leq[i, :])
-        JuMP.@constraint(m, dot(x[leq_indices], leq_values) <= b_leq[i])
-    end
+    JuMP.@constraint(m, A_leq * x .<= b_leq)
+    
 
     JuMP.@objective(m, Min, x[formulation_data.x_index])
     JuMP.optimize!(m)
+    println(m)
     @test JuMP.objective_value(m) == -1.0
 
     JuMP.@objective(m, Max, x[formulation_data.x_index])
