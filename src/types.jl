@@ -116,6 +116,7 @@ struct FormulationData
     lower_bounds::Vector{Real}
     upper_bounds::Vector{Real}
     binary::SparseArrays.SparseVector{Int64}
+    variable_names::Vector{String}
 end
 
 function FormulationData(
@@ -136,6 +137,15 @@ function FormulationData(
     upper_bounds[index_data.y_index] = Inf
     binary = SparseArrays.sparsevec(index_data.z_indices, ones(length(index_data.z_indices)))
 
+    variable_names::Vector{String} = ["" for _ in 1:num_variables]
+    variable_names[index_data.x_index] = "x"
+    variable_names[index_data.y_index] = "y"
+    for i in 1:length(index_data.delta_1_indices)
+        variable_names[index_data.delta_1_indices[i]] = "delta_1_$i"
+        variable_names[index_data.delta_2_indices[i]] = "delta_2_$i"
+        variable_names[index_data.z_indices[i]] = "z_$i"
+    end
+
     return FormulationData(
         A_eq, b_eq, eq_constraint_data.num_constraints,
         A_leq, b_leq, leq_constraint_data.num_constraints,
@@ -146,7 +156,8 @@ function FormulationData(
         index_data.z_indices,
         lower_bounds,
         upper_bounds,
-        binary)
+        binary,
+        variable_names)
 end
 
 function get_num_variables(formulation_data::FormulationData)
