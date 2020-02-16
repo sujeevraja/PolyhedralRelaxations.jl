@@ -1,4 +1,6 @@
-[![Build Status](https://travis-ci.org/sujeevraja/PolyhedralRelaxations.jl.svg?branch=master)](https://travis-ci.org/sujeevraja/PolyhedralRelaxations.jl)
+[![Build Status](https://travis-ci.org/sujeevraja/PolyhedralRelaxations.jl.svg?branch=master)](https://travis-ci.org/sujeevraja/PolyhedralRelaxations.jl) 
+
+[![codecov](https://codecov.io/gh/sujeevraja/PolyhedralRelaxations.jl/branch/master/graph/badge.svg)](https://codecov.io/gh/sujeevraja/PolyhedralRelaxations.jl)
 
 # PolyhedralRelaxations.jl
 
