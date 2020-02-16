@@ -4,12 +4,15 @@ module PolyhedralRelaxations
     import ForwardDiff
     import SparseArrays
     import Memento
+    using LinearAlgebra
 
     # Create our module level logger (this will get precompiled)
     const _LOGGER = Memento.getlogger(@__MODULE__)
 
-    # Register the module level logger at runtime so that folks can access the logger via `getlogger(PolyhedralRelaxations)`
-    # NOTE: If this line is not included then the precompiled `PolyhedralRelaxations.LOGGER` won't be registered at runtime.
+    # Register the module level logger at runtime so that folks can access the logger via
+    # getlogger(PolyhedralRelaxations)`.
+    # NOTE: If this line is not included then the precompiled `PolyhedralRelaxations.LOGGER` won't
+    # be registered at runtime.
     __init__() = Memento.register(_LOGGER)
 
     """
@@ -27,9 +30,12 @@ module PolyhedralRelaxations
         Memento.config!(Memento.getlogger("PolyhedralRelaxations"), level)
     end
 
-    const EPS = 1e-3
+    const ϵ = 1e-3
+    const ∞ = 1e12
 
     include("types.jl")
+    include("validation.jl")
+    include("refinement.jl")
     include("relaxations.jl")
     include("api.jl")
 

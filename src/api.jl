@@ -1,10 +1,10 @@
 function construct_milp_relaxation(
     f::Function,
     base_partition::Vector{<:Real};
-    error_tolerance::Real=NaN64,  # maximum allowed error bound
-    length_tolerance::Real=EPS, # maximum allowed distance between successive partition points
-    derivative_tolerance::Real=EPS,  # maximum difference between successive derivative values
-        num_additional_binary_variables::Int=0)::FormulationData  # maximum additional added partition intervals
+    error_tolerance::Real=NaN64,
+    length_tolerance::Real=ϵ,
+    derivative_tolerance::Real=ϵ,
+        num_additional_binary_variables::Int=0)::Pair{FormulationData, FunctionData}
     return construct_milp_relaxation(
         f,
         x -> ForwardDiff.derivative(f, x),
@@ -20,11 +20,12 @@ function construct_milp_relaxation(
     d::Function,
     base_partition::Vector{<:Real};
     error_tolerance::Real=NaN64,
-    length_tolerance::Real=EPS,
-    derivative_tolerance::Real=EPS,
-        num_additional_binary_variables::Int=0)::FormulationData
+    length_tolerance::Real=ϵ,
+    derivative_tolerance::Real=ϵ,
+        num_additional_binary_variables::Int=0)::Pair{FormulationData,FunctionData}
     function_data = FunctionData(f, d, base_partition, copy(base_partition), error_tolerance,
         length_tolerance, derivative_tolerance, num_additional_binary_variables)
+    validate(function_data)
     refine_partition!(function_data)
     return build_formulation(function_data)
 end
