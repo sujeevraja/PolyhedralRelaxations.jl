@@ -55,13 +55,28 @@ function build_formulation(function_data::FunctionData)::Pair{FormulationData, F
     num_points = length(function_data.partition)
     index_data = IndexData(num_points)
     secant_vertices, tangent_vertices = collect_vertices(function_data)
+    f_min, f_max = Inf, -Inf
+    for sv in secant_vertices
+        f_val = sv[2]
+        f_min = min(f_min, f_val)
+        f_max = max(f_max, f_val)
+    end
+    for tv in tangent_vertices
+        f_val = tv[2]
+        f_min = min(f_min, f_val)
+        f_max = max(f_max, f_val)
+    end
+
     eq_constraint_data = ConstraintData()
     add_vertex_constraints!(eq_constraint_data, index_data, secant_vertices, tangent_vertices)
+
     leq_constraint_data = ConstraintData()
     add_first_δ_constraint!(leq_constraint_data, index_data)
     add_linking_constraints!(leq_constraint_data, index_data, num_points-1)
+
     formulation_data = FormulationData(function_data, index_data, eq_constraint_data,
-        leq_constraint_data)
+        leq_constraint_data, f_min, f_max)
+
     return Pair(formulation_data, function_data)
 end
 
