@@ -192,6 +192,9 @@ function add_rhs!(constraint_data::ConstraintData, row::Int64, value::Real)
     push!(constraint_data.rhs_values, value)
 end
 
+function build_convex_hull_formulation(function_data::FunctionData)::
+end
+
 """
     main()
 
