@@ -6,8 +6,8 @@
     lb, ub = formulation_data.lower_bounds, formulation_data.upper_bounds
     @test lb[formulation_data.x_index] == function_data.partition[1]
     @test ub[formulation_data.x_index] == function_data.partition[end]
-    @test lb[formulation_data.y_index] == -Inf
-    @test ub[formulation_data.y_index] == Inf
+    @test lb[formulation_data.y_index] == -1.0
+    @test ub[formulation_data.y_index] == 1.0
 
     num_variables = PR.get_num_variables(formulation_data)
     @test num_variables == 8
