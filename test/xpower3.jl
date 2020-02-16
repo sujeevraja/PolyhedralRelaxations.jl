@@ -6,25 +6,25 @@
     lb, ub = formulation_data.lower_bounds, formulation_data.upper_bounds
     @test lb[formulation_data.x_index] == function_data.partition[1]
     @test ub[formulation_data.x_index] == function_data.partition[end]
-    @test lb[formulation_data.y_index] == -Inf
-    @test ub[formulation_data.y_index] == Inf
+    @test lb[formulation_data.y_index] == -1.0
+    @test ub[formulation_data.y_index] == 1.0
 
     num_variables = PR.get_num_variables(formulation_data)
     @test num_variables == 8
 
     m = JuMP.Model(glpk_optimizer)
-    JuMP.@variable(m, lb[i] <= x[i=1:num_variables] <= ub[i], 
-        binary=Bool(formulation_data.binary[i]), 
+    JuMP.@variable(m, lb[i] <= x[i=1:num_variables] <= ub[i],
+        binary=Bool(formulation_data.binary[i]),
         base_name=formulation_data.variable_names[i])
 
     # Add equality constraints
     A_eq, b_eq = formulation_data.A_eq, formulation_data.b_eq
     JuMP.@constraint(m, [i=1:formulation_data.num_eq_constraints], dot(A_eq[i, :], x) == b_eq[i])
-    
+
     # Add inequality constraints
     A_leq, b_leq = formulation_data.A_leq, formulation_data.b_leq
     JuMP.@constraint(m, [i=1:formulation_data.num_leq_constraints], dot(A_leq[i, :], x) <= b_leq[i])
-    
+
 
     JuMP.@objective(m, Min, x[formulation_data.x_index])
     JuMP.optimize!(m)
