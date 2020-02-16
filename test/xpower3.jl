@@ -19,11 +19,11 @@
 
     # Add equality constraints
     A_eq, b_eq = formulation_data.A_eq, formulation_data.b_eq
-    JuMP.@constraint(m, A_eq * x .== b_eq)
+    JuMP.@constraint(m, [i=1:formulation_data.num_eq_constraints], dot(A_eq[i, :], x) == b_eq[i])
     
     # Add inequality constraints
     A_leq, b_leq = formulation_data.A_leq, formulation_data.b_leq
-    JuMP.@constraint(m, A_leq * x .<= b_leq)
+    JuMP.@constraint(m, [i=1:formulation_data.num_leq_constraints], dot(A_leq[i, :], x) <= b_leq[i])
     
 
     JuMP.@objective(m, Min, x[formulation_data.x_index])
