@@ -173,6 +173,16 @@ function get_num_variables(formulation_data::FormulationData)
         length(formulation_data.z_indices) + 2
 end
 
+struct ConvexHullVariableIndices
+    x_index
+    y_index
+    λ_indices
+end
+
+function ConvexHullVariableIndices(num_λ_variables::Int64)::ConvexHullVariableIndices
+    return ConvexHullVariableIndices(1, 2, collect(3:3+num_λ_variables-1))
+end
+
 struct ConvexHullFormulation
     A::SparseArrays.SparseMatrixCSC{Real,Int64}
     b::Vector{Real}
@@ -188,30 +198,36 @@ end
 function ConvexHullFormulation(
     function_data::FunctionData,
     constraint_data::ConstraintData,
+    index_data::ConvexHullVariableIndices,
     f_min::Real,
         f_max::Real)::ConvexHullFormulation
-    num_partitions = length(function_data.partition) - 1
-    num_variables = num_partitions + 2
+    num_variables = length(function_data.partition) + 3
     A, b = get_constraint_matrix(constraint_data, num_variables)
-
-    x_index = 1
-    y_index = 2
-    λ_indices = collect(start:num_partitions-1)
 
     lower_bounds = zeros(num_variables)
     upper_bounds = ones(num_variables)
-    lower_bounds[x_index] = function_data.partition[1]
-    upper_bounds[x_index] = function_data.partition[end]
-    lower_bounds[y_index] = f_min
-    upper_bounds[y_index] = f_max
+    lower_bounds[index_data.x_index] = function_data.partition[1]
+    upper_bounds[index_data.x_index] = function_data.partition[end]
+    lower_bounds[index_data.y_index] = f_min
+    upper_bounds[index_data.y_index] = f_max
 
     variable_names = ["" for _ in 1:num_variables]
-    variable_names[x_index] = "x"
-    variable_names[y_indey] = "y"
-    for i in 1:length(λ_indices)
-        variable_names[λ_indice[i]] = "lambda_$i"
+    variable_names[index_data.x_index] = "x"
+    variable_names[index_data.y_index] = "y"
+    for i in 1:length(index_data.λ_indices)
+        variable_names[index_data.λ_indices[i]] = "lambda_$i"
     end
 
-    return ConvexHullFormulation(A, b, x_index, y_index, λ_indices, lower_bounds, upper_bounds,
+    return ConvexHullFormulation(
+        A,
+        b,
+        constraint_data.num_constraints,
+        index_data.x_index,
+        index_data.y_index,
+        index_data.λ_indices,
+        lower_bounds,
+        upper_bounds,
         variable_names)
 end
+
+const Vertex = Pair{Real,Real}

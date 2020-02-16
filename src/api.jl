@@ -43,7 +43,7 @@ function construct_convex_hull_relaxation(
     error_tolerance::Real=NaN64,
     length_tolerance::Real=ϵ,
     derivative_tolerance::Real=ϵ,
-        num_additional_binary_variables::Int=0)::Pair{FormulationData, FunctionData}
+        num_additional_binary_variables::Int=0)::Pair{ConvexHullFormulation,FunctionData}
     return construct_convex_hull_relaxation(
         f,
         x -> ForwardDiff.derivative(f, x),
@@ -61,7 +61,7 @@ function construct_convex_hull_relaxation(
     error_tolerance::Real=NaN64,
     length_tolerance::Real=ϵ,
     derivative_tolerance::Real=ϵ,
-        num_additional_binary_variables::Int=0)::Pair{FormulationData,FunctionData}
+        num_additional_binary_variables::Int=0)::Pair{ConvexHullFormulation,FunctionData}
     function_data = FunctionData(
         f,
         d,
@@ -73,5 +73,5 @@ function construct_convex_hull_relaxation(
         num_additional_binary_variables)
     validate(function_data)
     refine_partition!(function_data)
-    return build_formulation(function_data)
+    return build_convex_hull_formulation(function_data)
 end

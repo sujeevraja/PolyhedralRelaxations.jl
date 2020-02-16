@@ -192,7 +192,48 @@ function add_rhs!(constraint_data::ConstraintData, row::Int64, value::Real)
     push!(constraint_data.rhs_values, value)
 end
 
-function build_convex_hull_formulation(function_data::FunctionData)::
+function get_convex_hull_vertices(function_data::FunctionData)::Vector{Vertex}
+    secant_vertices, tangent_vertices = collect_vertices(function_data)
+    vertices = Vertex[]
+    push!(vertices, secant_vertices[1])
+    append!(vertices, tangent_vertices)
+    push!(vertices, secant_vertices[end])
+    return vertices
+end
+
+function build_convex_hull_formulation(
+        function_data::FunctionData)::Pair{ConvexHullFormulation,FunctionData}
+    convex_hull_vertices = get_convex_hull_vertices(function_data)
+    f_min, f_max = Inf, -Inf
+    for v in convex_hull_vertices
+        f_val = v[2]
+        f_min = min(f_min, f_val)
+        f_max = max(f_max, f_val)
+    end
+
+    chv = ConvexHullVariableIndices(length(convex_hull_vertices))
+    println(chv)
+    constraint_data = ConstraintData()
+
+    # Add convex combination constraint coefficients.
+    x_row, y_row, simplex_row = 1, 2, 3
+    add_coeff!(constraint_data, x_row, chv.x_index, 1)
+    add_coeff!(constraint_data, y_row, chv.y_index, 1)
+    for i in length(convex_hull_vertices)
+        add_coeff!(constraint_data, x_row, chv.λ_indices[i], -convex_hull_vertices[i][1])
+        add_coeff!(constraint_data, y_row, chv.λ_indices[i], -convex_hull_vertices[i][2])
+        add_coeff!(constraint_data, simplex_row, chv.λ_indices[i], 1)
+    end
+    add_rhs!(constraint_data, x_row, 0)
+    add_rhs!(constraint_data, y_row, 0)
+    add_rhs!(constraint_data, simplex_row, 1)
+    constraint_data.num_constraints = 3
+
+    validate(constraint_data)
+
+    # Build and return formulation with function data.
+    chf = ConvexHullFormulation(function_data, constraint_data, chv, f_min, f_max)
+    return Pair(chf, function_data)
 end
 
 """
@@ -202,7 +243,9 @@ Generate model data for the polyhedral relaxation of a univariate function.
 """
 function main()
     f = x -> x^3
-    partition = Vector{Real}(collect(-1.0:1.0:1.0))
-    formulation_data, function_data = construct_milp_relaxation(f, partition)
+    base_partition = Vector{Real}(collect(-1.0:1.0:1.0))
+    # formulation_data, function_data = construct_milp_relaxation(f, base_partition)
+    formulation_data, function_data = construct_convex_hull_relaxation(f, base_partition)
     println(formulation_data)
 end
+

@@ -46,3 +46,10 @@ function validate(function_data::FunctionData)
 
     Memento.info(_LOGGER, "input data valid.")
 end
+
+function validate(constraint_data::ConstraintData)
+    num_entries = length(constraint_data.constraint_row_indices)
+    @assert num_entries == length(constraint_data.constraint_column_indices)
+    @assert num_entries == length(constraint_data.constraint_coefficients)
+    @assert length(constraint_data.rhs_row_indices) == length(constraint_data.rhs_values)
+end
