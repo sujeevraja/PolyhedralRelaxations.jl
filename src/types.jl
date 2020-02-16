@@ -37,17 +37,17 @@ function ConstraintData()::ConstraintData
         rhs_values, num_constraints)
 end
 
-const ConstraintMatrix = Pair{SparseArrays.SparseMatrixCSC{Real,Int64},SparseArrays.SparseVector{Real,Int64}}
+const ConstraintMatrix = Pair{SparseArrays.SparseMatrixCSC{Real,Int64},Vector{Real}}
 
 function get_constraint_matrix(constraint_data::ConstraintData, num_columns::Int64)::ConstraintMatrix
     A = SparseArrays.sparse(constraint_data.constraint_row_indices,
         constraint_data.constraint_column_indices,
-        constraint_data.constraint_coefficients, 
+        constraint_data.constraint_coefficients,
         constraint_data.num_constraints, num_columns)
-    b = SparseArrays.sparsevec(constraint_data.rhs_row_indices, 
-        constraint_data.rhs_values, 
+    b = SparseArrays.sparsevec(constraint_data.rhs_row_indices,
+        constraint_data.rhs_values,
         constraint_data.num_constraints)
-    return Pair(A,b)
+    return Pair(A,Vector(b))
 end
 
 """
@@ -106,10 +106,10 @@ constraints are stored in `equality_row_indices`.
 """
 struct FormulationData
     A_eq::SparseArrays.SparseMatrixCSC{Real,Int64}
-    b_eq::SparseArrays.SparseVector{Real,Int64}
+    b_eq::Vector{Real}
     num_eq_constraints::Int64
     A_leq::SparseArrays.SparseMatrixCSC{Real,Int64}
-    b_leq::SparseArrays.SparseVector{Real,Int64}
+    b_leq::Vector{Real}
     num_leq_constraints::Int64
     x_index::Int64
     y_index::Int64
@@ -126,7 +126,9 @@ function FormulationData(
     function_data::FunctionData,
     index_data::IndexData,
     eq_constraint_data::ConstraintData,
-        leq_constraint_data::ConstraintData)::FormulationData
+    leq_constraint_data::ConstraintData,
+    f_min::Real,
+        f_max::Real)::FormulationData
     num_variables = get_num_variables(index_data)
     A_eq, b_eq = get_constraint_matrix(eq_constraint_data, num_variables)
     A_leq, b_leq = get_constraint_matrix(leq_constraint_data, num_variables)
@@ -136,8 +138,8 @@ function FormulationData(
 
     lower_bounds[index_data.x_index] = function_data.partition[1]
     upper_bounds[index_data.x_index] = function_data.partition[end]
-    lower_bounds[index_data.y_index] = -Inf
-    upper_bounds[index_data.y_index] = Inf
+    lower_bounds[index_data.y_index] = f_min
+    upper_bounds[index_data.y_index] = f_max
     binary = SparseArrays.sparsevec(index_data.z_indices, ones(length(index_data.z_indices)), num_variables)
 
     variable_names::Vector{String} = ["" for _ in 1:num_variables]
