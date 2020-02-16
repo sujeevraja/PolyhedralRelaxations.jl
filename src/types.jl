@@ -136,8 +136,8 @@ function FormulationData(
 
     lower_bounds[index_data.x_index] = function_data.partition[1]
     upper_bounds[index_data.x_index] = function_data.partition[end]
-    lower_bounds[index_data.y_index] = function_data.f(function_data.partition[1])
-    upper_bounds[index_data.y_index] = function_data.f(function_data.partition[end])
+    lower_bounds[index_data.y_index] = -Inf
+    upper_bounds[index_data.y_index] = Inf
     binary = SparseArrays.sparsevec(index_data.z_indices, ones(length(index_data.z_indices)), num_variables)
 
     variable_names::Vector{String} = ["" for _ in 1:num_variables]
