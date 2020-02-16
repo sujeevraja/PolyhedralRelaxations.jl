@@ -9,7 +9,6 @@ const PR = PolyhedralRelaxations
 
 using Test
 import JuMP
-import Ipopt
 import GLPK
 import MathOptInterface
 using SparseArrays
