@@ -12,6 +12,7 @@
     num_variables = PR.get_num_variables(formulation_data)
     @test num_variables == 8
 
+    # Create variables.
     m = JuMP.Model(glpk_optimizer)
     JuMP.@variable(m, lb[i] <= x[i=1:num_variables] <= ub[i],
         binary=Bool(formulation_data.binary[i]),
@@ -25,7 +26,7 @@
     A_leq, b_leq = formulation_data.A_leq, formulation_data.b_leq
     JuMP.@constraint(m, [i=1:formulation_data.num_leq_constraints], dot(A_leq[i, :], x) <= b_leq[i])
 
-
+    # Test model solution with different objectives.
     JuMP.@objective(m, Min, x[formulation_data.x_index])
     JuMP.optimize!(m)
     println(m)

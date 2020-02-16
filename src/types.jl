@@ -37,7 +37,7 @@ function ConstraintData()::ConstraintData
         rhs_values, num_constraints)
 end
 
-const ConstraintMatrix = Pair{SparseArrays.SparseMatrixCSC{Real,Int64},SparseArrays.SparseVector{Real,Int64}}
+const ConstraintMatrix = Pair{SparseArrays.SparseMatrixCSC{Real,Int64},Vector{Real}}
 
 function get_constraint_matrix(constraint_data::ConstraintData, num_columns::Int64)::ConstraintMatrix
     A = SparseArrays.sparse(constraint_data.constraint_row_indices,
@@ -47,7 +47,7 @@ function get_constraint_matrix(constraint_data::ConstraintData, num_columns::Int
     b = SparseArrays.sparsevec(constraint_data.rhs_row_indices,
         constraint_data.rhs_values,
         constraint_data.num_constraints)
-    return Pair(A,b)
+    return Pair(A,Vector(b))
 end
 
 """
@@ -106,10 +106,10 @@ constraints are stored in `equality_row_indices`.
 """
 struct FormulationData
     A_eq::SparseArrays.SparseMatrixCSC{Real,Int64}
-    b_eq::SparseArrays.SparseVector{Real,Int64}
+    b_eq::Vector{Real}
     num_eq_constraints::Int64
     A_leq::SparseArrays.SparseMatrixCSC{Real,Int64}
-    b_leq::SparseArrays.SparseVector{Real,Int64}
+    b_leq::Vector{Real}
     num_leq_constraints::Int64
     x_index::Int64
     y_index::Int64
