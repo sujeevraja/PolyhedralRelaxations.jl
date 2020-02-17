@@ -1,6 +1,6 @@
 name = "PolyhedralRelaxations"
 uuid = "2e741578-48fa-11ea-2d62-b52c946f73a0"
-authors = ["Kaarthik Sundar <kaarthik01sundar@gmail.com>", "Sujeevraja Sanjeevi <sujeev.sanjeevi@gmail.com>"]
+authors = ["Kaarthik Sundar", "Sujeevraja Sanjeevi"]
 version = "0.1.0"
 
 [deps]
@@ -8,6 +8,10 @@ DataStructures = "864edb3b-99cc-5e75-8d2d-829cb0a9cfe8"
 ForwardDiff = "f6369f11-7733-5829-9624-2563aa707210"
 Memento = "f28f55f0-a522-5efc-85c2-fe41dfb9b2d9"
 SparseArrays = "2f01184e-e22b-5df5-ae63-d93ebab69eaf"
+
+[compat]
+Memento = "~0.10, ~0.11, ~0.12"
+julia = "1"
 
 [extras]
 GLPK = "60bf3e95-4087-53dc-ae20-288a0d20c6a6"
