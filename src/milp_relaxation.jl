@@ -1,3 +1,11 @@
+export 
+    has_eq_constraints,
+    has_leq_constraints,
+    get_eq_constraint_matrices,
+    get_leq_constraint_matrices,
+    get_variable_type,
+    get_num_variables
+
 """
 MILP relaxation struct which contains 
 Constraint coefficients and right-hand-side of MIP relaxation.
@@ -27,7 +35,7 @@ end
 "Getters for the LP relaxation struct"
 @inline has_eq_constraints(milp::MILPRelaxation)::Bool = true
 @inline has_leq_constraints(milp::MILPRelaxation)::Bool = true
-@inline get_equality_constraint_matrices(milp::MILPRelaxation)::Tuple{SparseMatrixCSC{<:Real,Int64}, Vector{<:Real}} = milp.A_eq, milp.b_eq 
+@inline get_eq_constraint_matrices(milp::MILPRelaxation)::Tuple{SparseMatrixCSC{<:Real,Int64}, Vector{<:Real}} = milp.A_eq, milp.b_eq 
 @inline get_leq_constraint_matrices(milp::MILPRelaxation)::Tuple{SparseMatrixCSC{<:Real,Int64}, Vector{<:Real}} = milp.A_leq, milp.b_leq 
 @inline get_variable_type(milp::MILPRelaxation)::SparseVector{Int64} = milp.binary
 @inline get_num_variables(milp::MILPRelaxation)::Int64 = 
