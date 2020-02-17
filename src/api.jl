@@ -1,3 +1,7 @@
+export 
+    construct_lp_relaxation, 
+    construct_milp_relaxation
+
 function construct_milp_relaxation(
     f::Function,
     base_partition::Vector{<:Real};
@@ -5,7 +9,6 @@ function construct_milp_relaxation(
     length_tolerance::Real=ϵ,
     derivative_tolerance::Real=ϵ,
         num_additional_binary_variables::Int=0)::Pair{MILPRelaxation, FunctionData}
-    
     return construct_milp_relaxation(
         f,
         x -> ForwardDiff.derivative(f, x),
@@ -24,7 +27,6 @@ function construct_milp_relaxation(
     length_tolerance::Real=ϵ,
     derivative_tolerance::Real=ϵ,
         num_additional_binary_variables::Int=0)::Pair{MILPRelaxation,FunctionData}
-    
     function_data = FunctionData(
         f,
         f_dash,

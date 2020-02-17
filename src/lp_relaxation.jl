@@ -1,3 +1,10 @@
+export 
+    has_eq_constraints, 
+    has_leq_constraints,
+    get_eq_constraint_matrices, 
+    get_leq_constraint_matrices,
+    get_num_variables
+
 """
 LP relaxation struct which contains 
 Constraint coefficients and right-hand-side of LP relaxation.
@@ -21,7 +28,7 @@ end
 "Getters for the LP relaxation struct"
 @inline has_eq_constraints(lp::LPRelaxation)::Bool = true
 @inline has_leq_constraints(lp::LPRelaxation)::Bool = false  
-@inline get_equality_constraint_matrices(lp::LPRelaxation)::Tuple{SparseMatrixCSC{<:Real,Int64}, Vector{<:Real}} = lp.A, lp.b 
+@inline get_eq_constraint_matrices(lp::LPRelaxation)::Tuple{SparseMatrixCSC{<:Real,Int64}, Vector{<:Real}} = lp.A, lp.b 
 @inline get_leq_constraint_matrices(lp::LPRelaxation) = Memento.error(_LOGGER, "the LP relaxation has no <= constraints")
 @inline get_num_variables(lp::LPRelaxation)::Int64 = length(lp.λ_indices) + 2
 
