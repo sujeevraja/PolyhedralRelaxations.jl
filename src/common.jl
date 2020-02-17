@@ -22,21 +22,21 @@ subsequent partition points, and finally, the maximum number of additional parti
 struct FunctionData
     f::Function
     f_dash::Function
-    base_partition::Vector{Real}
-    partition::Vector{Real}  # refinement of `base_partition` based on specified limits
-    error_tolerance::Real  # maximum allowed error bound
-    length_tolerance::Real  # maximum allowed distance between successive partition points
-    derivative_tolerance::Real  # maximum difference between successive derivative values
+    base_partition::Vector{<:Real}
+    partition::Vector{<:Real}  # refinement of `base_partition` based on specified limits
+    error_tolerance::Float64  # maximum allowed error bound
+    length_tolerance::Float64  # maximum allowed distance between successive partition points
+    derivative_tolerance::Float64  # maximum difference between successive derivative values
     num_additional_binary_variables::Int64  # maximum number of additional partition intervals
 end
 
 "Getters for FunctionData struct"
-@inline get_function(uf::FunctionData)::Function = uf.f
-@inline get_derivative(uf::FunctionData)::Function = uf.f_dash
-@inline get_domain_lb(uf::FunctionData)::Real = uf.partition[1]
-@inline get_domain_ub(uf::FunctionData)::Real = uf.partition[end]
-@inline get_domain(uf::FunctionData)::Pair{Real,Real} = get_domain_lb(uf), get_domain_ub(uf)
-@inline get_partition(uf::FunctionData)::Vector{<:Real} = uf.partition
+@inline get_function(uf::FunctionData) = uf.f
+@inline get_derivative(uf::FunctionData) = uf.f_dash
+@inline get_domain_lb(uf::FunctionData) = uf.partition[1]
+@inline get_domain_ub(uf::FunctionData) = uf.partition[end]
+@inline get_domain(uf::FunctionData) = get_domain_lb(uf), get_domain_ub(uf)
+@inline get_partition(uf::FunctionData) = uf.partition
 
 """
     Struct to hold the constraint data.
@@ -45,26 +45,27 @@ end
 mutable struct ConstraintData
     constraint_row_indices::Vector{Int64}
     constraint_column_indices::Vector{Int64}
-    constraint_coefficients::Vector{Real}
+    constraint_coefficients::Vector{Float64}
     rhs_row_indices::Vector{Int64}
-    rhs_values::Vector{Real}
+    rhs_values::Vector{Float64}
     num_constraints::Int64
 end
 
-"Constructor for ConstraintData"
+"Empty Constructor for ConstraintData"
 function ConstraintData()::ConstraintData
     row_indices = Int64[]
     col_indices = Int64[]
-    coefs = Real[]
+    coefs = Float64[]
     rhs_row_indices = Int64[]
-    rhs_values = Real[]
+    rhs_values = Float64[]
     num_constraints = 0
     return ConstraintData(row_indices, col_indices, coefs, rhs_row_indices,
         rhs_values, num_constraints)
 end
 
 "Helper function to construct ConstraintMatrix from ConstraintData and number of variables"
-function get_constraint_matrix(constraint_data::ConstraintData, num_variables::Int64)::ConstraintMatrix
+function get_constraint_matrix(constraint_data::ConstraintData, 
+        num_variables::Int64)::ConstraintMatrix
     A = sparse(constraint_data.constraint_row_indices,
         constraint_data.constraint_column_indices,
         constraint_data.constraint_coefficients,
@@ -84,7 +85,7 @@ Return (x,y) coordinates of the intersection of tangents drawn at `prev_secant_v
 function get_tangent_vertex(
     prev_secant_vertex::Vertex,
     next_secant_vertex::Vertex,
-    derivative::Function)::Vertex
+        derivative::Function)::Vertex
     x_prev, f_prev = prev_secant_vertex
     x_next, f_next = next_secant_vertex
     d_prev, d_next = derivative(x_prev), derivative(x_next)
@@ -128,7 +129,7 @@ end
 Add the coefficient `value` of the variable with index `col` to the constraint with index `row` to
 `constraint_data`.
 """
-function add_coeff!(constraint_data::ConstraintData, row::Int64, col::Int64, value::Real)
+function add_coeff!(constraint_data::ConstraintData, row::Int64, col::Int64, value::Float64)
     push!(constraint_data.constraint_row_indices, row)
     push!(constraint_data.constraint_column_indices, col)
     push!(constraint_data.constraint_coefficients, value)
@@ -139,7 +140,7 @@ end
 
 Add the right-hand-side `value` for row `row` to `constraint_data`.
 """
-function add_rhs!(constraint_data::ConstraintData, row::Int64, value::Real)
+function add_rhs!(constraint_data::ConstraintData, row::Int64, value::Float64)
     push!(constraint_data.rhs_row_indices, row)
     push!(constraint_data.rhs_values, value)
 end
@@ -152,8 +153,8 @@ function validate(constraint_data::ConstraintData)
     @assert length(constraint_data.rhs_row_indices) == length(constraint_data.rhs_values)
 end
 
-"Input point validator"
-function validate_point(function_data::FunctionData, x::Real)
+"Input data point validator"
+function validate_point(function_data::FunctionData, x::Float64)
     if !isfinite(x) || abs(x) >= ∞
         Memento.error(_LOGGER, "all partition points must be finite")
     end
@@ -310,7 +311,7 @@ end
 
 Get error bound of a function with derivative `derivative` in the closed interval `[lb,ub]`.
 """
-function get_error_bound(derivative::Function, lb::Real, ub::Real)
+function get_error_bound(derivative::Function, lb::Float64, ub::Float64)
     return (ub-lb) * abs(derivative(ub) - derivative(lb)) / 4.0
 end
 

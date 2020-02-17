@@ -5,10 +5,10 @@ export
 function construct_milp_relaxation(
     f::Function,
     base_partition::Vector{<:Real};
-    error_tolerance::Real=NaN64,
-    length_tolerance::Real=ϵ,
-    derivative_tolerance::Real=ϵ,
-        num_additional_binary_variables::Int=0)::Pair{MILPRelaxation, FunctionData}
+    error_tolerance::Float64=NaN64,
+    length_tolerance::Float64=ϵ,
+    derivative_tolerance::Float64=ϵ,
+        num_additional_binary_variables::Int64=0)::Pair{MILPRelaxation, FunctionData}
     return construct_milp_relaxation(
         f,
         x -> ForwardDiff.derivative(f, x),
@@ -23,10 +23,10 @@ function construct_milp_relaxation(
     f::Function,
     f_dash::Function,
     base_partition::Vector{<:Real};
-    error_tolerance::Real=NaN64,
-    length_tolerance::Real=ϵ,
-    derivative_tolerance::Real=ϵ,
-        num_additional_binary_variables::Int=0)::Pair{MILPRelaxation,FunctionData}
+    error_tolerance::Float64=NaN64,
+    length_tolerance::Float64=ϵ,
+    derivative_tolerance::Float64=ϵ,
+        num_additional_binary_variables::Int64=0)::Pair{MILPRelaxation,FunctionData}
     function_data = FunctionData(
         f,
         f_dash,
@@ -44,10 +44,10 @@ end
 function construct_lp_relaxation(
     f::Function,
     base_partition::Vector{<:Real};
-    error_tolerance::Real=NaN64,
-    length_tolerance::Real=ϵ,
-    derivative_tolerance::Real=ϵ,
-        num_additional_binary_variables::Int=0)::Pair{LPRelaxation,FunctionData}
+    error_tolerance::Float64=NaN64,
+    length_tolerance::Float64=ϵ,
+    derivative_tolerance::Float64=ϵ,
+        num_additional_binary_variables::Int64=0)::Pair{LPRelaxation,FunctionData}
     return construct_lp_relaxation(
         f,
         x -> ForwardDiff.derivative(f, x),
@@ -62,10 +62,10 @@ function construct_lp_relaxation(
     f::Function,
     f_dash::Function,
     base_partition::Vector{<:Real};
-    error_tolerance::Real=NaN64,
-    length_tolerance::Real=ϵ,
-    derivative_tolerance::Real=ϵ,
-        num_additional_binary_variables::Int=0)::Pair{LPRelaxation,FunctionData}
+    error_tolerance::Float64=NaN64,
+    length_tolerance::Float64=ϵ,
+    derivative_tolerance::Float64=ϵ,
+        num_additional_binary_variables::Int64=0)::Pair{LPRelaxation,FunctionData}
     function_data = FunctionData(
         f,
         f_dash,

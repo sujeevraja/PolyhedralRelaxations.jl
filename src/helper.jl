@@ -5,10 +5,9 @@ export
     get_geq_constraint_matrices
     
 "Functions common to AbstractFormulation"
-@inline get_variable_bounds(formulation::AbstractFormulation)::Tuple{Vector{<:Real}, Vector{<:Real}} = 
+@inline get_variable_bounds(formulation::AbstractFormulation) = 
     formulation.lower_bounds, formulation.upper_bounds
-@inline get_variable_names(formulation::AbstractFormulation)::Tuple{Vector{String}} = 
-    formulation.variable_names
-@inline has_geq_constraints(formulation::AbstractFormulation)::Bool = false
+@inline get_variable_names(formulation::AbstractFormulation) = formulation.variable_names
+@inline has_geq_constraints(formulation::AbstractFormulation) = false
 @inline get_geq_constraint_matrices(formulation::AbstractFormulation) = 
     Memento.error(_LOGGER, "both the LP and the MILP relaxation have no >= constraints")

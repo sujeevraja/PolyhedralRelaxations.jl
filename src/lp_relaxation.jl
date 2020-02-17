@@ -14,23 +14,23 @@ Variables are ordered as: x,y,λ_i.
 All constraints are equality constraints. 
 """
 struct LPRelaxation <: AbstractFormulation
-    A::SparseMatrixCSC{Real,Int64}
-    b::Vector{Real}
+    A::SparseMatrixCSC{Float64,Int64}
+    b::Vector{Float64}
     num_constraints::Int64
     x_index::Int64
     y_index::Int64
     λ_indices::Vector{Int64}
-    lower_bounds::Vector{Real}
-    upper_bounds::Vector{Real}
+    lower_bounds::Vector{Float64}
+    upper_bounds::Vector{Float64}
     variable_names::Vector{String}
 end
 
 "Getters for the LP relaxation struct"
-@inline has_eq_constraints(lp::LPRelaxation)::Bool = true
-@inline has_leq_constraints(lp::LPRelaxation)::Bool = false  
-@inline get_eq_constraint_matrices(lp::LPRelaxation)::Tuple{SparseMatrixCSC{<:Real,Int64}, Vector{<:Real}} = lp.A, lp.b 
+@inline has_eq_constraints(lp::LPRelaxation) = true
+@inline has_leq_constraints(lp::LPRelaxation) = false  
+@inline get_eq_constraint_matrices(lp::LPRelaxation) = lp.A, lp.b 
 @inline get_leq_constraint_matrices(lp::LPRelaxation) = Memento.error(_LOGGER, "the LP relaxation has no <= constraints")
-@inline get_num_variables(lp::LPRelaxation)::Int64 = length(lp.λ_indices) + 2
+@inline get_num_variables(lp::LPRelaxation) = length(lp.λ_indices) + 2
 
 """
 Column indices of variables in constraint matrix of LP relaxation.
@@ -42,12 +42,12 @@ struct LPVariableIndices <: AbstractVariableIndices
 end
 
 "Getters for LPVariableIndices"
-@inline get_num_variables(lp_variable_indices::LPVariableIndices)::Int64 = 
+@inline get_num_variables(lp_variable_indices::LPVariableIndices) = 
     length(lp_variable_indices.λ_indices) + 2
 
 """
     LPRelaxation(function_data::FunctionData, constraint_data::ConstraintData, lp_variable_indices::LPVariableIndices,
-        f_min::Real, f_max::Real)::LPRelaxation 
+        f_min::Float64, f_max::Float64)::LPRelaxation 
 
 Constructor for the struct LPRelaxation
 """
@@ -55,8 +55,7 @@ function LPRelaxation(
     function_data::FunctionData,
     constraint_data::ConstraintData,
     lp_variable_indices::LPVariableIndices,
-    f_min::Real, f_max::Real)::LPRelaxation 
-
+        f_min::Float64, f_max::Float64)::LPRelaxation 
     num_variables = length(function_data.partition) + 3
     A, b = get_constraint_matrix(constraint_data, num_variables)
 
@@ -129,16 +128,16 @@ function build_lp_relaxation(function_data::FunctionData)::Pair{LPRelaxation,Fun
 
     # Add convex combination constraint coefficients.
     x_row, y_row, simplex_row = 1, 2, 3
-    add_coeff!(constraint_data, x_row, lp_variable_indices.x_index, 1)
-    add_coeff!(constraint_data, y_row, lp_variable_indices.y_index, 1)
+    add_coeff!(constraint_data, x_row, lp_variable_indices.x_index, 1.0)
+    add_coeff!(constraint_data, y_row, lp_variable_indices.y_index, 1.0)
     for i in 1:length(vertices)
-        add_coeff!(constraint_data, x_row, lp_variable_indices.λ_indices[i], -vertices[i][1])
-        add_coeff!(constraint_data, y_row, lp_variable_indices.λ_indices[i], -vertices[i][2])
-        add_coeff!(constraint_data, simplex_row, lp_variable_indices.λ_indices[i], 1)
+        add_coeff!(constraint_data, x_row, lp_variable_indices.λ_indices[i], float(-vertices[i][1]))
+        add_coeff!(constraint_data, y_row, lp_variable_indices.λ_indices[i], float(-vertices[i][2]))
+        add_coeff!(constraint_data, simplex_row, lp_variable_indices.λ_indices[i], 1.0)
     end
-    add_rhs!(constraint_data, x_row, 0)
-    add_rhs!(constraint_data, y_row, 0)
-    add_rhs!(constraint_data, simplex_row, 1)
+    add_rhs!(constraint_data, x_row, 0.0)
+    add_rhs!(constraint_data, y_row, 0.0)
+    add_rhs!(constraint_data, simplex_row, 1.0)
     constraint_data.num_constraints = 3
 
     validate(constraint_data)
