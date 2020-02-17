@@ -13,26 +13,25 @@
     @test num_variables == 8
 
     # Create variables.
-    m = JuMP.Model(glpk_optimizer)
-    JuMP.@variable(m, lb[i] <= x[i=1:num_variables] <= ub[i],
+    m = Model(glpk_optimizer)
+    @variable(m, lb[i] <= x[i=1:num_variables] <= ub[i],
         binary=Bool(formulation_data.binary[i]),
         base_name=formulation_data.variable_names[i])
 
     # Add equality constraints
     A_eq, b_eq = formulation_data.A_eq, formulation_data.b_eq
-    JuMP.@constraint(m, [i=1:formulation_data.num_eq_constraints], dot(A_eq[i, :], x) == b_eq[i])
+    @constraint(m, A_eq * x .== b_eq)
 
     # Add inequality constraints
     A_leq, b_leq = formulation_data.A_leq, formulation_data.b_leq
-    JuMP.@constraint(m, [i=1:formulation_data.num_leq_constraints], dot(A_leq[i, :], x) <= b_leq[i])
+    @constraint(m, A_leq * x .<= b_leq)
 
     # Test model solution with different objectives.
-    JuMP.@objective(m, Min, x[formulation_data.x_index])
-    JuMP.optimize!(m)
-    println(m)
-    @test JuMP.objective_value(m) == -1.0
+    @objective(m, Min, x[formulation_data.x_index])
+    optimize!(m)
+    @test objective_value(m) == -1.0
 
-    JuMP.@objective(m, Max, x[formulation_data.x_index])
-    JuMP.optimize!(m)
-    @test JuMP.objective_value(m) == 1.0
+    @objective(m, Max, x[formulation_data.x_index])
+    optimize!(m)
+    @test objective_value(m) == 1.0
 end

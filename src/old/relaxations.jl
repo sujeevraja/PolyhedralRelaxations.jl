@@ -81,8 +81,7 @@ function build_formulation(function_data::FunctionData)::Pair{FormulationData, F
 end
 
 """
-    add_vertex_constraints!(constraint_data, index_data, secant_vertices,
-        tangent_vertices)
+    add_vertex_constraints!(constraint_data, index_data, secant_vertices, tangent_vertices)
 
 Add vertex constraints to `constraint_data` using variable indices from `index_data`.
 
@@ -211,7 +210,7 @@ function build_convex_hull_formulation(
         f_max = max(f_max, f_val)
     end
 
-    chv = ConvexHullVariableIndices(length(convex_hull_vertices))
+    chv = ConvexHullVariableIndices(length(function_data.partition))
     println(chv)
     constraint_data = ConstraintData()
 

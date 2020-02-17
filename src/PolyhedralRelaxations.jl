@@ -1,10 +1,10 @@
 module PolyhedralRelaxations
 
     using DataStructures
+    using SparseArrays
+
     import ForwardDiff
-    import SparseArrays
     import Memento
-    using LinearAlgebra
 
     # Create our module level logger (this will get precompiled)
     const _LOGGER = Memento.getlogger(@__MODULE__)
@@ -33,10 +33,16 @@ module PolyhedralRelaxations
     const ϵ = 1e-3
     const ∞ = 1e12
 
-    include("types.jl")
-    include("validation.jl")
-    include("refinement.jl")
-    include("relaxations.jl")
+    include("common.jl")
+    include("lp_relaxation.jl")
+    include("milp_relaxation.jl")
+    include("helper.jl")
     include("api.jl")
+
+    # include("types.jl")
+    # include("validation.jl")
+    # include("refinement.jl")
+    # include("relaxations.jl")
+    # include("api.jl")
 
 end
