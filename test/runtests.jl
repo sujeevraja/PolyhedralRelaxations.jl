@@ -8,8 +8,6 @@ PR.logger_config!("debug")
 using Test
 using JuMP
 using GLPK
-using SparseArrays
-
 
 GLPK.jl_set_preemptive_check(false)
 glpk_optimizer = JuMP.optimizer_with_attributes(
