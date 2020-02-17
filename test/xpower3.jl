@@ -3,7 +3,7 @@
     @test milp_relaxation.x_index == 1
     @test milp_relaxation.y_index == 2
 
-    lb, ub = milp_relaxation.lower_bounds, milp_relaxation.upper_bounds
+    lb, ub = get_variable_bounds(milp_relaxation)
     @test lb[milp_relaxation.x_index] == function_data.partition[1]
     @test ub[milp_relaxation.x_index] == function_data.partition[end]
     @test lb[milp_relaxation.y_index] == -1.0
@@ -11,20 +11,23 @@
 
     num_variables = get_num_variables(milp_relaxation)
     @test num_variables == 8
+    @test has_eq_constraints(milp_relaxation) == true 
+    @test has_leq_constraints(milp_relaxation) == true 
+    @test has_geq_constraints(milp_relaxation) == false 
 
     # Create variables.
     m = Model(glpk_optimizer)
     @variable(m, lb[i] <= x[i=1:num_variables] <= ub[i],
-        binary=Bool(milp_relaxation.binary[i]),
-        base_name=milp_relaxation.variable_names[i])
+        binary=Bool(get_variable_type(milp_relaxation)[i]),
+        base_name=get_variable_names(milp_relaxation)[i])
 
     # Add equality constraints
-    A_eq, b_eq = get_eq_constraint_matrices(milp_relaxation)
-    @constraint(m, A_eq * x .== b_eq)
+    A, b = get_eq_constraint_matrices(milp_relaxation)
+    @constraint(m, A * x .== b)
 
     # Add inequality constraints
-    A_leq, b_leq = get_leq_constraint_matrices(milp_relaxation)
-    @constraint(m, A_leq * x .<= b_leq)
+    A, b = get_leq_constraint_matrices(milp_relaxation)
+    @constraint(m, A * x .<= b)
 
     # Test model solution with different objectives.
     @objective(m, Min, x[milp_relaxation.x_index])
