@@ -15,30 +15,30 @@ Variables are ordered as: x,y,δ_1^i,δ_2^i,z_i.
 All constraints are either equality or less-than-or-equal-to constraints. 
 """
 struct MILPRelaxation <: AbstractFormulation 
-    A_eq::SparseMatrixCSC{Real,Int64}
-    b_eq::Vector{Real}
+    A_eq::SparseMatrixCSC{Float64,Int64}
+    b_eq::Vector{Float64}
     num_eq_constraints::Int64
-    A_leq::SparseMatrixCSC{Real,Int64}
-    b_leq::Vector{Real}
+    A_leq::SparseMatrixCSC{Float64,Int64}
+    b_leq::Vector{Float64}
     num_leq_constraints::Int64
     x_index::Int64
     y_index::Int64
     δ_1_indices::Vector{Int64}
     δ_2_indices::Vector{Int64}
     z_indices::Vector{Int64}
-    lower_bounds::Vector{Real}
-    upper_bounds::Vector{Real}
+    lower_bounds::Vector{Float64}
+    upper_bounds::Vector{Float64}
     binary::SparseVector{Int64}
     variable_names::Vector{String}
 end 
 
 "Getters for the LP relaxation struct"
-@inline has_eq_constraints(milp::MILPRelaxation)::Bool = true
-@inline has_leq_constraints(milp::MILPRelaxation)::Bool = true
-@inline get_eq_constraint_matrices(milp::MILPRelaxation)::Tuple{SparseMatrixCSC{<:Real,Int64}, Vector{<:Real}} = milp.A_eq, milp.b_eq 
-@inline get_leq_constraint_matrices(milp::MILPRelaxation)::Tuple{SparseMatrixCSC{<:Real,Int64}, Vector{<:Real}} = milp.A_leq, milp.b_leq 
-@inline get_variable_type(milp::MILPRelaxation)::SparseVector{Int64} = milp.binary
-@inline get_num_variables(milp::MILPRelaxation)::Int64 = 
+@inline has_eq_constraints(milp::MILPRelaxation) = true
+@inline has_leq_constraints(milp::MILPRelaxation) = true
+@inline get_eq_constraint_matrices(milp::MILPRelaxation) = milp.A_eq, milp.b_eq 
+@inline get_leq_constraint_matrices(milp::MILPRelaxation) = milp.A_leq, milp.b_leq 
+@inline get_variable_type(milp::MILPRelaxation) = milp.binary
+@inline get_num_variables(milp::MILPRelaxation) = 
     length(milp.δ_1_indices) + length(milp.δ_2_indices) + length(milp.z_indices) + 2
 
 """
@@ -59,12 +59,9 @@ end
     length(milp_variable_indices.z_indices) + 2
 
 """
-    MILPRelaxation(
-        function_data::FunctionData,
-        milp_variable_indices::MILPVariableIndices,
-        eq_constraint_data::ConstraintData,
-        leq_constraint_data::ConstraintData,
-        f_min::Real, f_max::Real)::MILPRelaxation
+    MILPRelaxation(function_data, milp_variable_indices, 
+        eq_constraint_data, leq_constraint_data,
+            f_min, f_max)::MILPRelaxation
 Constructor for the struct MILPRelaxation
 """
 function MILPRelaxation(
@@ -72,14 +69,13 @@ function MILPRelaxation(
     milp_variable_indices::MILPVariableIndices,
     eq_constraint_data::ConstraintData,
     leq_constraint_data::ConstraintData,
-    f_min::Real, f_max::Real)::MILPRelaxation
-
+        f_min::Float64, f_max::Float64)::MILPRelaxation
     num_variables = get_num_variables(milp_variable_indices)
     A_eq, b_eq = get_constraint_matrix(eq_constraint_data, num_variables)
     A_leq, b_leq = get_constraint_matrix(leq_constraint_data, num_variables)
 
-    lower_bounds::Vector{Real} = zeros(num_variables)
-    upper_bounds::Vector{Real} = ones(num_variables)
+    lower_bounds::Vector{Float64} = zeros(num_variables)
+    upper_bounds::Vector{Float64} = ones(num_variables)
 
     lower_bounds[milp_variable_indices.x_index] = function_data.partition[1]
     upper_bounds[milp_variable_indices.x_index] = function_data.partition[end]
@@ -113,7 +109,7 @@ function MILPRelaxation(
 end
 
 """
-    MILPVariableIndices(num_partition_points::Int64)::MILPVariableIndices
+    MILPVariableIndices(num_partition_points)::MILPVariableIndices
 
 Constructor for the struct MILPVariableIndices; the only input it takes is the number of partition points.
 Return the collection of column indices of all variables in the MILP constraint matrix.
@@ -160,21 +156,21 @@ function add_vertex_constraints!(
         row = constraint_data.num_constraints+1
 
         # Add coordinate variable to constraint.
-        add_coeff!(constraint_data, row, indices[c], 1)
+        add_coeff!(constraint_data, row, indices[c], 1.0)
 
         for i in 1:num_vars
             # Add δ_1 variable to constraint.
             column = milp_variable_indices.δ_1_indices[i]
             value =  secant_vertices[i][c] - tangent_vertices[i][c]
-            add_coeff!(constraint_data, row, column, value)
+            add_coeff!(constraint_data, row, column, float(value))
 
             # Add δ_2 variable to constraint.
             column = milp_variable_indices.δ_2_indices[i]
             value =  secant_vertices[i][c] - secant_vertices[i+1][c]
-            add_coeff!(constraint_data, row, column, value)
+            add_coeff!(constraint_data, row, column, float(value))
         end
 
-        add_rhs!(constraint_data, row, secant_vertices[1][c])
+        add_rhs!(constraint_data, row, float(secant_vertices[1][c]))
         constraint_data.num_constraints += 1
     end
 
@@ -187,11 +183,12 @@ end
 Add the constraint "δ_1^1 + δ_2^1 <= 1 to `constraint_data` using variable indices from
 `milp_variable_indices`.
 """
-function add_first_δ_constraint!(constraint_data::ConstraintData, milp_variable_indices::MILPVariableIndices)
+function add_first_δ_constraint!(constraint_data::ConstraintData, 
+        milp_variable_indices::MILPVariableIndices)
     row = constraint_data.num_constraints + 1
-    add_coeff!(constraint_data, row, milp_variable_indices.δ_1_indices[1], 1)
-    add_coeff!(constraint_data, row, milp_variable_indices.δ_2_indices[1], 1)
-    add_rhs!(constraint_data, row, 1)
+    add_coeff!(constraint_data, row, milp_variable_indices.δ_1_indices[1], 1.0)
+    add_coeff!(constraint_data, row, milp_variable_indices.δ_2_indices[1], 1.0)
+    add_rhs!(constraint_data, row, 1.0)
     constraint_data.num_constraints += 1
     Memento.debug(_LOGGER, "built first δ constraint.")
 end
@@ -216,15 +213,15 @@ function add_linking_constraints!(
         row = constraint_data.num_constraints
 
         # Add δ_1^i + δ_2^i - z_{i-1} <= 0 constraint.
-        add_coeff!(constraint_data, row, milp_variable_indices.δ_1_indices[i], 1)
-        add_coeff!(constraint_data, row, milp_variable_indices.δ_2_indices[i], 1)
-        add_coeff!(constraint_data, row, milp_variable_indices.z_indices[i-1], -1)
+        add_coeff!(constraint_data, row, milp_variable_indices.δ_1_indices[i], 1.0)
+        add_coeff!(constraint_data, row, milp_variable_indices.δ_2_indices[i], 1.0)
+        add_coeff!(constraint_data, row, milp_variable_indices.z_indices[i-1], -1.0)
 
         # Add z_{i-1} - δ_2^{i-1} <= 0 constraint.
         constraint_data.num_constraints += 1
         row = constraint_data.num_constraints
-        add_coeff!(constraint_data, row, milp_variable_indices.z_indices[i-1], 1)
-        add_coeff!(constraint_data, row, milp_variable_indices.δ_2_indices[i-1], -1)
+        add_coeff!(constraint_data, row, milp_variable_indices.z_indices[i-1], 1.0)
+        add_coeff!(constraint_data, row, milp_variable_indices.δ_2_indices[i-1], -1.0)
     end
     Memento.debug(_LOGGER, "added linking constraints.")
 end
