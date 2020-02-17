@@ -37,14 +37,14 @@ function ConstraintData()::ConstraintData
         rhs_values, num_constraints)
 end
 
-const ConstraintMatrix = Pair{SparseArrays.SparseMatrixCSC{Real,Int64},Vector{Real}}
+const ConstraintMatrix = Pair{SparseMatrixCSC{Real,Int64},Vector{Real}}
 
 function get_constraint_matrix(constraint_data::ConstraintData, num_columns::Int64)::ConstraintMatrix
-    A = SparseArrays.sparse(constraint_data.constraint_row_indices,
+    A = sparse(constraint_data.constraint_row_indices,
         constraint_data.constraint_column_indices,
         constraint_data.constraint_coefficients,
         constraint_data.num_constraints, num_columns)
-    b = SparseArrays.sparsevec(constraint_data.rhs_row_indices,
+    b = sparsevec(constraint_data.rhs_row_indices,
         constraint_data.rhs_values,
         constraint_data.num_constraints)
     return Pair(A,Vector(b))
@@ -105,10 +105,10 @@ All constraints are either equality or less-than-or-equal-to constraints. Row in
 constraints are stored in `equality_row_indices`.
 """
 struct FormulationData
-    A_eq::SparseArrays.SparseMatrixCSC{Real,Int64}
+    A_eq::SparseMatrixCSC{Real,Int64}
     b_eq::Vector{Real}
     num_eq_constraints::Int64
-    A_leq::SparseArrays.SparseMatrixCSC{Real,Int64}
+    A_leq::SparseMatrixCSC{Real,Int64}
     b_leq::Vector{Real}
     num_leq_constraints::Int64
     x_index::Int64
@@ -118,7 +118,7 @@ struct FormulationData
     z_indices::Vector{Int64}
     lower_bounds::Vector{Real}
     upper_bounds::Vector{Real}
-    binary::SparseArrays.SparseVector{Int64}
+    binary::SparseVector{Int64}
     variable_names::Vector{String}
 end
 
@@ -140,7 +140,7 @@ function FormulationData(
     upper_bounds[index_data.x_index] = function_data.partition[end]
     lower_bounds[index_data.y_index] = f_min
     upper_bounds[index_data.y_index] = f_max
-    binary = SparseArrays.sparsevec(
+    binary = sparsevec(
         index_data.z_indices,
         ones(length(index_data.z_indices)),
         num_variables)
@@ -173,18 +173,18 @@ function get_num_variables(formulation_data::FormulationData)
         length(formulation_data.z_indices) + 2
 end
 
-struct ConvexHullVariableIndices
-    x_index
-    y_index
-    λ_indices
-end
+    struct ConvexHullVariableIndices
+        x_index
+        y_index
+        λ_indices
+    end
 
 function ConvexHullVariableIndices(num_λ_variables::Int64)::ConvexHullVariableIndices
     return ConvexHullVariableIndices(1, 2, collect(3:3+num_λ_variables-1))
 end
 
 struct ConvexHullFormulation
-    A::SparseArrays.SparseMatrixCSC{Real,Int64}
+    A::SparseMatrixCSC{Real,Int64}
     b::Vector{Real}
     num_constraints::Int64
     x_index::Int64
