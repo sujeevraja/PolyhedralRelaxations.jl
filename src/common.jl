@@ -1,3 +1,8 @@
+export 
+    get_function, get_derivative, 
+    get_domain_lb, get_domain_ub, 
+    get_domain, get_partition
+
 "Abstract formulation class"
 abstract type AbstractFormulation end 
 
