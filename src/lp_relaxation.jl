@@ -1,17 +1,17 @@
-export 
-    has_eq_constraints, 
+export
+    has_eq_constraints,
     has_leq_constraints,
-    get_eq_constraint_matrices, 
+    get_eq_constraint_matrices,
     get_leq_constraint_matrices,
     get_num_variables
 
 """
-LP relaxation struct which contains 
+LP relaxation struct which contains
 Constraint coefficients and right-hand-side of LP relaxation.
 
 Variables are ordered as: x,y,λ_i.
 
-All constraints are equality constraints. 
+All constraints are equality constraints.
 """
 struct LPRelaxation <: AbstractFormulation
     A::SparseMatrixCSC{Float64,Int64}
@@ -27,9 +27,10 @@ end
 
 "Getters for the LP relaxation struct"
 @inline has_eq_constraints(lp::LPRelaxation) = true
-@inline has_leq_constraints(lp::LPRelaxation) = false  
-@inline get_eq_constraint_matrices(lp::LPRelaxation) = lp.A, lp.b 
-@inline get_leq_constraint_matrices(lp::LPRelaxation) = Memento.error(_LOGGER, "the LP relaxation has no <= constraints")
+@inline has_leq_constraints(lp::LPRelaxation) = false
+@inline get_eq_constraint_matrices(lp::LPRelaxation) = lp.A, lp.b
+@inline get_leq_constraint_matrices(lp::LPRelaxation) = Memento.error(_LOGGER,
+    "the LP relaxation has no <= constraints")
 @inline get_num_variables(lp::LPRelaxation) = length(lp.λ_indices) + 2
 
 """
@@ -42,12 +43,16 @@ struct LPVariableIndices <: AbstractVariableIndices
 end
 
 "Getters for LPVariableIndices"
-@inline get_num_variables(lp_variable_indices::LPVariableIndices) = 
+@inline get_num_variables(lp_variable_indices::LPVariableIndices) =
     length(lp_variable_indices.λ_indices) + 2
 
 """
-    LPRelaxation(function_data::FunctionData, constraint_data::ConstraintData, lp_variable_indices::LPVariableIndices,
-        f_min::Float64, f_max::Float64)::LPRelaxation 
+    LPRelaxation(
+        function_data::FunctionData,
+        constraint_data::ConstraintData,
+        lp_variable_indices::LPVariableIndices,
+        f_min::Float64,
+        f_max::Float64)::LPRelaxation
 
 Constructor for the struct LPRelaxation
 """
@@ -55,7 +60,7 @@ function LPRelaxation(
     function_data::FunctionData,
     constraint_data::ConstraintData,
     lp_variable_indices::LPVariableIndices,
-        f_min::Float64, f_max::Float64)::LPRelaxation 
+        f_min::Float64, f_max::Float64)::LPRelaxation
     num_variables = length(function_data.partition) + 3
     A, b = get_constraint_matrix(constraint_data, num_variables)
 
@@ -87,7 +92,8 @@ end
 """
     LPVariableIndices(num_partition_points::Int64)::LPVariableIndices
 
-Constructor for the LPVariableIndices struct. The only input it takes is the number of partition points.
+Constructor for the LPVariableIndices struct. The only input it takes is the number of partition
+points.
 """
 function LPVariableIndices(num_partition_points::Int64)::LPVariableIndices
     num_λ_variables = num_partition_points + 1
@@ -97,7 +103,7 @@ end
 """
     get_convex_hull_vertices(function_data::FunctionData)::Vector{Vertex}
 
-Returns all the vertices that are a part of the LP relaxation given the function data 
+Returns all the vertices that are a part of the LP relaxation given the function data
 """
 function get_lp_relaxation_vertices(function_data::FunctionData)::Vector{Vertex}
     secant_vertices, tangent_vertices = collect_vertices(function_data)
@@ -111,7 +117,7 @@ end
 """
     build_lp_relaxation(function_data::FunctionData)::Pair{LPRelaxation,FunctionData}
 
-Function to build the LP relaxation given the function data  
+Function to build the LP relaxation given the function data
 """
 function build_lp_relaxation(function_data::FunctionData)::Pair{LPRelaxation,FunctionData}
     vertices = get_lp_relaxation_vertices(function_data)
