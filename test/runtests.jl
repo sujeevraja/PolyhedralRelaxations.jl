@@ -1,28 +1,21 @@
 using PolyhedralRelaxations
 import Memento
 
-# Suppress warnings during testing.
-const TESTLOG = Memento.getlogger(PolyhedralRelaxations)
-Memento.setlevel!(TESTLOG, "error")
-
 const PR = PolyhedralRelaxations
 
-using Test
-import JuMP
-import GLPK
-import MathOptInterface
-using SparseArrays
-using LinearAlgebra
+PR.logger_config!("debug")
 
-const MOI = MathOptInterface
-const MOIU = MOI.Utilities
-const LP = MOI.FileFormats.LP
+using Test
+using JuMP
+using GLPK
 
 GLPK.jl_set_preemptive_check(false)
-glpk_optimizer = JuMP.with_optimizer(GLPK.Optimizer, tm_lim = 100.0, msg_lev = GLPK.OFF)
+glpk_optimizer = JuMP.optimizer_with_attributes(
+    GLPK.Optimizer, "msg_lev" => GLPK.OFF, "tm_lim" => 100.0)
 
 @testset "PolyhedralRelaxations" begin
 
-    include("xpower3.jl")
+    include("api_tests.jl")
+    # include("xpower3.jl")
 
 end

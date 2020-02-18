@@ -1,10 +1,14 @@
+export 
+    construct_lp_relaxation, 
+    construct_milp_relaxation
+
 function construct_milp_relaxation(
     f::Function,
     base_partition::Vector{<:Real};
-    error_tolerance::Real=NaN64,
-    length_tolerance::Real=ϵ,
-    derivative_tolerance::Real=ϵ,
-        num_additional_binary_variables::Int=0)::Pair{FormulationData, FunctionData}
+    error_tolerance::Float64=NaN64,
+    length_tolerance::Float64=ϵ,
+    derivative_tolerance::Float64=ϵ,
+        num_additional_binary_variables::Int64=0)::Pair{MILPRelaxation, FunctionData}
     return construct_milp_relaxation(
         f,
         x -> ForwardDiff.derivative(f, x),
@@ -17,15 +21,15 @@ end
 
 function construct_milp_relaxation(
     f::Function,
-    d::Function,
+    f_dash::Function,
     base_partition::Vector{<:Real};
-    error_tolerance::Real=NaN64,
-    length_tolerance::Real=ϵ,
-    derivative_tolerance::Real=ϵ,
-        num_additional_binary_variables::Int=0)::Pair{FormulationData,FunctionData}
+    error_tolerance::Float64=NaN64,
+    length_tolerance::Float64=ϵ,
+    derivative_tolerance::Float64=ϵ,
+        num_additional_binary_variables::Int64=0)::Pair{MILPRelaxation,FunctionData}
     function_data = FunctionData(
         f,
-        d,
+        f_dash,
         base_partition,
         copy(base_partition),
         error_tolerance,
@@ -34,17 +38,17 @@ function construct_milp_relaxation(
         num_additional_binary_variables)
     validate(function_data)
     refine_partition!(function_data)
-    return build_formulation(function_data)
+    return build_milp_relaxation(function_data)
 end
 
-function construct_convex_hull_relaxation(
+function construct_lp_relaxation(
     f::Function,
     base_partition::Vector{<:Real};
-    error_tolerance::Real=NaN64,
-    length_tolerance::Real=ϵ,
-    derivative_tolerance::Real=ϵ,
-        num_additional_binary_variables::Int=0)::Pair{ConvexHullFormulation,FunctionData}
-    return construct_convex_hull_relaxation(
+    error_tolerance::Float64=NaN64,
+    length_tolerance::Float64=ϵ,
+    derivative_tolerance::Float64=ϵ,
+        num_additional_binary_variables::Int64=0)::Pair{LPRelaxation,FunctionData}
+    return construct_lp_relaxation(
         f,
         x -> ForwardDiff.derivative(f, x),
         base_partition,
@@ -54,17 +58,17 @@ function construct_convex_hull_relaxation(
         num_additional_binary_variables=num_additional_binary_variables)
 end
 
-function construct_convex_hull_relaxation(
+function construct_lp_relaxation(
     f::Function,
-    d::Function,
+    f_dash::Function,
     base_partition::Vector{<:Real};
-    error_tolerance::Real=NaN64,
-    length_tolerance::Real=ϵ,
-    derivative_tolerance::Real=ϵ,
-        num_additional_binary_variables::Int=0)::Pair{ConvexHullFormulation,FunctionData}
+    error_tolerance::Float64=NaN64,
+    length_tolerance::Float64=ϵ,
+    derivative_tolerance::Float64=ϵ,
+        num_additional_binary_variables::Int64=0)::Pair{LPRelaxation,FunctionData}
     function_data = FunctionData(
         f,
-        d,
+        f_dash,
         base_partition,
         copy(base_partition),
         error_tolerance,
@@ -73,5 +77,5 @@ function construct_convex_hull_relaxation(
         num_additional_binary_variables)
     validate(function_data)
     refine_partition!(function_data)
-    return build_convex_hull_formulation(function_data)
+    return build_lp_relaxation(function_data)
 end
