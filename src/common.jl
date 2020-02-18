@@ -269,8 +269,8 @@ function refine_partition!(function_data::FunctionData)
 
         # Add errors of the new partition intervals to the queue.
         x_new = 0.5 * (x_start + x_end)
-        error_queue[start] = get_error_bound(function_data.d, x_start, x_new)
-        error_queue[start+1] = get_error_bound(function_data.d, x_new, x_end)
+        error_queue[start] = get_error_bound(function_data.f_dash, x_start, x_new)
+        error_queue[start+1] = get_error_bound(function_data.f_dash, x_new, x_end)
 
         # Add `x_new` to `refined_partition`.
         splice!(partition, start+1:start, x_new)
