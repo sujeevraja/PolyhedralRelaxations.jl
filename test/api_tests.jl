@@ -1,6 +1,7 @@
 @testset "api tests" begin
     PR.logger_config!("error")
-    milp_relaxation, function_data = construct_milp_relaxation(x -> x^3, collect(-1.0:1.0:1.0))
+    milp_relaxation, function_data =
+        construct_milp_relaxation(x -> x^3, collect(-1.0:1.0:1.0))
 
     @test get_domain(function_data) == (-1.0, 1.0)
     @test get_derivative(function_data)(0.5) == 0.75

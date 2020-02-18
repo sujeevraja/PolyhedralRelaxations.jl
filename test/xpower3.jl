@@ -1,5 +1,6 @@
 @testset "x^3 test" begin
-    milp_relaxation, function_data = construct_milp_relaxation(x -> x^3, collect(-1.0:1.0:1.0))
+    milp_relaxation, function_data =
+        construct_milp_relaxation(x -> x^3, collect(-1.0:1.0:1.0))
     @test milp_relaxation.x_index == 1
     @test milp_relaxation.y_index == 2
 
@@ -11,15 +12,18 @@
 
     num_variables = get_num_variables(milp_relaxation)
     @test num_variables == 8
-    @test has_eq_constraints(milp_relaxation) == true 
-    @test has_leq_constraints(milp_relaxation) == true 
-    @test has_geq_constraints(milp_relaxation) == false 
+    @test has_eq_constraints(milp_relaxation) == true
+    @test has_leq_constraints(milp_relaxation) == true
+    @test has_geq_constraints(milp_relaxation) == false
 
     # Create variables.
     m = Model(glpk_optimizer)
-    @variable(m, lb[i] <= x[i=1:num_variables] <= ub[i],
-        binary=Bool(get_variable_type(milp_relaxation)[i]),
-        base_name=get_variable_names(milp_relaxation)[i])
+    @variable(
+        m,
+        lb[i] <= x[i = 1:num_variables] <= ub[i],
+        binary = Bool(get_variable_type(milp_relaxation)[i]),
+        base_name = get_variable_names(milp_relaxation)[i]
+    )
 
     # Add equality constraints
     A, b = get_eq_constraint_matrices(milp_relaxation)
