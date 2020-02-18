@@ -15,6 +15,7 @@ glpk_optimizer = JuMP.optimizer_with_attributes(
 
 @testset "PolyhedralRelaxations" begin
 
-    include("xpower3.jl")
+    include("api_tests.jl")
+    # include("xpower3.jl")
 
 end
