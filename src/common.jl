@@ -1,13 +1,13 @@
-export 
-    get_function, get_derivative, 
-    get_domain_lb, get_domain_ub, 
+export
+    get_function, get_derivative,
+    get_domain_lb, get_domain_ub,
     get_domain, get_partition
 
 "Abstract formulation class"
-abstract type AbstractFormulation end 
+abstract type AbstractFormulation end
 
 "Abstract variable index class"
-abstract type AbstractVariableIndices end 
+abstract type AbstractVariableIndices end
 
 "ConstraintMatrix is contains the pair (A, b) where A is a sparse matrix"
 const ConstraintMatrix = Pair{SparseMatrixCSC{<:Real,Int64},Vector{<:Real}}
@@ -17,12 +17,14 @@ const Vertex = Pair{<:Real,<:Real}
 
 """
     Struct to hold the function data with the inputs provided by the user.
-    
+
 It takes in the function and its derivative (as lambda expressions), the base partition
 that the user provides, the partition (refinement of the base partition), 3 tolerance values
-(i) error tolerance denotes the strength of the relaxation (the closer to zero the stronger
-the relaxation), (ii) length tolerance (maximum difference between successive derivative values), and (iii) derivative tolerance denotes the tolerance for checking equality of derivative values at 
-subsequent partition points, and finally, the maximum number of additional partition intervals
+(1) error tolerance denotes the strength of the relaxation (the closer to zero the stronger
+    the relaxation),
+(2) length tolerance (maximum difference between successive derivative values), and
+(3) derivative tolerance denotes the tolerance for checking equality of derivative values at
+    subsequent partition points, and finally, the maximum number of additional partition intervals.
 """
 struct FunctionData
     f::Function
@@ -69,7 +71,7 @@ function ConstraintData()::ConstraintData
 end
 
 "Helper function to construct ConstraintMatrix from ConstraintData and number of variables"
-function get_constraint_matrix(constraint_data::ConstraintData, 
+function get_constraint_matrix(constraint_data::ConstraintData,
         num_variables::Int64)::ConstraintMatrix
     A = sparse(constraint_data.constraint_row_indices,
         constraint_data.constraint_column_indices,
@@ -121,7 +123,8 @@ function collect_vertices(function_data::FunctionData)::Pair{Vector{Vertex},Vect
     for x in function_data.partition
         push!(secant_vertices, Pair(x, function_data.f(x)))
         if length(secant_vertices) >= 2
-            tv = get_tangent_vertex(secant_vertices[end-1], secant_vertices[end], function_data.f_dash)
+            tv = get_tangent_vertex(secant_vertices[end-1], secant_vertices[end],
+                function_data.f_dash)
             push!(tangent_vertices, tv)
         end
     end
