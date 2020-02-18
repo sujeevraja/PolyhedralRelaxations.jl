@@ -1,7 +1,4 @@
-export
-    get_function, get_derivative,
-    get_domain_lb, get_domain_ub,
-    get_domain, get_partition
+export get_function, get_derivative, get_domain_lb, get_domain_ub, get_domain, get_partition
 
 "Abstract formulation class"
 abstract type AbstractFormulation end
@@ -66,21 +63,34 @@ function ConstraintData()::ConstraintData
     rhs_row_indices = Int64[]
     rhs_values = Float64[]
     num_constraints = 0
-    return ConstraintData(row_indices, col_indices, coefs, rhs_row_indices,
-        rhs_values, num_constraints)
+    return ConstraintData(
+        row_indices,
+        col_indices,
+        coefs,
+        rhs_row_indices,
+        rhs_values,
+        num_constraints,
+    )
 end
 
 "Helper function to construct ConstraintMatrix from ConstraintData and number of variables"
-function get_constraint_matrix(constraint_data::ConstraintData,
-        num_variables::Int64)::ConstraintMatrix
-    A = sparse(constraint_data.constraint_row_indices,
+function get_constraint_matrix(
+    constraint_data::ConstraintData,
+    num_variables::Int64,
+)::ConstraintMatrix
+    A = sparse(
+        constraint_data.constraint_row_indices,
         constraint_data.constraint_column_indices,
         constraint_data.constraint_coefficients,
-        constraint_data.num_constraints, num_variables)
-    b = sparsevec(constraint_data.rhs_row_indices,
+        constraint_data.num_constraints,
+        num_variables,
+    )
+    b = sparsevec(
+        constraint_data.rhs_row_indices,
         constraint_data.rhs_values,
-        constraint_data.num_constraints)
-    return Pair(A,Vector(b))
+        constraint_data.num_constraints,
+    )
+    return Pair(A, Vector(b))
 end
 
 """
@@ -92,12 +102,13 @@ Return (x,y) coordinates of the intersection of tangents drawn at `prev_secant_v
 function get_tangent_vertex(
     prev_secant_vertex::Vertex,
     next_secant_vertex::Vertex,
-        derivative::Function)::Vertex
+    derivative::Function,
+)::Vertex
     x_prev, f_prev = prev_secant_vertex
     x_next, f_next = next_secant_vertex
     d_prev, d_next = derivative(x_prev), derivative(x_next)
-    x_t = (f_next - f_prev + (d_prev*x_prev) - (d_next*x_next)) / (d_prev - d_next)
-    y_t = f_prev + (d_prev*(x_t - x_prev))
+    x_t = (f_next - f_prev + (d_prev * x_prev) - (d_next * x_next)) / (d_prev - d_next)
+    y_t = f_prev + (d_prev * (x_t - x_prev))
     return Pair(x_t, y_t)
 end
 
@@ -123,8 +134,11 @@ function collect_vertices(function_data::FunctionData)::Pair{Vector{Vertex},Vect
     for x in function_data.partition
         push!(secant_vertices, Pair(x, function_data.f(x)))
         if length(secant_vertices) >= 2
-            tv = get_tangent_vertex(secant_vertices[end-1], secant_vertices[end],
-                function_data.f_dash)
+            tv = get_tangent_vertex(
+                secant_vertices[end-1],
+                secant_vertices[end],
+                function_data.f_dash,
+            )
             push!(tangent_vertices, tv)
         end
     end
@@ -191,17 +205,28 @@ function validate(function_data::FunctionData)
         dx = function_data.f_dash(x)
         if !isnan(x_prev)
             if x <= x_prev
-                Memento.error(_LOGGER, "partition must be sorted, violation for $x, $x_prev")
+                Memento.error(
+                    _LOGGER,
+                    "partition must be sorted, violation for $x, $x_prev",
+                )
             end
             if x - x_prev <= function_data.length_tolerance
-                Memento.error(_LOGGER, string(
-                    "$x_prev and $x difference less than ",
-                    "$(function_data.length_tolerance)"))
+                Memento.error(
+                    _LOGGER,
+                    string(
+                        "$x_prev and $x difference less than ",
+                        "$(function_data.length_tolerance)",
+                    ),
+                )
             end
             if abs(dx - d_prev) <= function_data.derivative_tolerance
-                Memento.error(_LOGGER, string(
-                    "difference of derivatives at $x and $x_prev less than ",
-                    "$(function_data.derivative_tolerance)"))
+                Memento.error(
+                    _LOGGER,
+                    string(
+                        "difference of derivatives at $x and $x_prev less than ",
+                        "$(function_data.derivative_tolerance)",
+                    ),
+                )
             end
         end
         x_prev = x
@@ -214,7 +239,8 @@ end
 "Partition refinement schemes (interval bisection)"
 function refine_partition!(function_data::FunctionData)
     # Don't refine the partition if no additional constraints are specified.
-    if isnan(function_data.error_tolerance) && function_data.num_additional_binary_variables <= 0
+    if isnan(function_data.error_tolerance) &&
+       function_data.num_additional_binary_variables <= 0
         return
     end
 
@@ -237,7 +263,7 @@ function refine_partition!(function_data::FunctionData)
         # between positions `start` and `start+1`, the positions of interval-starts after `x_new`
         # will all increase by 1 after the insertions. Upade the queue with this new indexing.
         num_starts = length(partition)
-        for i in num_starts:-1:start+1
+        for i = num_starts:-1:start+1
             error_queue[i] = error_queue[i-1]
         end
 
@@ -253,11 +279,17 @@ function refine_partition!(function_data::FunctionData)
 end
 
 "This function checks if the refinement is feasible"
-function is_refinement_feasible(function_data::FunctionData, error_queue::PriorityQueue)::Bool
+function is_refinement_feasible(
+    function_data::FunctionData,
+    error_queue::PriorityQueue,
+)::Bool
     # Check if error bound is below tolerance.
     start, max_error = peek(error_queue)
     if !isnan(function_data.error_tolerance) && max_error <= function_data.error_tolerance
-        Memento.debug(_LOGGER, "error: $max_error less than limit: $(function_data.error_tolerance)")
+        Memento.debug(
+            _LOGGER,
+            "error: $max_error less than limit: $(function_data.error_tolerance)",
+        )
         return false
     end
 
@@ -266,7 +298,10 @@ function is_refinement_feasible(function_data::FunctionData, error_queue::Priori
         num_added = length(function_data.partition) - length(function_data.base_partition)
         if num_added >= function_data.num_additional_binary_variables
             Memento.debug(_LOGGER, "number of new binary variables: $num_added")
-            Memento.debug(_LOGGER, "budget: $(function_data.num_additional_binary_variables)")
+            Memento.debug(
+                _LOGGER,
+                "budget: $(function_data.num_additional_binary_variables)",
+            )
             return false
         end
     end
@@ -286,8 +321,10 @@ function is_refinement_feasible(function_data::FunctionData, error_queue::Priori
     # Check if derivative differences at endpoints of new partitions are smaller than allowed.
     d_start, d_end = function_data.f_dash(x_start), function_data.f_dash(x_end)
     d_new = function_data.f_dash(x_new)
-    if (abs(d_new - d_start) <= function_data.derivative_tolerance ||
-        abs(d_end - d_new) <= function_data.derivative_tolerance)
+    if (
+        abs(d_new - d_start) <= function_data.derivative_tolerance ||
+        abs(d_end - d_new) <= function_data.derivative_tolerance
+    )
         Memento.debug(_LOGGER, "d_start: $d_start, d_new: $d_new, d_end: $d_end")
         Memento.debug(_LOGGER, "adjacent derivative difference will be too small")
         return false
@@ -306,7 +343,7 @@ a max-queue for easy access to the  maximum error.
 """
 function get_error_queue(function_data::FunctionData)::PriorityQueue
     pq = PriorityQueue{Int64,Float64}(Base.Order.Reverse)
-    for i in 1:length(function_data.partition)-1
+    for i = 1:length(function_data.partition)-1
         lb = function_data.partition[i]
         ub = function_data.partition[i+1]
         pq[i] = get_error_bound(function_data.f_dash, lb, ub)
@@ -320,6 +357,5 @@ end
 Get error bound of a function with derivative `derivative` in the closed interval `[lb,ub]`.
 """
 function get_error_bound(derivative::Function, lb::Float64, ub::Float64)
-    return (ub-lb) * abs(derivative(ub) - derivative(lb)) / 4.0
+    return (ub - lb) * abs(derivative(ub) - derivative(lb)) / 4.0
 end
-

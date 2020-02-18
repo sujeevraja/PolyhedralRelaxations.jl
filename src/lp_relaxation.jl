@@ -1,5 +1,4 @@
-export
-    has_eq_constraints,
+export has_eq_constraints,
     has_leq_constraints,
     get_eq_constraint_matrices,
     get_leq_constraint_matrices,
@@ -29,8 +28,8 @@ end
 @inline has_eq_constraints(lp::LPRelaxation) = true
 @inline has_leq_constraints(lp::LPRelaxation) = false
 @inline get_eq_constraint_matrices(lp::LPRelaxation) = lp.A, lp.b
-@inline get_leq_constraint_matrices(lp::LPRelaxation) = Memento.error(_LOGGER,
-    "the LP relaxation has no <= constraints")
+@inline get_leq_constraint_matrices(lp::LPRelaxation) =
+    Memento.error(_LOGGER, "the LP relaxation has no <= constraints")
 @inline get_num_variables(lp::LPRelaxation) = length(lp.λ_indices) + 2
 
 """
@@ -60,7 +59,9 @@ function LPRelaxation(
     function_data::FunctionData,
     constraint_data::ConstraintData,
     lp_variable_indices::LPVariableIndices,
-        f_min::Float64, f_max::Float64)::LPRelaxation
+    f_min::Float64,
+    f_max::Float64,
+)::LPRelaxation
     num_variables = length(function_data.partition) + 3
     A, b = get_constraint_matrix(constraint_data, num_variables)
 
@@ -71,22 +72,24 @@ function LPRelaxation(
     lower_bounds[lp_variable_indices.y_index] = f_min
     upper_bounds[lp_variable_indices.y_index] = f_max
 
-    variable_names = ["" for _ in 1:num_variables]
+    variable_names = ["" for _ = 1:num_variables]
     variable_names[lp_variable_indices.x_index] = "x"
     variable_names[lp_variable_indices.y_index] = "y"
-    for i in 1:length(lp_variable_indices.λ_indices)
+    for i = 1:length(lp_variable_indices.λ_indices)
         variable_names[lp_variable_indices.λ_indices[i]] = "lambda_$i"
     end
 
     return LPRelaxation(
-        A, b,
+        A,
+        b,
         constraint_data.num_constraints,
         lp_variable_indices.x_index,
         lp_variable_indices.y_index,
         lp_variable_indices.λ_indices,
         lower_bounds,
         upper_bounds,
-        variable_names)
+        variable_names,
+    )
 end
 
 """
@@ -136,9 +139,19 @@ function build_lp_relaxation(function_data::FunctionData)::Pair{LPRelaxation,Fun
     x_row, y_row, simplex_row = 1, 2, 3
     add_coeff!(constraint_data, x_row, lp_variable_indices.x_index, 1.0)
     add_coeff!(constraint_data, y_row, lp_variable_indices.y_index, 1.0)
-    for i in 1:length(vertices)
-        add_coeff!(constraint_data, x_row, lp_variable_indices.λ_indices[i], float(-vertices[i][1]))
-        add_coeff!(constraint_data, y_row, lp_variable_indices.λ_indices[i], float(-vertices[i][2]))
+    for i = 1:length(vertices)
+        add_coeff!(
+            constraint_data,
+            x_row,
+            lp_variable_indices.λ_indices[i],
+            float(-vertices[i][1]),
+        )
+        add_coeff!(
+            constraint_data,
+            y_row,
+            lp_variable_indices.λ_indices[i],
+            float(-vertices[i][2]),
+        )
         add_coeff!(constraint_data, simplex_row, lp_variable_indices.λ_indices[i], 1.0)
     end
     add_rhs!(constraint_data, x_row, 0.0)
@@ -149,6 +162,7 @@ function build_lp_relaxation(function_data::FunctionData)::Pair{LPRelaxation,Fun
     validate(constraint_data)
 
     # Build and return LP relaxation with function data.
-    lp_relaxation = LPRelaxation(function_data, constraint_data, lp_variable_indices, f_min, f_max)
+    lp_relaxation =
+        LPRelaxation(function_data, constraint_data, lp_variable_indices, f_min, f_max)
     return Pair(lp_relaxation, function_data)
 end

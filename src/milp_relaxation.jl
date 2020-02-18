@@ -1,5 +1,4 @@
-export
-    has_eq_constraints,
+export has_eq_constraints,
     has_leq_constraints,
     get_eq_constraint_matrices,
     get_leq_constraint_matrices,
@@ -55,8 +54,10 @@ end
 
 "Getters for MILPVariableIndices"
 @inline get_num_variables(milp_variable_indices::MILPVariableIndices)::Int64 =
-    length(milp_variable_indices.δ_1_indices) + length(milp_variable_indices.δ_2_indices) +
-    length(milp_variable_indices.z_indices) + 2
+    length(milp_variable_indices.δ_1_indices) +
+    length(milp_variable_indices.δ_2_indices) +
+    length(milp_variable_indices.z_indices) +
+    2
 
 """
     MILPRelaxation(function_data, milp_variable_indices,
@@ -69,7 +70,9 @@ function MILPRelaxation(
     milp_variable_indices::MILPVariableIndices,
     eq_constraint_data::ConstraintData,
     leq_constraint_data::ConstraintData,
-        f_min::Float64, f_max::Float64)::MILPRelaxation
+    f_min::Float64,
+    f_max::Float64,
+)::MILPRelaxation
     num_variables = get_num_variables(milp_variable_indices)
     A_eq, b_eq = get_constraint_matrix(eq_constraint_data, num_variables)
     A_leq, b_leq = get_constraint_matrix(leq_constraint_data, num_variables)
@@ -81,22 +84,28 @@ function MILPRelaxation(
     upper_bounds[milp_variable_indices.x_index] = function_data.partition[end]
     lower_bounds[milp_variable_indices.y_index] = f_min
     upper_bounds[milp_variable_indices.y_index] = f_max
-    binary = sparsevec(milp_variable_indices.z_indices,
+    binary = sparsevec(
+        milp_variable_indices.z_indices,
         ones(length(milp_variable_indices.z_indices)),
-        num_variables)
+        num_variables,
+    )
 
-    variable_names::Vector{String} = ["" for _ in 1:num_variables]
+    variable_names::Vector{String} = ["" for _ = 1:num_variables]
     variable_names[milp_variable_indices.x_index] = "x"
     variable_names[milp_variable_indices.y_index] = "y"
-    for i in 1:length(milp_variable_indices.δ_1_indices)
+    for i = 1:length(milp_variable_indices.δ_1_indices)
         variable_names[milp_variable_indices.δ_1_indices[i]] = "delta_1_$i"
         variable_names[milp_variable_indices.δ_2_indices[i]] = "delta_2_$i"
         variable_names[milp_variable_indices.z_indices[i]] = "z_$i"
     end
 
     return MILPRelaxation(
-        A_eq, b_eq, eq_constraint_data.num_constraints,
-        A_leq, b_leq, leq_constraint_data.num_constraints,
+        A_eq,
+        b_eq,
+        eq_constraint_data.num_constraints,
+        A_leq,
+        b_leq,
+        leq_constraint_data.num_constraints,
         milp_variable_indices.x_index,
         milp_variable_indices.y_index,
         milp_variable_indices.δ_1_indices,
@@ -105,7 +114,8 @@ function MILPRelaxation(
         lower_bounds,
         upper_bounds,
         binary,
-        variable_names)
+        variable_names,
+    )
 end
 
 """
@@ -127,10 +137,10 @@ function MILPVariableIndices(num_partition_points::Int64)::MILPVariableIndices
     start = 3
     δ_1_indices = collect(start:(start+num_vars-1))
 
-    start = δ_1_indices[end]+1
+    start = δ_1_indices[end] + 1
     δ_2_indices = collect(start:(start+num_vars-1))
 
-    start = δ_2_indices[end]+1
+    start = δ_2_indices[end] + 1
     z_indices = collect(start:(start+num_vars-1))
 
     return MILPVariableIndices(x_index, y_index, δ_1_indices, δ_2_indices, z_indices)
@@ -152,25 +162,26 @@ function add_vertex_constraints!(
     constraint_data::ConstraintData,
     milp_variable_indices::MILPVariableIndices,
     secant_vertices::Vector{Vertex},
-        tangent_vertices::Vector{Vertex})
+    tangent_vertices::Vector{Vertex},
+)
     indices = [milp_variable_indices.x_index, milp_variable_indices.y_index]
     num_vars = length(secant_vertices) - 1
 
-    for c in [1,2]  # c is the coordinate index (1 for x, 2 for y).
-        row = constraint_data.num_constraints+1
+    for c in [1, 2]  # c is the coordinate index (1 for x, 2 for y).
+        row = constraint_data.num_constraints + 1
 
         # Add coordinate variable to constraint.
         add_coeff!(constraint_data, row, indices[c], 1.0)
 
-        for i in 1:num_vars
+        for i = 1:num_vars
             # Add δ_1 variable to constraint.
             column = milp_variable_indices.δ_1_indices[i]
-            value =  secant_vertices[i][c] - tangent_vertices[i][c]
+            value = secant_vertices[i][c] - tangent_vertices[i][c]
             add_coeff!(constraint_data, row, column, float(value))
 
             # Add δ_2 variable to constraint.
             column = milp_variable_indices.δ_2_indices[i]
-            value =  secant_vertices[i][c] - secant_vertices[i+1][c]
+            value = secant_vertices[i][c] - secant_vertices[i+1][c]
             add_coeff!(constraint_data, row, column, float(value))
         end
 
@@ -187,8 +198,10 @@ end
 Add the constraint "δ_1^1 + δ_2^1 <= 1 to `constraint_data` using variable indices from
 `milp_variable_indices`.
 """
-function add_first_δ_constraint!(constraint_data::ConstraintData,
-        milp_variable_indices::MILPVariableIndices)
+function add_first_δ_constraint!(
+    constraint_data::ConstraintData,
+    milp_variable_indices::MILPVariableIndices,
+)
     row = constraint_data.num_constraints + 1
     add_coeff!(constraint_data, row, milp_variable_indices.δ_1_indices[1], 1.0)
     add_coeff!(constraint_data, row, milp_variable_indices.δ_2_indices[1], 1.0)
@@ -211,8 +224,9 @@ constraints corresponds to the number of triangles specified by `num_triangles`.
 function add_linking_constraints!(
     constraint_data::ConstraintData,
     milp_variable_indices::MILPVariableIndices,
-        num_triangles::Int64)
-    for i in 2:num_triangles
+    num_triangles::Int64,
+)
+    for i = 2:num_triangles
         constraint_data.num_constraints += 1
         row = constraint_data.num_constraints
 
@@ -236,7 +250,9 @@ end
 Return a MILPRelaxation object with constraint and RHS information of the MILP formulation of the
 polyhedral relaxation.
 """
-function build_milp_relaxation(function_data::FunctionData)::Pair{MILPRelaxation, FunctionData}
+function build_milp_relaxation(
+    function_data::FunctionData,
+)::Pair{MILPRelaxation,FunctionData}
     num_points = length(function_data.partition)
     milp_variable_indices = MILPVariableIndices(num_points)
     secant_vertices, tangent_vertices = collect_vertices(function_data)
@@ -253,15 +269,25 @@ function build_milp_relaxation(function_data::FunctionData)::Pair{MILPRelaxation
     end
 
     eq_constraint_data = ConstraintData()
-    add_vertex_constraints!(eq_constraint_data, milp_variable_indices, secant_vertices,
-        tangent_vertices)
+    add_vertex_constraints!(
+        eq_constraint_data,
+        milp_variable_indices,
+        secant_vertices,
+        tangent_vertices,
+    )
 
     leq_constraint_data = ConstraintData()
     add_first_δ_constraint!(leq_constraint_data, milp_variable_indices)
-    add_linking_constraints!(leq_constraint_data, milp_variable_indices, num_points-1)
+    add_linking_constraints!(leq_constraint_data, milp_variable_indices, num_points - 1)
 
-    milp_relaxation = MILPRelaxation(function_data, milp_variable_indices, eq_constraint_data,
-        leq_constraint_data, f_min, f_max)
+    milp_relaxation = MILPRelaxation(
+        function_data,
+        milp_variable_indices,
+        eq_constraint_data,
+        leq_constraint_data,
+        f_min,
+        f_max,
+    )
 
     return Pair(milp_relaxation, function_data)
 end
