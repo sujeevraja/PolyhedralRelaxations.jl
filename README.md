@@ -2,7 +2,7 @@
 
 [![codecov](https://codecov.io/gh/sujeevraja/PolyhedralRelaxations.jl/branch/master/graph/badge.svg)](https://codecov.io/gh/sujeevraja/PolyhedralRelaxations.jl)
 
-[![Coverage Status](https://coveralls.io/repos/sujeevraja/PolyhedralRelaxations.jl/badge.svg?branch=master)](https://coveralls.io/r/sujeevraja/PolyhedralRelaxations.jl?branch=master)
+[![Coverage Status](https://coveralls.io/repos/github/sujeevraja/PolyhedralRelaxations.jl/badge.svg)](https://coveralls.io/github/sujeevraja/PolyhedralRelaxations.jl)
 
 # PolyhedralRelaxations.jl
 
