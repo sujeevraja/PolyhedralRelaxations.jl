@@ -29,6 +29,7 @@ struct MILPRelaxation <: AbstractFormulation
     upper_bounds::Vector{Float64}
     binary::SparseVector{Int64}
     variable_names::Vector{String}
+    error_bound::Float64
 end
 
 "Getters for the LP relaxation struct"
@@ -115,6 +116,7 @@ function MILPRelaxation(
         upper_bounds,
         binary,
         variable_names,
+        get_max_error_bound(function_data),
     )
 end
 
