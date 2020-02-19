@@ -34,6 +34,7 @@ get_milp_xcube(; error_tolerance = 1e-2) = construct_milp_relaxation(
         optimize!(m)
         y_max = objective_value(m)
         @test abs(y_max - y_min) <= 1e-2
+        @test get_error_bound(milp) <= 1e-2
     end
 
 end
