@@ -359,3 +359,21 @@ Get error bound of a function with derivative `derivative` in the closed interva
 function get_error_bound(derivative::Function, lb::Float64, ub::Float64)
     return (ub - lb) * abs(derivative(ub) - derivative(lb)) / 4.0
 end
+
+"""
+    get_max_error_bound(function_data)
+
+Compute and return maximum value of error bound among all partition intervals.
+"""
+function get_max_error_bound(function_data::FunctionData)::Float64
+    max_err = -Inf
+    for i in length(function_data.partition) - 1
+        err = get_error_bound(
+            function_data.f_dash,
+            function_data.partition[i],
+            function_data.partition[i+1],
+        )
+        max_err = max(err, max_err)
+    end
+    return max_err
+end
