@@ -23,11 +23,17 @@
 
     for i in 1:10
         α = rand() * 2 * pi
-        @objective(milp, Min, x[milp_relaxation.y_index] - α * x[milp_relaxation.x_index])
-        @objective(lp, Min, y[lp_relaxation.y_index] - α * y[lp_relaxation.x_index])
+        @objective(milp, Min, x[milp_relaxation.y_index] - tan(α) * x[milp_relaxation.x_index])
+        @objective(lp, Min, y[lp_relaxation.y_index] - tan(α) * y[lp_relaxation.x_index])
         optimize!(milp)
         optimize!(lp)
-        @test objective_value(milp) == objective_value(lp)
+        @test isapprox(objective_value(milp), objective_value(lp), atol=1e-5)
+
+        @objective(milp, Max, x[milp_relaxation.y_index] - tan(α) * x[milp_relaxation.x_index])
+        @objective(lp, Max, y[lp_relaxation.y_index] - tan(α) * y[lp_relaxation.x_index])
+        optimize!(milp)
+        optimize!(lp)
+        @test isapprox(objective_value(milp), objective_value(lp), atol=1e-5)
     end
 
     # sec_verts, tan_verts = collect_vertices(function_data)
