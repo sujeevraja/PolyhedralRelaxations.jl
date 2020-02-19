@@ -22,6 +22,7 @@ struct LPRelaxation <: AbstractFormulation
     lower_bounds::Vector{Float64}
     upper_bounds::Vector{Float64}
     variable_names::Vector{String}
+    error_bound::Float64
 end
 
 "Getters for the LP relaxation struct"
@@ -89,6 +90,7 @@ function LPRelaxation(
         lower_bounds,
         upper_bounds,
         variable_names,
+        get_max_error_bound(function_data),
     )
 end
 
