@@ -16,6 +16,7 @@ glpk_optimizer =
 @testset "PolyhedralRelaxations" begin
 
     include("api_tests.jl")
-    # include("xpower3.jl")
+    include("sampling_tests.jl")
+    include("error_tests.jl")
 
 end
