@@ -5,7 +5,7 @@ get_milp_xcube(; error_tolerance = 1e-2) = construct_milp_relaxation(
 )
 
 @testset "sampling tests for error tolerance" begin
-    PR.logger_config!("error")
+    PR.silence()
     milp, milp_function_data = get_milp_xcube()
     lb, ub = get_domain(milp_function_data)
     var_lb, var_ub = get_variable_bounds(milp)
