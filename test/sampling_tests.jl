@@ -4,7 +4,7 @@ get_milp_xcube(; error_tolerance = 1e-2) = construct_milp_relaxation(
     error_tolerance = error_tolerance,
 )
 
-@testset "sampling tests for error tolerance" begin
+@testset "sampling tests with x^3 for error tolerance" begin
     PR.silence()
     milp, milp_function_data = get_milp_xcube()
     lb, ub = get_domain(milp_function_data)
@@ -37,4 +37,17 @@ get_milp_xcube(; error_tolerance = 1e-2) = construct_milp_relaxation(
         @test get_error_bound(milp) <= 1e-2
     end
 
+end
+
+@testset "sampling tests with x^3 for binary variable budget" begin
+    f = x -> x^3
+    num_vars = 10
+    tol = 1e-5
+    for l in [0.1,0.25,0.5,1.0]
+        base_partition = collect(-1.0:l:1.0)
+        milp, function_data, = construct_milp_relaxation(f, base_partition, error_tolerance=tol,
+            num_additional_binary_variables=num_vars)
+        num_base = length(function_data.base_partition) - 1
+        @test PR.get_num_binary_variables(milp) == num_base + num_vars
+    end
 end

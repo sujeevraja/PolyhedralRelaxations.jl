@@ -35,12 +35,12 @@ struct FunctionData
 end
 
 "Getters for FunctionData struct"
-@inline get_function(uf::FunctionData) = uf.f
-@inline get_derivative(uf::FunctionData) = uf.f_dash
-@inline get_domain_lb(uf::FunctionData) = uf.partition[1]
-@inline get_domain_ub(uf::FunctionData) = uf.partition[end]
-@inline get_domain(uf::FunctionData) = get_domain_lb(uf), get_domain_ub(uf)
-@inline get_partition(uf::FunctionData) = uf.partition
+@inline get_function(function_data::FunctionData) = function_data.f
+@inline get_derivative(function_data::FunctionData) = function_data.f_dash
+@inline get_domain_lb(function_data::FunctionData) = function_data.partition[1]
+@inline get_domain_ub(function_data::FunctionData) = function_data.partition[end]
+@inline get_domain(function_data::FunctionData) = get_domain_lb(function_data), get_domain_ub(function_data)
+@inline get_partition(function_data::FunctionData) = function_data.partition
 
 """
     Struct to hold the constraint data.
