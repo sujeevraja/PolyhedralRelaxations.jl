@@ -42,10 +42,6 @@ struct LPVariableIndices <: AbstractVariableIndices
     λ_indices
 end
 
-"Getters for LPVariableIndices"
-@inline get_num_variables(lp_variable_indices::LPVariableIndices) =
-    length(lp_variable_indices.λ_indices) + 2
-
 """
     LPRelaxation(
         function_data::FunctionData,
