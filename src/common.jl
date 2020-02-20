@@ -39,7 +39,8 @@ end
 @inline get_derivative(function_data::FunctionData) = function_data.f_dash
 @inline get_domain_lb(function_data::FunctionData) = function_data.partition[1]
 @inline get_domain_ub(function_data::FunctionData) = function_data.partition[end]
-@inline get_domain(function_data::FunctionData) = get_domain_lb(function_data), get_domain_ub(function_data)
+@inline get_domain(function_data::FunctionData) =
+    get_domain_lb(function_data), get_domain_ub(function_data)
 @inline get_partition(function_data::FunctionData) = function_data.partition
 
 """

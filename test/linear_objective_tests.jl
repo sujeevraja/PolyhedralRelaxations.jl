@@ -4,10 +4,10 @@
 
     # create LP relaxation of the MILP relaxation of the univariate function.
     milp_relaxation, milp_function_data = construct_milp_relaxation(f, partition)
-    milp = Model(glpk_optimizer)
+    milp = Model(cbc_optimizer)
     lb, ub = get_variable_bounds(milp_relaxation)
     num_variables = get_num_variables(milp_relaxation)
-    @variable(milp, lb[i] <= x[i=1:num_variables] <= ub[i])
+    @variable(milp, lb[i] <= x[i = 1:num_variables] <= ub[i])
     A, b = get_eq_constraint_matrices(milp_relaxation)
     @constraint(milp, A * x .== b)
     A, b = get_leq_constraint_matrices(milp_relaxation)
@@ -17,10 +17,10 @@
 
     # create LP relaxation of the univariate function using the convex hull formulation.
     lp_relaxation, lp_function_data = construct_lp_relaxation(f, partition)
-    lp = Model(glpk_optimizer)
+    lp = Model(cbc_optimizer)
     lb, ub = get_variable_bounds(lp_relaxation)
     num_variables = get_num_variables(lp_relaxation)
-    @variable(lp, lb[i] <= y[i=1:num_variables] <= ub[i])
+    @variable(lp, lb[i] <= y[i = 1:num_variables] <= ub[i])
     A, b = get_eq_constraint_matrices(lp_relaxation)
     @constraint(lp, A * y .== b)
     set_objective_coefficient(lp, y[lp_relaxation.y_index], 1.0)
@@ -32,10 +32,10 @@
     append!(sln_verts, tan_verts)
     push!(sln_verts, sec_verts[end])
 
-    tol=1e-5
+    tol = 1e-5
 
-    for i in 1:10
-        α = rand() * (π/2)
+    for i = 1:10
+        α = rand() * (π / 2)
         set_objective_coefficient(milp, x[milp_relaxation.x_index], -tan(α))
         set_objective_coefficient(lp, y[lp_relaxation.x_index], -tan(α))
 
@@ -54,7 +54,7 @@
             x_sln = value.(x[milp_relaxation.x_index])
             y_sln = value.(x[milp_relaxation.y_index])
             for v in sln_verts
-                if isapprox(v[1],x_sln,atol=tol) && isapprox(v[2],y_sln,atol=tol)
+                if isapprox(v[1], x_sln, atol = tol) && isapprox(v[2], y_sln, atol = tol)
                     sln_found = true
                     break
                 end
@@ -69,14 +69,14 @@
             optimize!(milp)
             @test termination_status(milp) == MOI.OPTIMAL
             lp1_obj = objective_value(milp)
-            @test milp_obj ≈ lp1_obj atol=tol
+            @test milp_obj ≈ lp1_obj atol = tol
 
             # Solve LP relaxation formulated in the convex hull form.
             # Verify that the LP relaxation formulated in the convex hull form has the same
             # objective as the above 2 relaxations.
             set_objective_sense(lp, s)
             optimize!(lp)
-            @test lp1_obj ≈ objective_value(lp) atol=tol
+            @test lp1_obj ≈ objective_value(lp) atol = tol
         end
     end
 end
