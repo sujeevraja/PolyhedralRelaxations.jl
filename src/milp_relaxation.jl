@@ -38,6 +38,7 @@ end
 @inline get_eq_constraint_matrices(milp::MILPRelaxation) = milp.A_eq, milp.b_eq
 @inline get_leq_constraint_matrices(milp::MILPRelaxation) = milp.A_leq, milp.b_leq
 @inline get_variable_type(milp::MILPRelaxation) = milp.binary
+@inline get_num_binary_variables(milp::MILPRelaxation) = length(milp.z_indices)
 @inline get_num_variables(milp::MILPRelaxation) =
     length(milp.δ_1_indices) + length(milp.δ_2_indices) + length(milp.z_indices) + 2
 

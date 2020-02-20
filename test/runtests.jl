@@ -1,4 +1,5 @@
 using PolyhedralRelaxations
+using SparseArrays
 import Memento
 
 const PR = PolyhedralRelaxations
@@ -18,5 +19,6 @@ glpk_optimizer =
     include("api_tests.jl")
     include("sampling_tests.jl")
     include("error_tests.jl")
+    include("linear_objective_tests.jl")
 
 end

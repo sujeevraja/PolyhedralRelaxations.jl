@@ -21,4 +21,5 @@
     lp, lp_function_data = construct_lp_relaxation(x -> x^3, collect(-1.0:1.0:1.0))
     @test_throws(logger, ErrorException, get_geq_constraint_matrices(lp))
     @test_throws(logger, ErrorException, get_leq_constraint_matrices(lp))
+    @test_throws(logger, ErrorException, construct_milp_relaxation(x -> x^2, [0.0, 1e-16]))
 end
