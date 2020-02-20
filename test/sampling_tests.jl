@@ -29,7 +29,7 @@ get_milp_xcube(; error_tolerance = 1e-2) = construct_milp_relaxation(
         @objective(m, Min, x[milp.y_index])
         optimize!(m)
         y_min = objective_value(m)
-        # solve for max y 
+        # solve for max y
         @objective(m, Max, x[milp.y_index])
         optimize!(m)
         y_max = objective_value(m)

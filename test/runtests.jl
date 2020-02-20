@@ -1,4 +1,5 @@
 using PolyhedralRelaxations
+using SparseArrays
 import Memento
 
 const PR = PolyhedralRelaxations
