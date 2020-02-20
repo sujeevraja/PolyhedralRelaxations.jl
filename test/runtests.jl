@@ -8,11 +8,9 @@ PR.logger_config!("debug")
 
 using Test
 using JuMP
-using GLPK
+using Cbc
 
-GLPK.jl_set_preemptive_check(false)
-glpk_optimizer =
-    JuMP.optimizer_with_attributes(GLPK.Optimizer, "msg_lev" => GLPK.OFF, "tm_lim" => 100.0)
+cbc_optimizer = JuMP.optimizer_with_attributes(Cbc.Optimizer, "logLevel" => 0)
 
 @testset "PolyhedralRelaxations" begin
 
