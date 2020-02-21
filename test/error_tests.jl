@@ -16,7 +16,11 @@
     )
 
     # Test for unbounded derivative value.
-    @test_throws(logger, ErrorException, construct_milp_relaxation(x -> sqrt(1-x^2), [0.0, 1.0]))
+    @test_throws(
+        logger,
+        ErrorException,
+        construct_milp_relaxation(x -> sqrt(1 - x^2), [0.0, 1.0])
+    )
 
     # Test for equal derivative values in adjacent points of the base partition.
     @test_throws(
