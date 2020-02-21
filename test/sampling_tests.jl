@@ -13,7 +13,7 @@ get_milp_xcube(; error_tolerance = 1e-2) = construct_milp_relaxation(
     for i = 1:10
         λ = rand()
         x_val = λ * lb + (1 - λ) * ub
-        m = Model(glpk_optimizer)
+        m = Model(cbc_optimizer)
         @variable(
             m,
             var_lb[i] <= x[i = 1:num_variables] <= var_ub[i],
@@ -43,10 +43,14 @@ end
     f = x -> x^3
     num_vars = 10
     tol = 1e-5
-    for l in [0.1,0.25,0.5,1.0]
+    for l in [0.1, 0.25, 0.5, 1.0]
         base_partition = collect(-1.0:l:1.0)
-        milp, function_data, = construct_milp_relaxation(f, base_partition, error_tolerance=tol,
-            num_additional_binary_variables=num_vars)
+        milp, function_data, = construct_milp_relaxation(
+            f,
+            base_partition,
+            error_tolerance = tol,
+            num_additional_binary_variables = num_vars,
+        )
         num_base = length(function_data.base_partition) - 1
         @test PR.get_num_binary_variables(milp) == num_base + num_vars
     end

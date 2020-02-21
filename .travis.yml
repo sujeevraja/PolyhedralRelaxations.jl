@@ -13,3 +13,10 @@ notifications:
 jobs:
   allow_failures:
     - julia: nightly
+  include:
+    - stage: "Examples"
+      julia: 1.0
+      os: linux
+      script:
+        - julia --project=examples -e 'using Pkg; Pkg.instantiate(); Pkg.add(PackageSpec(path=pwd()))'
+        - julia --project=examples --color=yes examples/run_examples.jl
