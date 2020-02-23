@@ -1,6 +1,6 @@
 @testset "linear objective function tests" begin
     PR.logger_config!("error")
-    f, partition = x -> x^3, collect(-1.0:0.05:1.0)
+    f, partition = x -> x^3, collect(-1.0:0.25:1.0)
 
     # create LP relaxation of the MILP relaxation of the univariate function.
     milp_relaxation, milp_function_data = construct_milp_relaxation(f, partition)
