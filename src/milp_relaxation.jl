@@ -1,10 +1,3 @@
-export has_eq_constraints,
-    has_leq_constraints,
-    get_eq_constraint_matrices,
-    get_leq_constraint_matrices,
-    get_variable_type,
-    get_num_variables
-
 """
 MILP relaxation struct which contains
 Constraint coefficients and right-hand-side of MIP relaxation.
@@ -31,16 +24,6 @@ struct MILPRelaxation <: AbstractFormulation
     variable_names::Vector{String}
     error_bound::Float64
 end
-
-"Getters for the LP relaxation struct"
-@inline has_eq_constraints(milp::MILPRelaxation) = true
-@inline has_leq_constraints(milp::MILPRelaxation) = true
-@inline get_eq_constraint_matrices(milp::MILPRelaxation) = milp.A_eq, milp.b_eq
-@inline get_leq_constraint_matrices(milp::MILPRelaxation) = milp.A_leq, milp.b_leq
-@inline get_variable_type(milp::MILPRelaxation) = milp.binary
-@inline get_num_binary_variables(milp::MILPRelaxation) = length(milp.z_indices)
-@inline get_num_variables(milp::MILPRelaxation) =
-    length(milp.δ_1_indices) + length(milp.δ_2_indices) + length(milp.z_indices) + 2
 
 """
 Column indices of variables in constraint matrix of MILP relaxation.
