@@ -1,5 +1,3 @@
-export get_function, get_derivative, get_domain_lb, get_domain_ub, get_domain, get_partition
-
 "Abstract formulation class"
 abstract type AbstractFormulation end
 
@@ -33,15 +31,6 @@ struct FunctionData
     derivative_tolerance::Float64  # maximum difference between successive derivative values
     num_additional_binary_variables::Int64  # maximum number of additional partition intervals
 end
-
-"Getters for FunctionData struct"
-@inline get_function(function_data::FunctionData) = function_data.f
-@inline get_derivative(function_data::FunctionData) = function_data.f_dash
-@inline get_domain_lb(function_data::FunctionData) = function_data.partition[1]
-@inline get_domain_ub(function_data::FunctionData) = function_data.partition[end]
-@inline get_domain(function_data::FunctionData) =
-    get_domain_lb(function_data), get_domain_ub(function_data)
-@inline get_partition(function_data::FunctionData) = function_data.partition
 
 """
     Struct to hold the constraint data.
