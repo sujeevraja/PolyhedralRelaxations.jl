@@ -1,6 +1,6 @@
 @testset "linear objective function tests" begin
     PR.logger_config!("error")
-    f, partition = x -> x^3, collect(-1.0:0.05:1.0)
+    f, partition = x -> x^3, collect(-1.0:0.25:1.0)
 
     # create LP relaxation of the MILP relaxation of the univariate function.
     milp_relaxation, milp_function_data = construct_milp_relaxation(f, partition)
@@ -12,7 +12,6 @@
     @constraint(milp, A * x .== b)
     A, b = get_leq_constraint_matrices(milp_relaxation)
     @constraint(milp, A * x .<= b)
-    set_objective_coefficient(milp, x[milp_relaxation.y_index], 1.0)
     binary_indices, _ = findnz(milp_relaxation.binary)
 
     # create LP relaxation of the univariate function using the convex hull formulation.
@@ -23,7 +22,6 @@
     @variable(lp, lb[i] <= y[i = 1:num_variables] <= ub[i])
     A, b = get_eq_constraint_matrices(lp_relaxation)
     @constraint(lp, A * y .== b)
-    set_objective_coefficient(lp, y[lp_relaxation.y_index], 1.0)
 
     # Collect possible solutions of relaxations.
     sec_verts, tan_verts = PR.collect_vertices(milp_function_data)
@@ -34,10 +32,9 @@
 
     tol = 1e-5
 
-    for i = 1:10
-        α = rand() * (π / 2)
-        set_objective_coefficient(milp, x[milp_relaxation.x_index], -tan(α))
-        set_objective_coefficient(lp, y[lp_relaxation.x_index], -tan(α))
+    for α ∈ collect(π/20:π/20:(2*π/5))
+        set_objective_function(milp, x[milp_relaxation.y_index] - (x[milp_relaxation.x_index]*tan(α)))
+        set_objective_function(lp, y[lp_relaxation.y_index] - (y[lp_relaxation.x_index]*tan(α)))
 
         for s in [MOI.MIN_SENSE, MOI.MAX_SENSE]
             # Solve MILP relaxation.

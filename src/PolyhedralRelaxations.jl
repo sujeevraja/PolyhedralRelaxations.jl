@@ -41,7 +41,6 @@ const ∞ = 1e12
 include("common.jl")
 include("lp_relaxation.jl")
 include("milp_relaxation.jl")
-include("helper.jl")
 include("api.jl")
 
 end
