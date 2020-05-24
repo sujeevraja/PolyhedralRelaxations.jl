@@ -6,13 +6,14 @@
 
 # PolyhedralRelaxations.jl
 
-UnivariatePolyhedralRelaxations.jl is a Julia package to construct mixed-integer linear programming and linear programming (MILP and LP) relaxations for univariate, continuous, and differentiable functions whose domain is also bounded. The package constructs the relaxations and returns a sparse matrix A and column vector b with additional details on what each variable represents and whether the variable is continuous or binary. 
+PolyhedralRelaxations.jl is a Julia package to construct mixed-integer linear programming and linear programming (MILP and LP) relaxations for univariate, continuous, and differentiable functions whose domain is also bounded. The package constructs the relaxations and returns a sparse matrix A and column vector b with additional details on what each variable represents and whether the variable is continuous or binary. 
 
 ## Documentation 
-
-## Acknowledgements 
+See docs for detailed documentation
 
 ## Citation
+If you find PolyhedralRelaxations.jl useful in your work, we kindly request that you cite the following paper: 
+
 
 
 
