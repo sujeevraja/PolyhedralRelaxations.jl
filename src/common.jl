@@ -29,7 +29,7 @@ struct FunctionData
     error_tolerance::Float64  # maximum allowed error bound
     length_tolerance::Float64  # maximum allowed distance between successive partition points
     derivative_tolerance::Float64  # maximum difference between successive derivative values
-    num_additional_binary_variables::Int64  # maximum number of additional partition intervals
+    num_additional_partitions::Int64  # maximum number of additional partition intervals
 end
 
 """
@@ -230,7 +230,7 @@ end
 function refine_partition!(function_data::FunctionData)
     # Don't refine the partition if no additional constraints are specified.
     if isnan(function_data.error_tolerance) &&
-       function_data.num_additional_binary_variables <= 0
+       function_data.num_additional_partitions <= 0
         return
     end
 
@@ -283,13 +283,13 @@ function is_refinement_feasible(
     end
 
     # Check if the maximum allowed number of binary variables have been added.
-    if function_data.num_additional_binary_variables > 0
+    if function_data.num_additional_partitions > 0
         num_added = length(function_data.partition) - length(function_data.base_partition)
-        if num_added >= function_data.num_additional_binary_variables
+        if num_added >= function_data.num_additional_partitions
             Memento.debug(_LOGGER, "number of new binary variables: $num_added")
             Memento.debug(
                 _LOGGER,
-                "budget: $(function_data.num_additional_binary_variables)",
+                "budget: $(function_data.num_additional_partitions)",
             )
             return false
         end

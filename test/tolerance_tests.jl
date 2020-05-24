@@ -46,7 +46,7 @@ end
             f,
             base_partition,
             error_tolerance = tol,
-            num_additional_binary_variables = num_vars,
+            num_additional_partitions = num_vars,
         )
         num_base = length(function_data.base_partition) - 1
         @test PR.get_num_binary_variables(milp) == num_base + num_vars
