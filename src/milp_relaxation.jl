@@ -1,9 +1,8 @@
 """
-MILP relaxation struct which contains
+MILP relaxation struct
+
 Constraint coefficients and right-hand-side of MIP relaxation.
-
-Variables are ordered as: x,y,δ_1^i,δ_2^i,z_i.
-
+Variables are ordered as: ``x,~y,~\\delta_1^i,~\\delta_2^i,~z_i``
 All constraints are either equality or less-than-or-equal-to constraints.
 """
 struct MILPRelaxation <: AbstractFormulation
@@ -25,10 +24,7 @@ struct MILPRelaxation <: AbstractFormulation
     error_bound::Float64
 end
 
-"""
-Column indices of variables in constraint matrix of MILP relaxation.
-Indices of δ_1^i, δ_2^i and z_i start from 3.
-"""
+" Column indices of variables in constraint matrix of MILP relaxation. Indices of ``\\delta_1^i,~\\delta_2^i`` and ``z_i`` start from 3"
 struct MILPVariableIndices <: AbstractVariableIndices
     x_index::Int64
     y_index::Int64
@@ -45,9 +41,8 @@ end
     2
 
 """
-    MILPRelaxation(function_data, milp_variable_indices,
-        eq_constraint_data, leq_constraint_data,
-            f_min, f_max)::MILPRelaxation
+    MILPRelaxation(function_data, milp_variable_indices, eq_constraint_data, leq_constraint_data, f_min, f_max)
+
 Constructor for the struct MILPRelaxation
 """
 function MILPRelaxation(
@@ -107,13 +102,9 @@ end
 """
     MILPVariableIndices(num_partition_points)::MILPVariableIndices
 
-Constructor for the struct MILPVariableIndices; the only input it takes is the number of partition
-points. Return the collection of column indices of all variables in the MILP constraint matrix.
+Constructor for the struct MILPVariableIndices; the only input it takes is the number of partition points. Return the collection of column indices of all variables in the MILP constraint matrix.
 
-If there are k partition points, there are k-1 intervals, with each interval corresponding to a
-triangle. As we need one delta_1 variable, delta_2 variable and z variable for each triangle, we
-need k-1 of each of these variables in total. For instance, if k=3, we need 2 delta_1 variables with
-indices 3,4. As the collect() function includes both endpoints, we should collect only up to
+If there are k partition points, there are k-1 intervals, with each interval corresponding to a triangle. As we need one ``\\delta_1`` variable, ``\\delta_2`` variable and ``z`` variable for each triangle, we need k-1 of each of these variables in total. For instance, if k=3, we need 2 ``\\delta_1`` variables with indices 3,4. As the collect() function includes both endpoints, we should collect only up to
 num_vars-1. Then, we will get the correct count for each variable set.
 """
 function MILPVariableIndices(num_partition_points::Int64)::MILPVariableIndices
@@ -181,7 +172,7 @@ end
 """
     add_first_δ_constraint!(constraint_data, milp_variable_indices)
 
-Add the constraint "δ_1^1 + δ_2^1 <= 1 to `constraint_data` using variable indices from
+Add the constraint ``\\delta_1^1 + \\delta_2^1 <= 1`` to `constraint_data` using variable indices from
 `milp_variable_indices`.
 """
 function add_first_δ_constraint!(
@@ -201,11 +192,11 @@ end
 
 Add the constraint families
 
-    δ_1^i + δ_2^i - z_{i-1} <= 0
-    δ_2^{i-1} >= z_{i-1}
+``\\delta_1^i + \\delta_2^i - z_{i-1} \\leq 0`` 
 
-to `constraint_data` using variable indices from `milp_variable_indices`. The number of each of these
-constraints corresponds to the number of triangles specified by `num_triangles`.
+``\\delta_2^{i-1} >= z_{i-1}``
+
+to `constraint_data` using variable indices from `milp_variable_indices`. The number of each of these constraints corresponds to the number of triangles specified by `num_triangles`.
 """
 function add_linking_constraints!(
     constraint_data::ConstraintData,
@@ -233,8 +224,7 @@ end
 """
     build_milp_relaxation(function_data)
 
-Return a MILPRelaxation object with constraint and RHS information of the MILP formulation of the
-polyhedral relaxation.
+Return a MILPRelaxation object with constraint and RHS information of the MILP formulation of the polyhedral relaxation.
 """
 function build_milp_relaxation(
     function_data::FunctionData,

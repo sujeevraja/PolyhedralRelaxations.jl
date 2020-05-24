@@ -11,7 +11,9 @@ makedocs(
     authors = "Sujeevraja Sanjeevi and Kaarthik Sundar",
     pages = [
         "Introduction" => "index.md",
-        "Quick Start Guide" => "quickstart.md",
+        "API" => "api.md",
+        "Interfacing with JuMP" => "interface.md",
+        "Reference" => "reference.md"
     ],
 )
 

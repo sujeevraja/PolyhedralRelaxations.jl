@@ -4,10 +4,10 @@ abstract type AbstractFormulation end
 "Abstract variable index class"
 abstract type AbstractVariableIndices end
 
-"ConstraintMatrix is contains the pair (A, b) where A is a sparse matrix"
+"ConstraintMatrix is contains the pair ``(A, b)`` where ``A``` is a sparse matrix"
 const ConstraintMatrix = Pair{SparseMatrixCSC{<:Real,Int64},Vector{<:Real}}
 
-"Vertex is a pair (x, y)"
+"Vertex is a pair ``(x, y)``"
 const Vertex = Pair{<:Real,<:Real}
 
 """
@@ -34,7 +34,8 @@ end
 
 """
     Struct to hold the constraint data.
-    It contains info to create the sparse constraint matrices.
+
+It contains info to create the sparse constraint matrices.
 """
 mutable struct ConstraintData
     constraint_row_indices::Vector{Int64}
@@ -86,8 +87,7 @@ end
 """
     get_tangent_vertex(prev_secant_vertex, next_secant_vertex, derivative)
 
-Return (x,y) coordinates of the intersection of tangents drawn at `prev_secant_vertex` and
-`next_secant_vertex`.
+Return ``(x,y)`` coordinates of the intersection of tangents drawn at `prev_secant_vertex` and `next_secant_vertex`.
 """
 function get_tangent_vertex(
     prev_secant_vertex::Vertex,
@@ -115,9 +115,6 @@ Each element in the secant vertex list is a pair (x,y) where
 Each element in the tangent vertex list is also a pair (x,y). Each position i of the list contains
 the vertex formed by intersection of tangents of the curve `y=function_data.f(x)` at
 `secant_vertices[i]` and `secant_vertices[i+1]`.
-
-In terms of notation in the paper, `secant_vertices[i]` is the vertex v_i, `secant_vertices[i+1]`
-is the vertex v_{i+1} and `tangent_vertices[i]` is the vertex v_{i,i+1}.
 """
 function collect_vertices(function_data::FunctionData)::Pair{Vector{Vertex},Vector{Vertex}}
     secant_vertices, tangent_vertices = Vertex[], Vertex[]
@@ -138,8 +135,7 @@ end
 """
     add_coeff!(constraint_data, row, col, value)
 
-Add the coefficient `value` of the variable with index `col` to the constraint with index `row` to
-`constraint_data`.
+Add the coefficient `value` of the variable with index `col` to the constraint with index `row` to `constraint_data`.
 """
 function add_coeff!(constraint_data::ConstraintData, row::Int64, col::Int64, value::Float64)
     push!(constraint_data.constraint_row_indices, row)
@@ -229,8 +225,7 @@ end
 "Partition refinement schemes (interval bisection)"
 function refine_partition!(function_data::FunctionData)
     # Don't refine the partition if no additional constraints are specified.
-    if isnan(function_data.error_tolerance) &&
-       function_data.num_additional_partitions <= 0
+    if isnan(function_data.error_tolerance) && function_data.num_additional_partitions <= 0
         return
     end
 
@@ -287,10 +282,7 @@ function is_refinement_feasible(
         num_added = length(function_data.partition) - length(function_data.base_partition)
         if num_added >= function_data.num_additional_partitions
             Memento.debug(_LOGGER, "number of new binary variables: $num_added")
-            Memento.debug(
-                _LOGGER,
-                "budget: $(function_data.num_additional_partitions)",
-            )
+            Memento.debug(_LOGGER, "budget: $(function_data.num_additional_partitions)")
             return false
         end
     end
