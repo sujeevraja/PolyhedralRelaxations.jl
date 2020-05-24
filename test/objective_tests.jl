@@ -33,8 +33,14 @@
     tol = 1e-5
 
     for α ∈ collect(π/20:π/20:(2*π/5))
-        set_objective_function(milp, x[milp_relaxation.y_index] - (x[milp_relaxation.x_index]*tan(α)))
-        set_objective_function(lp, y[lp_relaxation.y_index] - (y[lp_relaxation.x_index]*tan(α)))
+        set_objective_function(
+            milp,
+            x[milp_relaxation.y_index] - (x[milp_relaxation.x_index] * tan(α)),
+        )
+        set_objective_function(
+            lp,
+            y[lp_relaxation.y_index] - (y[lp_relaxation.x_index] * tan(α)),
+        )
 
         for s in [MOI.MIN_SENSE, MOI.MAX_SENSE]
             # Solve MILP relaxation.
