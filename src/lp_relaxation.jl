@@ -1,10 +1,11 @@
 """
-LP relaxation struct which contains
-Constraint coefficients and right-hand-side of LP relaxation.
+    LP relaxation struct 
 
-Variables are ordered as: x,y,λ_i.
+Constraint coefficients and right-hand-side of LP relaxation
 
-All constraints are equality constraints.
+Variables are ordered as: ``x,~y,~\\lambda_i``
+
+All constraints are equality constraints
 """
 struct LPRelaxation <: AbstractFormulation
     A::SparseMatrixCSC{Float64,Int64}
@@ -19,9 +20,7 @@ struct LPRelaxation <: AbstractFormulation
     error_bound::Float64
 end
 
-"""
-Column indices of variables in constraint matrix of LP relaxation.
-"""
+"Column indices of variables in constraint matrix of LP relaxation"
 struct LPVariableIndices <: AbstractVariableIndices
     x_index
     y_index
@@ -29,12 +28,7 @@ struct LPVariableIndices <: AbstractVariableIndices
 end
 
 """
-    LPRelaxation(
-        function_data::FunctionData,
-        constraint_data::ConstraintData,
-        lp_variable_indices::LPVariableIndices,
-        f_min::Float64,
-        f_max::Float64)::LPRelaxation
+    LPRelaxation(function_data, constraint_data, lp_variable_indices, f_min, f_max)
 
 Constructor for the struct LPRelaxation
 """
@@ -77,10 +71,9 @@ function LPRelaxation(
 end
 
 """
-    LPVariableIndices(num_partition_points::Int64)::LPVariableIndices
+    LPVariableIndices(num_partition_points)
 
-Constructor for the LPVariableIndices struct. The only input it takes is the number of partition
-points.
+Constructor for the LPVariableIndices struct. The only input it takes is the number of partition points.
 """
 function LPVariableIndices(num_partition_points::Int64)::LPVariableIndices
     num_λ_variables = num_partition_points + 1
@@ -102,7 +95,7 @@ function get_lp_relaxation_vertices(function_data::FunctionData)::Vector{Vertex}
 end
 
 """
-    build_lp_relaxation(function_data::FunctionData)::Pair{LPRelaxation,FunctionData}
+    build_lp_relaxation(function_data)
 
 Function to build the LP relaxation given the function data
 """
