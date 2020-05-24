@@ -248,10 +248,9 @@ function refine_partition!(function_data::FunctionData)
         x_end = partition[start+1]
         Memento.debug(_LOGGER, "max error: $max_error between $x_start, $x_end")
 
-        # Errors of partition intervals in `error_queue` are indexed by positions of interval
-        # starts in `refined_partition`. As we will be inserting `x_new` into `refined_partition`
-        # between positions `start` and `start+1`, the positions of interval-starts after `x_new`
-        # will all increase by 1 after the insertions. Upade the queue with this new indexing.
+        """
+        Errors of partition intervals in `error_queue` are indexed by positions of interval starts in `refined_partition`. As we will be inserting `x_new` into `refined_partition` between positions `start` and `start+1`, the positions of interval-starts after `x_new` will all increase by 1 after the insertions. Upade the queue with this new indexing.
+        """
         num_starts = length(partition)
         for i = num_starts:-1:start+1
             error_queue[i] = error_queue[i-1]

@@ -1,11 +1,14 @@
-export
-    construct_lp_relaxation,
+"""
+API for the PolyhedralRelaxations.jl package
+"""
+export construct_lp_relaxation,
     construct_milp_relaxation,
     get_variable_bounds,
     get_variable_names,
     has_geq_constraints,
     get_geq_constraint_matrices,
-    get_error_bound, has_eq_constraints,
+    get_error_bound,
+    has_eq_constraints,
     has_leq_constraints,
     get_eq_constraint_matrices,
     get_leq_constraint_matrices,
@@ -20,6 +23,9 @@ export
     get_partition
 
 
+"""
+    This function is the entry point for constructing a MILP relaxation for the constraint ``y = f(x)``. The mandatory inputs to the functions are the function, the base partition. All other arguments are optional. The keyword argument `error_tolerance` is used to obtain an MILP relaxation by adding more partitions to the `base_partition`. Partitions are added till the difference between the over-estimator and under-estimator of the relaxation is less than the `error_tolerance` for any value in the domain. `length_tolerance` is similar in the sense that it prohibits adding more partitions to an interval that is less than this value and `derivative_tolerance` is used to check if derivaties of the function as successive discretization points are not equal to each other. Finally, the `num_additional_binary_variables` can be used generate an MILP relaxation of the function with a budget on the number of binary variables required. Note that if the number of partitions is N and the number of additional binary variables is M, then the function will return a relaxation with at most (N+M) binary variables.
+"""
 function construct_milp_relaxation(
     f::Function,
     base_partition::Vector{<:Real};
@@ -39,6 +45,9 @@ function construct_milp_relaxation(
     )
 end
 
+"""
+    This function is the entry point for constructing a MILP relaxation for the constraint ``y = f(x)``. The mandatory inputs to the functions are the function, its derivative, and the base partition. All other arguments are optional. The keyword argument `error_tolerance` is used to obtain an MILP relaxation by adding more partitions to the `base_partition`. Partitions are added till the difference between the over-estimator and under-estimator of the relaxation is less than the `error_tolerance` for any value in the domain. `length_tolerance` is similar in the sense that it prohibits adding more partitions to an interval that is less than this value and `derivative_tolerance` is used to check if derivaties of the function as successive discretization points are not equal to each other. Finally, the `num_additional_binary_variables` can be used generate an MILP relaxation of the function with a budget on the number of binary variables required. Note that if the number of partitions is N and the number of additional binary variables is M, then the function will return a relaxation with at most (N+M) binary variables.
+"""
 function construct_milp_relaxation(
     f::Function,
     f_dash::Function,
@@ -63,6 +72,9 @@ function construct_milp_relaxation(
     return build_milp_relaxation(function_data)
 end
 
+"""
+    This function is the entry point for constructing a LP relaxation for the constraint ``y = f(x)``. The mandatory inputs to the functions are the function, the base partition. All other arguments are optional. The keyword argument `error_tolerance` is used to obtain an LP relaxation by adding more partitions to the `base_partition`. Partitions are added till the difference between the over-estimator and under-estimator of the relaxation is less than the `error_tolerance` for any value in the domain. `length_tolerance` is similar in the sense that it prohibits adding more partitions to an interval that is less than this value and `derivative_tolerance` is used to check if derivaties of the function as successive discretization points are not equal to each other. Finally, the `num_additional_binary_variables` can be used generate an LP relaxation of the function with a budget on the number of binary variables required. Note that if the number of partitions is N and the number of additional binary variables is M, then the function will return a relaxation with at most (N+M) binary variables. Here, the `num_additional_binary_variables` is just used as a parameter for refining the partitions since both the MILP and the LP relaxations use the same partition refinement scheme. But the relaxation that is provided is an LP relaxation. 
+"""
 function construct_lp_relaxation(
     f::Function,
     base_partition::Vector{<:Real};
@@ -82,6 +94,9 @@ function construct_lp_relaxation(
     )
 end
 
+"""
+    This function is the entry point for constructing a LP relaxation for the constraint ``y = f(x)``. The mandatory inputs to the functions are the function, the derivate, and the base partition. All other arguments are optional. The keyword argument `error_tolerance` is used to obtain an LP relaxation by adding more partitions to the `base_partition`. Partitions are added till the difference between the over-estimator and under-estimator of the relaxation is less than the `error_tolerance` for any value in the domain. `length_tolerance` is similar in the sense that it prohibits adding more partitions to an interval that is less than this value and `derivative_tolerance` is used to check if derivaties of the function as successive discretization points are not equal to each other. Finally, the `num_additional_binary_variables` can be used generate an LP relaxation of the function with a budget on the number of binary variables required. Note that if the number of partitions is N and the number of additional binary variables is M, then the function will return a relaxation with at most (N+M) binary variables. Here, the `num_additional_binary_variables` is just used as a parameter for refining the partitions since both the MILP and the LP relaxations use the same partition refinement scheme. But the relaxation that is provided is an LP relaxation. 
+"""
 function construct_lp_relaxation(
     f::Function,
     f_dash::Function,
