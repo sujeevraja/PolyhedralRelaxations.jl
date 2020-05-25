@@ -4,21 +4,19 @@ abstract type AbstractFormulation end
 "Abstract variable index class"
 abstract type AbstractVariableIndices end
 
-"ConstraintMatrix is contains the pair ``(A, b)`` where ``A``` is a sparse matrix"
+"ConstraintMatrix contains the pair ``(A, b)`` where ``A`` is a sparse matrix"
 const ConstraintMatrix = Pair{SparseMatrixCSC{<:Real,Int64},Vector{<:Real}}
 
 "Vertex is a pair ``(x, y)``"
 const Vertex = Pair{<:Real,<:Real}
 
 """
-    Struct to hold the function data with the inputs provided by the user.
+The struct `FunctionData` holds the inputs provided by the user. It takes in the function and its derivative (as lambda expressions), the base partition that the user provides, the partition (refinement of the base partition), 3 tolerance values
 
-It takes in the function and its derivative (as lambda expressions), the base partition
-that the user provides, the partition (refinement of the base partition), 3 tolerance values
-(1) error tolerance denotes the strength of the relaxation (the closer to zero the stronger
+* error tolerance denotes the strength of the relaxation (the closer to zero the stronger
     the relaxation),
-(2) length tolerance (maximum difference between successive derivative values), and
-(3) derivative tolerance denotes the tolerance for checking equality of derivative values at
+* length tolerance (maximum difference between successive derivative values), and
+* derivative tolerance denotes the tolerance for checking equality of derivative values at
     subsequent partition points, and finally, the maximum number of additional partition intervals.
 """
 struct FunctionData
@@ -32,11 +30,7 @@ struct FunctionData
     num_additional_partitions::Int64  # maximum number of additional partition intervals
 end
 
-"""
-    Struct to hold the constraint data.
-
-It contains info to create the sparse constraint matrices.
-"""
+" This struct holds the constraint data. It contains info to create the sparse constraint matrices"
 mutable struct ConstraintData
     constraint_row_indices::Vector{Int64}
     constraint_column_indices::Vector{Int64}
@@ -64,7 +58,11 @@ function ConstraintData()::ConstraintData
     )
 end
 
-"Helper function to construct ConstraintMatrix from ConstraintData and number of variables"
+"""
+    get_constraint_matrix(constraint_data, num_variables)
+
+Helper function to construct ConstraintMatrix from ConstraintData and number of variables
+"""
 function get_constraint_matrix(
     constraint_data::ConstraintData,
     num_variables::Int64,
@@ -153,7 +151,11 @@ function add_rhs!(constraint_data::ConstraintData, row::Int64, value::Float64)
     push!(constraint_data.rhs_values, value)
 end
 
-"ConstraintData validator - checks for correctness"
+"""
+    validate(constraint_data)
+
+ConstraintData validator - checks for correctness
+"""
 function validate(constraint_data::ConstraintData)
     num_entries = length(constraint_data.constraint_row_indices)
     @assert num_entries == length(constraint_data.constraint_column_indices)
@@ -161,7 +163,11 @@ function validate(constraint_data::ConstraintData)
     @assert length(constraint_data.rhs_row_indices) == length(constraint_data.rhs_values)
 end
 
-"Input data point validator"
+"""
+    validate_point(function_data, x)
+
+Input data point validator
+"""
 function validate_point(function_data::FunctionData, x::Float64)
     if !isfinite(x) || abs(x) >= ∞
         Memento.error(_LOGGER, "all partition points must be finite")
@@ -178,7 +184,11 @@ function validate_point(function_data::FunctionData, x::Float64)
     end
 end
 
-"Input data validator"
+"""
+    validate(function_data)
+
+Input data validator
+"""
 function validate(function_data::FunctionData)
     if length(function_data.partition) < 2
         Memento.error(_LOGGER, "partition must have at least 2 points")
@@ -222,7 +232,11 @@ function validate(function_data::FunctionData)
     Memento.debug(_LOGGER, "input data valid.")
 end
 
-"Partition refinement schemes (interval bisection)"
+"""
+    refine_partition!(function_data)
+
+Partition refinement schemes (interval bisection)
+"""
 function refine_partition!(function_data::FunctionData)
     # Don't refine the partition if no additional constraints are specified.
     if isnan(function_data.error_tolerance) && function_data.num_additional_partitions <= 0
@@ -262,7 +276,11 @@ function refine_partition!(function_data::FunctionData)
     end
 end
 
-"This function checks if the refinement is feasible"
+"""
+    is_refinement_feasible(function_data, error_queue)
+
+This function checks if the refinement is feasible
+"""
 function is_refinement_feasible(
     function_data::FunctionData,
     error_queue::PriorityQueue,
