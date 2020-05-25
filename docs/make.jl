@@ -17,6 +17,6 @@ makedocs(
     ],
 )
 
-# deploydocs(
-#     repo   = "github.com/JuliaOpt/JuMP.jl.git",
-# )
+deploydocs(
+    repo   = "github.com/sujeevraja/PolyhedralRelaxations.jl.git",
+)
