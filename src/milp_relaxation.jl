@@ -1,5 +1,5 @@
 """
-MILP relaxation struct
+    MILP relaxation struct
 
 Constraint coefficients and right-hand-side of MIP relaxation.
 Variables are ordered as: ``x,~y,~\\delta_1^i,~\\delta_2^i,~z_i``
@@ -24,7 +24,7 @@ struct MILPRelaxation <: AbstractFormulation
     error_bound::Float64
 end
 
-" Column indices of variables in constraint matrix of MILP relaxation. Indices of ``\\delta_1^i,~\\delta_2^i`` and ``z_i`` start from 3"
+"Column indices of variables in constraint matrix of MILP relaxation. Indices of ``\\delta_1^i,~\\delta_2^i`` and ``z_i`` start from 3"
 struct MILPVariableIndices <: AbstractVariableIndices
     x_index::Int64
     y_index::Int64
@@ -33,7 +33,7 @@ struct MILPVariableIndices <: AbstractVariableIndices
     z_indices::Vector{Int64}
 end
 
-"Getters for MILPVariableIndices"
+"get number of variables from the `MILPVariableIndices` struct"
 @inline get_num_variables(milp_variable_indices::MILPVariableIndices)::Int64 =
     length(milp_variable_indices.δ_1_indices) +
     length(milp_variable_indices.δ_2_indices) +
@@ -132,8 +132,7 @@ end
 
 Add vertex constraints to `constraint_data` using variable indices from `milp_variable_indices`.
 
-These constraints link the x and y coordinate variables to the δ variables. The lists
-`secant_vertices` and `tangent_vertices` are used to compute coefficients of δ variables.
+These constraints link the x and y coordinate variables to the ``\\delta`` variables. The lists `secant_vertices` and `tangent_vertices` are used to compute coefficients of ``\\delta`` variables.
 """
 function add_vertex_constraints!(
     constraint_data::ConstraintData,
@@ -172,8 +171,7 @@ end
 """
     add_first_δ_constraint!(constraint_data, milp_variable_indices)
 
-Add the constraint ``\\delta_1^1 + \\delta_2^1 <= 1`` to `constraint_data` using variable indices from
-`milp_variable_indices`.
+Add the constraint ``\\delta_1^1 + \\delta_2^1 \leq 1`` to `constraint_data` using variable indices from `milp_variable_indices`.
 """
 function add_first_δ_constraint!(
     constraint_data::ConstraintData,

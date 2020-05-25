@@ -1,11 +1,7 @@
 """
     LP relaxation struct 
 
-Constraint coefficients and right-hand-side of LP relaxation
-
-Variables are ordered as: ``x,~y,~\\lambda_i``
-
-All constraints are equality constraints
+Constraint coefficients and right-hand-side of LP relaxation. Variables are ordered as: ``x,~y,~\\lambda_i``. All constraints are equality constraints
 """
 struct LPRelaxation <: AbstractFormulation
     A::SparseMatrixCSC{Float64,Int64}
