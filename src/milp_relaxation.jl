@@ -123,11 +123,7 @@ function MILPVariableIndices(num_partition_points::Int64)::MILPVariableIndices
 end
 
 """
-    add_vertex_constraints!(
-        constraint_data,
-        milp_variable_indices,
-        secant_vertices,
-        tangent_vertices)
+    add_vertex_constraints!(constraint_data, milp_variable_indices, secant_vertices, tangent_vertices)
 
 Add vertex constraints to `constraint_data` using variable indices from `milp_variable_indices`.
 
