@@ -171,7 +171,7 @@ end
 """
     add_first_δ_constraint!(constraint_data, milp_variable_indices)
 
-Add the constraint ``\\delta_1^1 + \\delta_2^1 \leq 1`` to `constraint_data` using variable indices from `milp_variable_indices`.
+Add the constraint ``\\delta_1^1 + \\delta_2^1 \\leq 1`` to `constraint_data` using variable indices from `milp_variable_indices`.
 """
 function add_first_δ_constraint!(
     constraint_data::ConstraintData,
