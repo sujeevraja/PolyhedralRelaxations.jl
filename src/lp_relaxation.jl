@@ -1,5 +1,5 @@
 """
-    LP relaxation struct 
+    struct to hold LP relaxation
 
 Constraint coefficients and right-hand-side of LP relaxation. Variables are ordered as: ``x,~y,~\\lambda_i``. All constraints are equality constraints
 """
