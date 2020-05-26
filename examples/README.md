@@ -1,4 +1,4 @@
-> :warning: If you are viewing the examples on GitHub, make sure that the JuMP version installed is > 0.21.0.
+> :warning: If you are viewing the examples on GitHub, make sure that the JuMP version installed is >= 0.21.0.
 
 # PolyhedralRelaxations.jl examples
 
