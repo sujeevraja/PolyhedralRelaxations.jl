@@ -17,7 +17,7 @@ For more examples and details on the helper functions, the reader is referred to
 ## Additional Algorithms
 Apart from providing MILP and LP relaxations of graphs of univariate function ``y=f(x)`` for a given partition, the package also implements some basic partitioning algorithms to refine the partition and provide tighter relaxations. Given a partition, PolyhedralRelaxations.jl can refine the partition using an interval-bisection algorithm detailed in the following reference: 
 
-* K. Sundar, S. Sanjeevi, and H, Nagarajan (forthcoming). Sequence of Polyhedral Relaxations for Nonlinear Univariate Functions.
+* K. Sundar, S. Sanjeevi, and H, Nagarajan (2020). Sequence of Polyhedral Relaxations for Nonlinear Univariate Functions. ([arxiv link](https://arxiv.org/abs/2005.13445))
 
 The partition refinement scheme is equipped with multiple stopping criteria that can be toggled by setting non-default values to the following keyword arguments in the standard API:
 
