@@ -18,7 +18,9 @@ Please report any issues via the Github **[issue tracker]**. All types of issues
 ## Citation
 If you find PolyhedralRelaxations.jl useful in your work, we kindly request that you cite the following paper: 
 
-K. Sundar, S. Sanjeevi, and H, Nagarajan (forthcoming). Sequence of Polyhedral Relaxations for Nonlinear Univariate Functions.
+K. Sundar, S. Sanjeevi, and H, Nagarajan (2020). Sequence of Polyhedral Relaxations for Nonlinear Univariate Functions. (**[arxiv link]**)
+
+[arxiv]: https://arxiv.org/abs/2005.13445
 
 
 

@@ -52,4 +52,4 @@ As far as the LP relaxation is concerned, the package will return the convex hul
 ### Type of formulation used
 The MILP formulation, obtained as the disjunction of the triangles, is formulated using the incremental method (using the so-called ``\delta`` variables) and the convex hull of the triangles (the LP) is formulated using the standard ``\lambda``-method (V-representation). For details on the formulation and theoretical properties, interested readers are referred to the following paper:
 
-* K. Sundar, S. Sanjeevi, and H, Nagarajan (forthcoming). Sequence of Polyhedral Relaxations for Nonlinear Univariate Functions.
+* K. Sundar, S. Sanjeevi, and H, Nagarajan (2020). Sequence of Polyhedral Relaxations for Nonlinear Univariate Functions. ([arxiv link](https://arxiv.org/abs/2005.13445))
