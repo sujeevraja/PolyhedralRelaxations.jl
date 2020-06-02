@@ -1,5 +1,8 @@
 PolyhedralRelaxations.jl Change Log
 =========================
+### v0.1.2
+- patch release
+- Update Datastructures version 
 
 ### v0.1.1
 - patch release
