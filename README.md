@@ -1,4 +1,4 @@
-[![Build Status](https://travis-ci.org/sujeevraja/PolyhedralRelaxations.jl/workflows/CI/badge.svg?branch=master)](https://travis-ci.org/sujeevraja/PolyhedralRelaxations.jl/actions?query=workflow%3ACI) 
+[![Build Status](https://github.com//sujeevraja/PolyhedralRelaxations.jl/workflows/CI/badge.svg?branch=master)](https://github.com/sujeevraja/PolyhedralRelaxations.jl/actions?query=workflow%3ACI) 
 [![codecov](https://codecov.io/gh/sujeevraja/PolyhedralRelaxations.jl/branch/master/graph/badge.svg)](https://codecov.io/gh/sujeevraja/PolyhedralRelaxations.jl)
 [![Coverage Status](https://coveralls.io/repos/github/sujeevraja/PolyhedralRelaxations.jl/badge.svg?branch=master)](https://coveralls.io/github/sujeevraja/PolyhedralRelaxations.jl?branch=master)
 [![](https://img.shields.io/badge/docs-stable-blue.svg)](https://sujeevraja.github.io/PolyhedralRelaxations.jl/stable/)
