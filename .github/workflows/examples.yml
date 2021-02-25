@@ -1,0 +1,21 @@
+name: Examples
+on:
+  push:
+    branches: [master]
+    tags: '*'
+  pull_request:
+    types: [opened, synchronize, reopened]
+jobs:
+  docs:
+    if: "!contains(github.event.head_commit.message, 'skip ci')"
+    name: Examples
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: julia-actions/setup-julia@latest
+        with:
+          version: '1'
+      - name: Install Dependencies
+        run: julia --project=examples -e 'using Pkg; Pkg.develop(PackageSpec(path=pwd())); Pkg.instantiate()'
+      - name: Run Examples
+        run: julia --project=examples examples/run_examples.jl
