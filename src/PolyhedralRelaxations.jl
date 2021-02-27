@@ -3,6 +3,8 @@ module PolyhedralRelaxations
 using DataStructures
 using SparseArrays
 
+using JuMP
+
 import ForwardDiff
 import Memento
 
