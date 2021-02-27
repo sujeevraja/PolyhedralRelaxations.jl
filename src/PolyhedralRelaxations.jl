@@ -41,8 +41,8 @@ const ϵ = 1e-3
 const ∞ = 1e12
 
 include("common.jl")
-include("lp_relaxation.jl")
-include("milp_relaxation.jl")
+include("univariate_lp_relaxation.jl")
+include("univariate_milp_relaxation.jl")
 include("api.jl")
 
 end

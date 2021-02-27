@@ -1,5 +1,7 @@
 export construct_lp_relaxation,
     construct_milp_relaxation,
+    construct_univariate_milp_relaxation,
+    construct_univariate_lp_relaxation,
     get_variable_bounds,
     get_variable_names,
     has_geq_constraints,
@@ -19,31 +21,6 @@ export construct_lp_relaxation,
     get_domain,
     get_partition
 
-
-"""
-    construct_milp_relaxation(f, base_partition; error_tolerance = NaN64, length_tolerance = ϵ, derivative_tolerance = ϵ, num_additional_partitions = 0)
-
-This function is the entry point for constructing a MILP relaxation for the constraint ``y = f(x)``. The mandatory inputs to the functions are the function, the base partition. All other arguments are optional. The keyword argument `error_tolerance` is used to obtain an MILP relaxation by adding more partitions to the `base_partition`. Partitions are added till the vertical distance between the over-estimator and under-estimator of the relaxation is less than the `error_tolerance` for any value in the domain. `length_tolerance` is similar in the sense that it prohibits adding more partitions to an interval that is less than this value and `derivative_tolerance` is used to check if derivaties of the function as successive discretization points are not equal to each other. Finally, the `num_additional_partitions` can be used generate an LP relaxation of the function with a budget on the number of partitions. Note that if the number of partitions is ``n`` and the number of additional partitions is ``m``, then the function will return a relaxation with at most ``n+m`` partitions. 
-"""
-function construct_milp_relaxation(
-    f::Function,
-    base_partition::Vector{<:Real};
-    error_tolerance::Float64 = NaN64,
-    length_tolerance::Float64 = ϵ,
-    derivative_tolerance::Float64 = ϵ,
-    num_additional_partitions::Int64 = 0,
-)::Pair{MILPRelaxation,FunctionData}
-    return construct_milp_relaxation(
-        f,
-        x -> ForwardDiff.derivative(f, x),
-        base_partition,
-        error_tolerance = error_tolerance,
-        length_tolerance = length_tolerance,
-        derivative_tolerance = derivative_tolerance,
-        num_additional_partitions = num_additional_partitions,
-    )
-end
-
 """
     construct_univariate_milp_relaxation(m, x, y, f, x_partition; error_tolerance = NaN64, length_tolerance = ϵ, derivative_tolerance = ϵ, num_additional_partitions = 0)
 
@@ -51,53 +28,27 @@ This function is the entry point for constructing a MILP relaxation for the univ
 """
 function construct_univariate_milp_relaxation!(
     m::JuMP.Model,
-    x::JuMP.VariableRef, 
+    x::JuMP.VariableRef,
     y::JuMP.VariableRef,
-    f::Function, 
+    f::Function,
     x_partition::Vector{<:Real};
     error_tolerance::Float64 = NaN64,
     length_tolerance::Float64 = ϵ,
     derivative_tolerance::Float64 = ϵ,
     num_additional_partitions::Int64 = 0,
-)
+)::FormulationInfo
     return construct_univariate_milp_relaxation!(
-        m, x, y, f, 
-        x -> ForwardDiff.derivative(f, x),
-        x_partition, 
-        error_tolerance = error_tolerance, 
-        length_tolerance = length_tolerance, 
-        derivative_tolerance = derivative_tolerance, 
-        num_additional_partitions = num_additional_partitions
-    )
-end 
-
-"""
-    construct_milp_relaxation(f, f_dash, base_partition; error_tolerance = NaN64, length_tolerance = ϵ, derivative_tolerance = ϵ, num_additional_partitions = 0)
-    
-This function is the entry point for constructing a MILP relaxation for the constraint ``y = f(x)``. The mandatory inputs to the functions are the function, its derivative, and the base partition. All other arguments are optional. The keyword argument `error_tolerance` is used to obtain an MILP relaxation by adding more partitions to the `base_partition`. Partitions are added till the vertical distance between the over-estimator and under-estimator of the relaxation is less than the `error_tolerance` for any value in the domain. `length_tolerance` is similar in the sense that it prohibits adding more partitions to an interval that is less than this value and `derivative_tolerance` is used to check if derivaties of the function as successive discretization points are not equal to each other. Finally, the `num_additional_partitions` can be used generate an LP relaxation of the function with a budget on the number of partitions. Note that if the number of partitions is ``n`` and the number of additional partitions is ``m``, then the function will return a relaxation with at most ``n+m`` partitions. 
-"""
-function construct_milp_relaxation(
-    f::Function,
-    f_dash::Function,
-    base_partition::Vector{<:Real};
-    error_tolerance::Float64 = NaN64,
-    length_tolerance::Float64 = ϵ,
-    derivative_tolerance::Float64 = ϵ,
-    num_additional_partitions::Int64 = 0,
-)::Pair{MILPRelaxation,FunctionData}
-    function_data = FunctionData(
+        m,
+        x,
+        y,
         f,
-        f_dash,
-        base_partition,
-        copy(base_partition),
-        error_tolerance,
-        length_tolerance,
-        derivative_tolerance,
-        num_additional_partitions,
+        x -> ForwardDiff.derivative(f, x),
+        x_partition,
+        error_tolerance = error_tolerance,
+        length_tolerance = length_tolerance,
+        derivative_tolerance = derivative_tolerance,
+        num_additional_partitions = num_additional_partitions,
     )
-    validate(function_data)
-    refine_partition!(function_data)
-    return build_milp_relaxation(function_data)
 end
 
 """
@@ -107,53 +58,28 @@ This function is the entry point for constructing a MILP relaxation for the univ
 """
 function construct_univariate_milp_relaxation!(
     m::JuMP.Model,
-    x::JuMP.VariableRef, 
+    x::JuMP.VariableRef,
     y::JuMP.VariableRef,
-    f::Function, 
+    f::Function,
     f_dash::Function,
     x_partition::Vector{<:Real};
     error_tolerance::Float64 = NaN64,
     length_tolerance::Float64 = ϵ,
     derivative_tolerance::Float64 = ϵ,
     num_additional_partitions::Int64 = 0,
-)::Pair{MILPRelaxation,FunctionData}
-    function_data = FunctionData(
+)::FormulationInfo
+    univariate_function_data = UnivariateFunctionData(
         f,
         f_dash,
         x_partition,
-        copy(x_partition),
         error_tolerance,
         length_tolerance,
         derivative_tolerance,
         num_additional_partitions,
     )
-    validate(function_data)
-    refine_partition!(function_data)
-    return build_milp_relaxation(function_data)
-end 
-
-"""
-    construct_lp_relaxation(f, base_partition; error_tolerance = NaN64, length_tolerance = ϵ, derivative_tolerance = ϵ, num_additional_partitions = 0)
-
-This function is the entry point for constructing a LP relaxation for the constraint ``y = f(x)``. The mandatory inputs to the functions are the function, the base partition. All other arguments are optional. The keyword argument `error_tolerance` is used to obtain an LP relaxation by adding more partitions to the `base_partition`. Partitions are added till the vertical distance between the over-estimator and under-estimator of the relaxation is less than the `error_tolerance` for any value in the domain. `length_tolerance` is similar in the sense that it prohibits adding more partitions to an interval that is less than this value and `derivative_tolerance` is used to check if derivaties of the function as successive discretization points are not equal to each other. Finally, the `num_additional_partitions` can be used generate an LP relaxation of the function with a budget on the number of partitions. Note that if the number of partitions is ``n`` and the number of additional partitions is ``m``, then the function will return a relaxation with at most ``n+m`` partitions. 
-"""
-function construct_lp_relaxation(
-    f::Function,
-    base_partition::Vector{<:Real};
-    error_tolerance::Float64 = NaN64,
-    length_tolerance::Float64 = ϵ,
-    derivative_tolerance::Float64 = ϵ,
-    num_additional_partitions::Int64 = 0,
-)::Pair{LPRelaxation,FunctionData}
-    return construct_lp_relaxation(
-        f,
-        x -> ForwardDiff.derivative(f, x),
-        base_partition,
-        error_tolerance = error_tolerance,
-        length_tolerance = length_tolerance,
-        derivative_tolerance = derivative_tolerance,
-        num_additional_partitions = num_additional_partitions,
-    )
+    validate(univariate_function_data)
+    refine_partition!(univariate_function_data)
+    return build_milp_relaxation(univariate_function_data)
 end
 
 """
@@ -162,8 +88,8 @@ end
 This function is the entry point for constructing a LP relaxation for the univariate function ``y = f(x)``. The mandatory inputs to the functions are the JuMP model, the JuMP variables x and y, the function (oracle), the partition on ``x``'s domain. All other arguments are optional. The keyword argument `error_tolerance` is used to obtain an LP relaxation by adding more partitions to the `base_partition`. Partitions are added till the vertical distance between the over-estimator and under-estimator of the relaxation is less than the `error_tolerance` for any value in the domain. `length_tolerance` is similar in the sense that it prohibits adding more partitions to an interval that is less than this value and `derivative_tolerance` is used to check if derivaties of the function as successive discretization points are not equal to each other. Finally, the `num_additional_partitions` can be used generate an LP relaxation of the function with a budget on the number of partitions. Note that if the number of partitions is ``n`` and the number of additional partitions is ``m``, then the function will return a relaxation with at most ``n+m`` partitions. 
 """
 function construct_univariate_lp_relaxation!(
-    m::JuMP.Model, 
-    x::JuMP.VariableRef, 
+    m::JuMP.Model,
+    x::JuMP.VariableRef,
     y::JuMP.VariableRef,
     f::Function,
     x_partition::Vector{<:Real};
@@ -171,9 +97,12 @@ function construct_univariate_lp_relaxation!(
     length_tolerance::Float64 = ϵ,
     derivative_tolerance::Float64 = ϵ,
     num_additional_partitions::Int64 = 0,
-)::Pair{LPRelaxation,FunctionData}
+)::FormulationInfo
     return construct_univariate_lp_relaxation!(
-        m, x, y, f,
+        m,
+        x,
+        y,
+        f,
         x -> ForwardDiff.derivative(f, x),
         x_partition,
         error_tolerance = error_tolerance,
@@ -184,42 +113,13 @@ function construct_univariate_lp_relaxation!(
 end
 
 """
-    construct_lp_relaxation(f, f_dash, base_partition; error_tolerance = NaN64, length_tolerance = ϵ, derivative_tolerance = ϵ, num_additional_partitions = 0)
-
-This function is the entry point for constructing a LP relaxation for the constraint ``y = f(x)``. The mandatory inputs to the functions are the function, the derivate, and the base partition. All other arguments are optional. The keyword argument `error_tolerance` is used to obtain an LP relaxation by adding more partitions to the `base_partition`. Partitions are added till the vertical distance between the over-estimator and under-estimator of the relaxation is less than the `error_tolerance` for any value in the domain. `length_tolerance` is similar in the sense that it prohibits adding more partitions to an interval that is less than this value and `derivative_tolerance` is used to check if derivaties of the function as successive discretization points are not equal to each other. Finally, the `num_additional_partitions` can be used generate an LP relaxation of the function with a budget on the number of partitions. Note that if the number of partitions is ``n`` and the number of additional partitions is ``m``, then the function will return a relaxation with at most ``n+m`` partitions. 
-"""
-function construct_lp_relaxation(
-    f::Function,
-    f_dash::Function,
-    base_partition::Vector{<:Real};
-    error_tolerance::Float64 = NaN64,
-    length_tolerance::Float64 = ϵ,
-    derivative_tolerance::Float64 = ϵ,
-    num_additional_partitions::Int64 = 0,
-)::Pair{LPRelaxation,FunctionData}
-    function_data = FunctionData(
-        f,
-        f_dash,
-        base_partition,
-        copy(base_partition),
-        error_tolerance,
-        length_tolerance,
-        derivative_tolerance,
-        num_additional_partitions,
-    )
-    validate(function_data)
-    refine_partition!(function_data)
-    return build_lp_relaxation(function_data)
-end
-
-"""
     construct_univariate_lp_relaxation(m, x, y, f, f_dash, x_partition; error_tolerance = NaN64, length_tolerance = ϵ, derivative_tolerance = ϵ, num_additional_partitions = 0)
 
 This function is the entry point for constructing a LP relaxation for the univariate function ``y = f(x)``. The mandatory inputs to the functions are the JuMP model, the JuMP variables x and y, the function (oracle), the function's derivative (oracle), the partition on ``x``'s domain. All other arguments are optional. The keyword argument `error_tolerance` is used to obtain an LP relaxation by adding more partitions to the `base_partition`. Partitions are added till the vertical distance between the over-estimator and under-estimator of the relaxation is less than the `error_tolerance` for any value in the domain. `length_tolerance` is similar in the sense that it prohibits adding more partitions to an interval that is less than this value and `derivative_tolerance` is used to check if derivaties of the function as successive discretization points are not equal to each other. Finally, the `num_additional_partitions` can be used generate an LP relaxation of the function with a budget on the number of partitions. Note that if the number of partitions is ``n`` and the number of additional partitions is ``m``, then the function will return a relaxation with at most ``n+m`` partitions. 
 """
 function construct_univariate_lp_relaxation!(
-    m::JuMP.Model, 
-    x::JuMP.VariableRef, 
+    m::JuMP.Model,
+    x::JuMP.VariableRef,
     y::JuMP.VariableRef,
     f::Function,
     f_dash::Function,
@@ -228,8 +128,8 @@ function construct_univariate_lp_relaxation!(
     length_tolerance::Float64 = ϵ,
     derivative_tolerance::Float64 = ϵ,
     num_additional_partitions::Int64 = 0,
-)::Pair{LPRelaxation,FunctionData}
-    function_data = FunctionData(
+)::FormulationInfo
+    univariate_function_data = UnivariateFunctionData(
         f,
         f_dash,
         x_partition,
@@ -239,9 +139,9 @@ function construct_univariate_lp_relaxation!(
         derivative_tolerance,
         num_additional_partitions,
     )
-    validate(function_data)
-    refine_partition!(function_data)
-    return build_lp_relaxation(function_data)
+    validate(univariate_function_data)
+    refine_partition!(univariate_function_data)
+    return build_univariate_lp_relaxation(m, x, y, univariate_function_data)
 end
 
 "get variable bounds from formulation"
@@ -302,21 +202,26 @@ end
 "get the binary variable indices from the MILP formulation"
 @inline get_binary_indices(milp::MILPRelaxation) = findnz(milp.binary)[1]
 
-"get the function from `function_data`"
-@inline get_function(function_data::FunctionData) = function_data.f
+"get the function from `univariate_function_data`"
+@inline get_function(univariate_function_data::UnivariateFunctionData) =
+    univariate_function_data.f
 
-"get the derivative from `function_data`"
-@inline get_derivative(function_data::FunctionData) = function_data.f_dash
+"get the derivative from `univariate_function_data`"
+@inline get_derivative(univariate_function_data::UnivariateFunctionData) =
+    univariate_function_data.f_dash
 
-"get the domain's lower bound from `function_data`"
-@inline get_domain_lb(function_data::FunctionData) = function_data.partition[1]
+"get the domain's lower bound from `univariate_function_data`"
+@inline get_domain_lb(univariate_function_data::UnivariateFunctionData) =
+    univariate_function_data.partition[1]
 
-"get the domain's upper bound from `function_data`"
-@inline get_domain_ub(function_data::FunctionData) = function_data.partition[end]
+"get the domain's upper bound from `univariate_function_data`"
+@inline get_domain_ub(univariate_function_data::UnivariateFunctionData) =
+    univariate_function_data.partition[end]
 
-"get the function's domain from `function_data`"
-@inline get_domain(function_data::FunctionData) =
-    get_domain_lb(function_data), get_domain_ub(function_data)
+"get the function's domain from `univariate_function_data`"
+@inline get_domain(univariate_function_data::UnivariateFunctionData) =
+    get_domain_lb(univariate_function_data), get_domain_ub(univariate_function_data)
 
-"get the partition from `function_data`"
-@inline get_partition(function_data::FunctionData) = function_data.partition
+"get the partition from `univariate_function_data`"
+@inline get_partition(univariate_function_data::UnivariateFunctionData) =
+    univariate_function_data.partition
