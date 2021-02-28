@@ -25,7 +25,7 @@ function build_univariate_lp_relaxation!(
     x::JuMP.VariableRef,
     y::JuMP.VariableRef,
     univariate_function_data::UnivariateFunctionData,
-)::Pair{LPRelaxation,UnivariateFunctionData}
+)::FormulationInfo
     vertices = get_lp_relaxation_vertices(univariate_function_data)
     f_min, f_max = Inf, -Inf
     for v in vertices
