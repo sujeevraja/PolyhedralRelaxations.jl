@@ -114,17 +114,17 @@ end
 Input data point validator
 """
 function validate_point(univariate_function_data::UnivariateFunctionData, x::Float64)
-    if !isfinite(x) || abs(x) >= ∞
+    if !isfinite(x) || abs(x) >= INF 
         Memento.error(_LOGGER, "all partition points must be finite")
     end
 
     fx = univariate_function_data.f(x)
-    if abs(fx) >= ∞
+    if abs(fx) >= INF
         Memento.error(_LOGGER, "absolute function value at $x larger than $∞")
     end
 
     dx = univariate_function_data.f_dash(x)
-    if abs(dx) >= ∞
+    if abs(dx) >= INF
         Memento.error(_LOGGER, "absolute derivative value at $x larger than $∞")
     end
 end

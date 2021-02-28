@@ -16,8 +16,8 @@
     @test has_geq_constraints(milp_relaxation) == false
     @test milp_relaxation.num_eq_constraints == 2
     @test milp_relaxation.num_leq_constraints == 3
-    @test milp_relaxation.δ_1_indices == [3, 4]
-    @test milp_relaxation.δ_2_indices == [5, 6]
+    @test milp_relaxation.delta_1_indices == [3, 4]
+    @test milp_relaxation.delta_2_indices == [5, 6]
     @test milp_relaxation.z_indices == [7, 8]
 
     lp_relaxation, function_data = construct_lp_relaxation(x -> x^3, collect(-1.0:1.0:1.0))

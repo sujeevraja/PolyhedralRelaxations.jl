@@ -53,8 +53,8 @@ function construct_univariate_relaxation!(
     milp::Bool;
     f_dash::Function=x -> ForwardDiff.derivative(f, x),
     error_tolerance::Float64=NaN64,
-    length_tolerance::Float64=ϵ,
-    derivative_tolerance::Float64=ϵ,
+    length_tolerance::Float64=EPS,
+    derivative_tolerance::Float64=EPS,
     num_additional_partitions::Int64=0,
 )::FormulationInfo
     univariate_function_data = UnivariateFunctionData(

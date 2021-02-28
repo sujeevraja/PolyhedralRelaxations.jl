@@ -37,8 +37,8 @@ function logger_config!(level)
     Memento.config!(Memento.getlogger("PolyhedralRelaxations"), level)
 end
 
-const ϵ = 1e-3
-const ∞ = 1e12
+const EPS = 1e-3
+const INF = 1e12
 
 include("common.jl")
 include("univariate_lp_relaxation.jl")
