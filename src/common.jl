@@ -81,15 +81,23 @@ function collect_vertices(
 end
 
 """
-    validate(constraint_data)
+    validate(x, partition)
 
-ConstraintData validator - checks for correctness
+Variable bounds and partition consistency checker
 """
-function validate(constraint_data::ConstraintData)
-    num_entries = length(constraint_data.constraint_row_indices)
-    @assert num_entries == length(constraint_data.constraint_column_indices)
-    @assert num_entries == length(constraint_data.constraint_coefficients)
-    @assert length(constraint_data.rhs_row_indices) == length(constraint_data.rhs_values)
+function validate(x::JuMP.VariableRef, partition::Vector{<:Real})
+    x_lb = isinf(JuMP.lower_bound(x)) ? -Inf : JuMP.lower_bound(x)
+    x_ub = isinf(JuMP.upper_bound(x)) ? Inf : JuMP.upper_bound(x)
+    lb = partition[1]
+    ub = partition[end]
+    if isfinite(x_lb) && !isapprox(x_lb, lb, rtol=1e-8)
+        Memento.error(_LOGGER, "partition lower bound and variable lower bound not equal")
+    end 
+    if isfinite(x_ub) && !isapprox(x_ub, ub, rtol=1e-8)
+        Memento.error(_LOGGER, "partition upper bound and variable upper bound not equal")
+    end 
+    (isinf(x_lb)) && (JuMP.set_lower_bound(x, lb))
+    (isinf(x_ub)) && (JuMP.set_upper_bound(x, ub))
 end
 
 """

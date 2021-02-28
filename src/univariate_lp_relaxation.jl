@@ -19,8 +19,10 @@ end
 
 Function to build the LP relaxation for ``y=f(x)`` given the univariate function data
 """
-function build_univariate_lp_relaxation(
-    m::JuMP.Model, x::JuMP.VariableRef, y::JuMP.VariableRef,
+function build_univariate_lp_relaxation!(
+    m::JuMP.Model,
+    x::JuMP.VariableRef,
+    y::JuMP.VariableRef,
     univariate_function_data::UnivariateFunctionData,
 )::Pair{LPRelaxation,UnivariateFunctionData}
     vertices = get_lp_relaxation_vertices(univariate_function_data)
@@ -30,9 +32,23 @@ function build_univariate_lp_relaxation(
         f_min = min(f_min, f_val)
         f_max = max(f_max, f_val)
     end
+    num_vertices = length(vertices)
 
     lp_formulation_info = FormulationInfo()
-    
-    # Add the LP relaxation formulation 
+
+    # add variables 
+    num_lambda_variables = length(univariate_function_data) + 1
+    @assert num_vertices == num_lambda_variables
+    lambda =
+        lp_formulation_info.var[:lambda] =
+            @variable(m, 0 <= [i = 1:num_lambda_variables] <= 1)
+
+    # add constraints 
+    lp_formulation_info.con[:sum_lambda] = @constraint(m, sum(lambda) == 1)
+    lp_formulation_info.con[:x] =
+        @constraint(m, x == sum(lambda[i] * vertices[i][1] for i = 1:num_vertices))
+    lp_formulation_info.con[:y] =
+        @constraint(m, y == sum(lambda[i] * vertices[i][2] for i = 1:num_vertices))
+
     return lp_formulation_info
 end

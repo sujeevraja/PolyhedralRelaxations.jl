@@ -133,15 +133,15 @@ function construct_univariate_lp_relaxation!(
         f,
         f_dash,
         x_partition,
-        copy(x_partition),
         error_tolerance,
         length_tolerance,
         derivative_tolerance,
         num_additional_partitions,
     )
     validate(univariate_function_data)
+    validate(x, x_partition)
     refine_partition!(univariate_function_data)
-    return build_univariate_lp_relaxation(m, x, y, univariate_function_data)
+    return build_univariate_lp_relaxation!(m, x, y, univariate_function_data)
 end
 
 "get variable bounds from formulation"
