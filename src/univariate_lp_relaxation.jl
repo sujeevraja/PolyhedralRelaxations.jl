@@ -1,7 +1,8 @@
 """
     get_lp_relaxation_vertices(univariate_function_data::UnivariateFunctionData)::Vector{Vertex}
 
-Returns all the vertices that are a part of the LP relaxation given the function data
+Return all the vertices that are a part of the LP relaxation given the
+function data.
 """
 function get_lp_relaxation_vertices(
     univariate_function_data::UnivariateFunctionData,
@@ -17,7 +18,7 @@ end
 """
     build_lp_relaxation(univariate_function_data)
 
-Function to build the LP relaxation for ``y=f(x)`` given the univariate function data
+Build LP relaxation for ``y=f(x)`` given the univariate function data.
 """
 function build_univariate_lp_relaxation!(
     m::JuMP.Model,

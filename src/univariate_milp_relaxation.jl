@@ -102,22 +102,30 @@ end
 """
     MILPVariableIndices(num_partition_points)::MILPVariableIndices
 
-Constructor for the struct MILPVariableIndices; the only input it takes is the number of partition points. Return the collection of column indices of all variables in the MILP constraint matrix.
+Constructor for the struct MILPVariableIndices; the only input it takes is the
+number of partition points. Return the collection of column indices of all
+variables in the MILP constraint matrix.
 
-If there are k partition points, there are k-1 intervals, with each interval corresponding to a triangle. As we need one ``\\delta_1`` variable, ``\\delta_2`` variable and ``z`` variable for each triangle, we need k-1 of each of these variables in total. For instance, if ``k=3``, we need two ``\\delta_1`` variables with indices 3,4. As the `collect()`` function includes both endpoints, we should collect only up to `num_vars-1`. Then, we get the correct count for each variable set.
+If there are k partition points, there are k-1 intervals, with each interval
+corresponding to a triangle. As we need one ``\\delta_1`` variable,
+``\\delta_2`` variable and ``z`` variable for each triangle, we need k-1 of
+each of these variables in total. For instance, if ``k=3``, we need two
+``\\delta_1`` variables with indices 3,4. As the `collect()`` function includes
+both endpoints, we should collect only up to `num_vars-1`. Then, we get the
+correct count for each variable set.
 """
 function MILPVariableIndices(num_partition_points::Int64)::MILPVariableIndices
     x_index, y_index = 1, 2
     num_vars = num_partition_points - 1
 
     start = 3
-    δ_1_indices = collect(start:(start+num_vars-1))
+    δ_1_indices = collect(start:(start + num_vars - 1))
 
     start = δ_1_indices[end] + 1
-    δ_2_indices = collect(start:(start+num_vars-1))
+    δ_2_indices = collect(start:(start + num_vars - 1))
 
     start = δ_2_indices[end] + 1
-    z_indices = collect(start:(start+num_vars-1))
+    z_indices = collect(start:(start + num_vars - 1))
 
     return MILPVariableIndices(x_index, y_index, δ_1_indices, δ_2_indices, z_indices)
 end
@@ -125,9 +133,12 @@ end
 """
     add_vertex_constraints!(constraint_data, milp_variable_indices, secant_vertices, tangent_vertices)
 
-Add vertex constraints to `constraint_data` using variable indices from `milp_variable_indices`.
+Add vertex constraints to `constraint_data` using variable indices from
+`milp_variable_indices`.
 
-These constraints link the x and y coordinate variables to the ``\\delta`` variables. The lists `secant_vertices` and `tangent_vertices` are used to compute coefficients of ``\\delta`` variables.
+These constraints link the x and y coordinate variables to the ``\\delta``
+variables. The lists `secant_vertices` and `tangent_vertices` are used to
+compute coefficients of ``\\delta`` variables.
 """
 function add_vertex_constraints!(
     constraint_data::ConstraintData,
@@ -152,7 +163,7 @@ function add_vertex_constraints!(
 
             # Add δ_2 variable to constraint.
             column = milp_variable_indices.δ_2_indices[i]
-            value = secant_vertices[i][c] - secant_vertices[i+1][c]
+            value = secant_vertices[i][c] - secant_vertices[i + 1][c]
             add_coeff!(constraint_data, row, column, float(value))
         end
 
@@ -166,7 +177,8 @@ end
 """
     add_first_δ_constraint!(constraint_data, milp_variable_indices)
 
-Add the constraint ``\\delta_1^1 + \\delta_2^1 \\leq 1`` to `constraint_data` using variable indices from `milp_variable_indices`.
+Add the constraint ``\\delta_1^1 + \\delta_2^1 \\leq 1`` to `constraint_data`
+using variable indices from `milp_variable_indices`.
 """
 function add_first_δ_constraint!(
     constraint_data::ConstraintData,
@@ -189,7 +201,9 @@ Add the constraint families
 
 ``\\delta_2^{i-1} \\geq z_{i-1}``
 
-to `constraint_data` using variable indices from `milp_variable_indices`. The number of each of these constraints corresponds to the number of triangles specified by `num_triangles`.
+to `constraint_data` using variable indices from `milp_variable_indices`. The
+number of each of these constraints corresponds to the number of triangles
+specified by `num_triangles`.
 """
 function add_linking_constraints!(
     constraint_data::ConstraintData,
@@ -203,13 +217,13 @@ function add_linking_constraints!(
         # Add δ_1^i + δ_2^i - z_{i-1} <= 0 constraint.
         add_coeff!(constraint_data, row, milp_variable_indices.δ_1_indices[i], 1.0)
         add_coeff!(constraint_data, row, milp_variable_indices.δ_2_indices[i], 1.0)
-        add_coeff!(constraint_data, row, milp_variable_indices.z_indices[i-1], -1.0)
+        add_coeff!(constraint_data, row, milp_variable_indices.z_indices[i - 1], -1.0)
 
         # Add z_{i-1} - δ_2^{i-1} <= 0 constraint.
         constraint_data.num_constraints += 1
         row = constraint_data.num_constraints
-        add_coeff!(constraint_data, row, milp_variable_indices.z_indices[i-1], 1.0)
-        add_coeff!(constraint_data, row, milp_variable_indices.δ_2_indices[i-1], -1.0)
+        add_coeff!(constraint_data, row, milp_variable_indices.z_indices[i - 1], 1.0)
+        add_coeff!(constraint_data, row, milp_variable_indices.δ_2_indices[i - 1], -1.0)
     end
     Memento.debug(_LOGGER, "added linking constraints.")
 end
@@ -217,7 +231,8 @@ end
 """
     build_milp_relaxation(function_data)
 
-Return a MILPRelaxation object with constraint and RHS information of the MILP formulation of the polyhedral relaxation.
+Return a MILPRelaxation object with constraint and RHS information of the MILP
+formulation of the polyhedral relaxation.
 """
 function build_milp_relaxation(
     function_data::FunctionData,

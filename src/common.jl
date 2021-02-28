@@ -2,7 +2,8 @@
 const Vertex = Pair{<:Real,<:Real}
 
 """
-The struct `FormulationInfo` holds two dictionaries, one for holding the variable references and another for constraint references
+The struct `FormulationInfo` holds two dictionaries, one for holding the
+variable references and another for constraint references
 """
 struct FormulationInfo
     var::Dict{Symbol,Any}
@@ -13,13 +14,17 @@ end
 FormulationInfo()::FormulationInfo = FormulationInfo(Dict{Symbol,Any}(), Dict{Symbol,Any}())
 
 """
-The struct `UnivariateFunctionData` holds the inputs provided by the user. It takes in the function and its derivative (as lambda expressions), the partition on the independent variable that the user provides, and the following 3 tolerance values:
+The struct `UnivariateFunctionData` holds the inputs provided by the user. It
+takes in the function and its derivative (as lambda expressions), the partition
+on the independent variable that the user provides, and the following 3
+tolerance values:
 
-* error tolerance denotes the strength of the relaxation (the closer to zero the stronger
-    the relaxation),
-* length tolerance (maximum difference between successive derivative values), and
-* derivative tolerance denotes the tolerance for checking equality of derivative values at
-    subsequent partition points, and finally, the maximum number of additional partition intervals.
+* error tolerance denotes the strength of the relaxation (the closer to zero
+    the stronger the relaxation)
+* length tolerance (maximum difference between successive derivative values)
+* derivative tolerance denotes the tolerance for checking equality of
+    derivative values at subsequent partition points, and finally, the maximum
+    number of additional partition intervals.
 """
 struct UnivariateFunctionData
     f::Function
@@ -34,7 +39,8 @@ end
 """
     get_tangent_vertex(prev_secant_vertex, next_secant_vertex, derivative)
 
-Return ``(x,y)`` coordinates of the intersection of tangents drawn at `prev_secant_vertex` and `next_secant_vertex`.
+Return ``(x,y)`` coordinates of the intersection of tangents drawn at
+`prev_secant_vertex` and `next_secant_vertex`.
 """
 function get_tangent_vertex(
     prev_secant_vertex::Vertex,
@@ -52,15 +58,17 @@ end
 """
     collect_vertices(univariate_function_data)
 
-Return a pair of lists with secant vertices as the first element and tangent vertices as the second element.
+Return a pair of lists with secant vertices as the first element and tangent
+vertices as the second element.
 
 Each element in the secant vertex list is a pair (x,y) where
 * x is an element of `univariate_function_data.partition`,
 * y is the value of the given univariate function at x.
 
-Each element in the tangent vertex list is also a pair (x,y). Each position i of the list contains
-the vertex formed by intersection of tangents of the curve `y=univariate_function_data.f(x)` at
-`secant_vertices[i]` and `secant_vertices[i+1]`.
+Each element in the tangent vertex list is also a pair (x,y). Each position i
+of the list contains the vertex formed by intersection of tangents of the curve
+`y=univariate_function_data.f(x)` at `secant_vertices[i]` and
+`secant_vertices[i+1]`.
 """
 function collect_vertices(
     univariate_function_data::UnivariateFunctionData,
@@ -70,7 +78,7 @@ function collect_vertices(
         push!(secant_vertices, Pair(x, univariate_function_data.f(x)))
         if length(secant_vertices) >= 2
             tv = get_tangent_vertex(
-                secant_vertices[end-1],
+                secant_vertices[end - 1],
                 secant_vertices[end],
                 univariate_function_data.f_dash,
             )
@@ -192,26 +200,31 @@ function refine_partition!(univariate_function_data::UnivariateFunctionData)
 
         start, max_error = peek(error_queue)
         x_start = partition[start]
-        x_end = partition[start+1]
+        x_end = partition[start + 1]
         Memento.debug(_LOGGER, "max error: $max_error between $x_start, $x_end")
 
         """
-        Errors of partition intervals in `error_queue` are indexed by positions of interval starts in `refined_partition`. As we will be inserting `x_new` into `refined_partition` between positions `start` and `start+1`, the positions of interval-starts after `x_new` will all increase by 1 after the insertions. Upade the queue with this new indexing.
+        Errors of partition intervals in `error_queue` are indexed by positions
+        of interval starts in `refined_partition`. As we will be inserting
+        `x_new` into `refined_partition` between positions `start` and
+        `start+1`, the positions of interval-starts after `x_new` will all
+        increase by 1 after the insertions. Upade the queue with this new
+        indexing.
         """
         num_starts = length(partition)
-        for i = num_starts:-1:start+1
-            error_queue[i] = error_queue[i-1]
+        for i = num_starts:-1:start + 1
+            error_queue[i] = error_queue[i - 1]
         end
 
         # Add errors of the new partition intervals to the queue.
         x_new = 0.5 * (x_start + x_end)
         error_queue[start] =
             get_error_bound(univariate_function_data.f_dash, x_start, x_new)
-        error_queue[start+1] =
+        error_queue[start + 1] =
             get_error_bound(univariate_function_data.f_dash, x_new, x_end)
 
         # Add `x_new` to `refined_partition`.
-        splice!(partition, start+1:start, x_new)
+        splice!(partition, start + 1:start, x_new)
         num_partitions_added += 1
     end
 end
@@ -253,7 +266,7 @@ function is_refinement_feasible(
 
     # Check if new partition lengths are smaller than allowed.
     x_start, x_end = univariate_function_data.partition[start],
-    univariate_function_data.partition[start+1]
+    univariate_function_data.partition[start + 1]
     if x_end - x_start <= (2 * univariate_function_data.length_tolerance)
         Memento.debug(_LOGGER, "start: $x_start, end: $x_end")
         Memento.debug(_LOGGER, "new interval length will be too small")
@@ -283,16 +296,17 @@ end
 """
     get_error_queue(univariate_function_data)
 
-Build a max-priority-queue holding errors of each partition interval in `univariate_function_data.partition`.
-Keys of the queue are indices of starting positions of the partition interval in
-`univariate_function_data.partition`. Priorities are error bounds of partition intervals. The queue is built as
+Build a max-priority-queue holding errors of each partition interval in
+`univariate_function_data.partition`. Keys of the queue are indices of starting
+positions of the partition interval in `univariate_function_data.partition`.
+Priorities are error bounds of partition intervals. The queue is built as
 a max-queue for easy access to the  maximum error.
 """
 function get_error_queue(univariate_function_data::UnivariateFunctionData)::PriorityQueue
     pq = PriorityQueue{Int64,Float64}(Base.Order.Reverse)
-    for i = 1:length(univariate_function_data.partition)-1
+    for i = 1:length(univariate_function_data.partition) - 1
         lb = univariate_function_data.partition[i]
-        ub = univariate_function_data.partition[i+1]
+        ub = univariate_function_data.partition[i + 1]
         pq[i] = get_error_bound(univariate_function_data.f_dash, lb, ub)
     end
     return pq
@@ -301,7 +315,8 @@ end
 """
     get_error_bound(derivative, lb, ub)
 
-Get error bound of a function with derivative `derivative` in the closed interval `[lb,ub]`.
+Get error bound of a function with derivative `derivative` in the closed
+interval `[lb,ub]`.
 """
 function get_error_bound(derivative::Function, lb::Float64, ub::Float64)
     return (ub - lb) * abs(derivative(ub) - derivative(lb)) / 4.0
@@ -318,7 +333,7 @@ function get_max_error_bound(univariate_function_data::UnivariateFunctionData)::
         err = get_error_bound(
             univariate_function_data.f_dash,
             univariate_function_data.partition[i],
-            univariate_function_data.partition[i+1],
+            univariate_function_data.partition[i + 1],
         )
         max_err = max(err, max_err)
     end
