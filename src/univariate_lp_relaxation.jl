@@ -1,8 +1,7 @@
 """
     get_lp_relaxation_vertices(univariate_function_data::UnivariateFunctionData)::Vector{Vertex}
 
-Return all the vertices that are a part of the LP relaxation given the
-function data.
+Return vertices of the LP relaxation of the given function.
 """
 function get_lp_relaxation_vertices(
     univariate_function_data::UnivariateFunctionData,
@@ -16,7 +15,7 @@ function get_lp_relaxation_vertices(
 end
 
 """
-    build_lp_relaxation(univariate_function_data)
+    build_univariate_lp_relaxation(univariate_function_data)
 
 Build LP relaxation for ``y=f(x)`` given the univariate function data.
 """
@@ -38,11 +37,10 @@ function build_univariate_lp_relaxation!(
     lp_formulation_info = FormulationInfo()
 
     # add variables 
-    num_lambda_variables = length(univariate_function_data) + 1
+    num_lambda_variables = length(univariate_function_data.partition) + 1
     @assert num_vertices == num_lambda_variables
-    lambda =
-        lp_formulation_info.variables[:lambda] =
-            @variable(m, 0 <= [i = 1:num_lambda_variables] <= 1)
+    @variable(m, 0 <= lambda[1:num_lambda_variables] <= 1)
+    lp_formulation_info.variables[:lambda] = lambda
 
     # add constraints 
     lp_formulation_info.constraints[:sum_lambda] =
