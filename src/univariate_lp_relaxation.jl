@@ -1,16 +1,16 @@
 """
-    get_lp_relaxation_vertices(univariate_function_data::UnivariateFunctionData)::Vector{Vertex}
+    _get_lp_relaxation_vertices(univariate_function_data::UnivariateFunctionData)::Vector{Vertex}
 
 Return vertices of the LP relaxation of the given function.
 """
-function get_lp_relaxation_vertices(
+function _get_lp_relaxation_vertices(
     univariate_function_data::UnivariateFunctionData,
 )::Vector{Vertex}
-    secant_vertices, tangent_vertices = collect_vertices(univariate_function_data)
+    sec_vs, tan_vs = collect_vertices(univariate_function_data)
     vertices = Vertex[]
-    push!(vertices, secant_vertices[1])
-    append!(vertices, tangent_vertices)
-    push!(vertices, secant_vertices[end])
+    push!(vertices, sec_vs[1])
+    append!(vertices, tan_vs)
+    push!(vertices, sec_vs[end])
     return vertices
 end
 
@@ -25,32 +25,20 @@ function build_univariate_lp_relaxation!(
     y::JuMP.VariableRef,
     univariate_function_data::UnivariateFunctionData,
 )::FormulationInfo
-    vertices = get_lp_relaxation_vertices(univariate_function_data)
-    f_min, f_max = Inf, -Inf
-    for v in vertices
-        f_val = v[2]
-        f_min = min(f_min, f_val)
-        f_max = max(f_max, f_val)
-    end
-    num_vertices = length(vertices)
-
-    lp_formulation_info = FormulationInfo()
+    vertices = _get_lp_relaxation_vertices(univariate_function_data)
+    num_vars = length(vertices)
+    formulation_info = FormulationInfo()
 
     # add variables 
-    num_lambda_variables = length(univariate_function_data.partition) + 1
-    @assert num_vertices == num_lambda_variables
-    @variable(m, 0 <= lambda[1:num_lambda_variables] <= 1)
-    lp_formulation_info.variables[:lambda] = lambda
+    @variable(m, 0 <= lambda[1:num_vars] <= 1)
+    formulation_info.variables[:lambda] = lambda
 
     # add constraints 
-    lp_formulation_info.constraints[:sum_lambda] =
-        @constraint(m, sum(lambda) == 1)
-    lp_formulation_info.constraints[:x] =
-        @constraint(
-            m, x == sum(lambda[i] * vertices[i][1] for i = 1:num_vertices))
-    lp_formulation_info.constraints[:y] =
-        @constraint(
-            m, y == sum(lambda[i] * vertices[i][2] for i = 1:num_vertices))
+    formulation_info.constraints[:sum_lambda] = @constraint(m, sum(lambda) == 1)
+    formulation_info.constraints[:x] = @constraint(m,
+        x == sum(lambda[i] * vertices[i][1] for i = 1:num_vars))
+    formulation_info.constraints[:y] = @constraint(m,
+        y == sum(lambda[i] * vertices[i][2] for i = 1:num_vars))
 
-    return lp_formulation_info
+    return formulation_info
 end
