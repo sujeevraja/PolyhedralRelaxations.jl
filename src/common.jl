@@ -64,11 +64,13 @@ vertices as the second element.
 Each element in the secant vertex list is a pair (x,y) where
 * x is an element of `univariate_function_data.partition`,
 * y is the value of the given univariate function at x.
+All secant vertices lie on the curve.
 
 Each element in the tangent vertex list is also a pair (x,y). Each position i
 of the list contains the vertex formed by intersection of tangents of the curve
 `y=univariate_function_data.f(x)` at `secant_vertices[i]` and
-`secant_vertices[i+1]`.
+`secant_vertices[i+1]`. No tangent vertex will lie on the curve (except for the
+trivial case where the curve is linear, and all triangles are flat lines).
 """
 function collect_vertices(
     univariate_function_data::UnivariateFunctionData,
