@@ -69,8 +69,6 @@ function construct_univariate_relaxation!(
     validate(univariate_function_data)
     validate(x, x_partition)
     refine_partition!(univariate_function_data)
-    if milp
-        return build_milp_relaxation(univariate_function_data)
-    end
-    return build_univariate_lp_relaxation!(m, x, y, univariate_function_data)
+    func = milp ? build_univariate_milp_relaxation! : build_univariate_lp_relaxation!
+    return func(m, x, y, univariate_function_data)
 end

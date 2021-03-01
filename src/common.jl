@@ -2,12 +2,12 @@
 const Vertex = Pair{<:Real,<:Real}
 
 """
-The struct `FormulationInfo` holds two dictionaries, one for holding the
-variable references and another for constraint references
+The struct `FormulationInfo` holds two dictionaries, one for variable
+references and the other for constraint references.
 """
 struct FormulationInfo
-    var::Dict{Symbol,Any}
-    con::Dict{Symbol,Any}
+    variables::Dict{Symbol,Any}
+    constraints::Dict{Symbol,Any}
 end
 
 "Empty contructor for struct `FormulationInfo`"

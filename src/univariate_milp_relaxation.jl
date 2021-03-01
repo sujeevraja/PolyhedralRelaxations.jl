@@ -161,7 +161,7 @@ function add_vertex_constraints!(
             value = secant_vertices[i][c] - tangent_vertices[i][c]
             add_coeff!(constraint_data, row, column, float(value))
 
-            # Add δ_2 variable to constraint.
+            # Add delta_2 variable to constraint.
             column = milp_variable_indices.delta_2_indices[i]
             value = secant_vertices[i][c] - secant_vertices[i + 1][c]
             add_coeff!(constraint_data, row, column, float(value))
@@ -234,9 +234,12 @@ end
 Return a MILPRelaxation object with constraint and RHS information of the MILP
 formulation of the polyhedral relaxation.
 """
-function build_milp_relaxation(
+function build_univariate_milp_relaxation!(
+    m::JuMP.Model,
+    x::JuMP.VariableRef,
+    y::JuMP.VariableRef,
     function_data::FunctionData,
-)::Pair{MILPRelaxation,FunctionData}
+)::FormulationInfo
     num_points = length(function_data.partition)
     milp_variable_indices = MILPVariableIndices(num_points)
     secant_vertices, tangent_vertices = collect_vertices(function_data)
@@ -252,6 +255,7 @@ function build_milp_relaxation(
         f_max = max(f_max, f_val)
     end
 
+    formulation_info = FormulationInfo()
     eq_constraint_data = ConstraintData()
     add_vertex_constraints!(
         eq_constraint_data,

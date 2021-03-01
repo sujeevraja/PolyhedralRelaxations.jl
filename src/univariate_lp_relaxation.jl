@@ -41,15 +41,18 @@ function build_univariate_lp_relaxation!(
     num_lambda_variables = length(univariate_function_data) + 1
     @assert num_vertices == num_lambda_variables
     lambda =
-        lp_formulation_info.var[:lambda] =
+        lp_formulation_info.variables[:lambda] =
             @variable(m, 0 <= [i = 1:num_lambda_variables] <= 1)
 
     # add constraints 
-    lp_formulation_info.con[:sum_lambda] = @constraint(m, sum(lambda) == 1)
-    lp_formulation_info.con[:x] =
-        @constraint(m, x == sum(lambda[i] * vertices[i][1] for i = 1:num_vertices))
-    lp_formulation_info.con[:y] =
-        @constraint(m, y == sum(lambda[i] * vertices[i][2] for i = 1:num_vertices))
+    lp_formulation_info.constraints[:sum_lambda] =
+        @constraint(m, sum(lambda) == 1)
+    lp_formulation_info.constraints[:x] =
+        @constraint(
+            m, x == sum(lambda[i] * vertices[i][1] for i = 1:num_vertices))
+    lp_formulation_info.constraints[:y] =
+        @constraint(
+            m, y == sum(lambda[i] * vertices[i][2] for i = 1:num_vertices))
 
     return lp_formulation_info
 end
