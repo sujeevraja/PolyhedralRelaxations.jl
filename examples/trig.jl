@@ -59,7 +59,6 @@ function example_trig(; verbose = true)
         for j = 1:5
             f = functions[j]
             p = deepcopy(base_partition[j])
-            @show err_tol, p, j
             construct_univariate_relaxation!(
                 milp,
                 f,
