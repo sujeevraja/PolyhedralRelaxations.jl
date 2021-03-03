@@ -1,6 +1,9 @@
 PolyhedralRelaxations.jl Change Log
 =========================
 
+### v0.2.2
+- Bug fix in documentation generator
+
 ### v0.2.1
 - Example bug fix in LP relaxation
 
