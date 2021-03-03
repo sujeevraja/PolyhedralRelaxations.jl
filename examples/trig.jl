@@ -96,7 +96,7 @@ function example_trig(; verbose = true)
                 x,
                 y[j],
                 p,
-                true,
+                false,
                 error_tolerance = err_tol,
             )
         end
