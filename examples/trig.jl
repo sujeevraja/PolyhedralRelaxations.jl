@@ -66,8 +66,7 @@ function example_trig(; verbose = true)
                 y[j],
                 p,
                 true,
-                error_tolerance = err_tol,
-                length_tolerance = 1e-2
+                error_tolerance = err_tol
             )
         end
         @constraint(milp, 5 * y[1] - x <= 0.0)
@@ -98,8 +97,7 @@ function example_trig(; verbose = true)
                 y[j],
                 p,
                 true,
-                error_tolerance = err_tol,
-                length_tolerance = 1e-4
+                error_tolerance = err_tol
             )
         end
         @constraint(lp, 5 * y[1] - x <= 0.0)
