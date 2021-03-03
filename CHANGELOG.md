@@ -1,6 +1,9 @@
 PolyhedralRelaxations.jl Change Log
 =========================
 
+### v0.2.1
+- Example bug fix in LP relaxation
+
 ### v0.2.0 
 - API refactor 
 - Move CI to GitHub Actions 
