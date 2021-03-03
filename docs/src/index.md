@@ -6,7 +6,7 @@ CurrentModule = PolyhedralRelaxations
 
 ## Overview
 
-PolyhedralRelaxations.jl is a Julia/JuMP package for constructing Polyhedral Relaxations for graphs of bounded, differentiable, univariate functions. In particular, it can be used to construct a sequence of both MILP and LP relaxation that converge to the graph of the univariate function and its convex hull, respectively. It takes in the function with its domain and returns a the constraint matrix A and a vector b that correspond to the constraint set. It also provides additional information on the type of the constraints and the variables. These can in-turn be used with a package like JuMP in an optimization model. 
+PolyhedralRelaxations.jl is a Julia/JuMP package for constructing Polyhedral Relaxations for graphs of bounded, differentiable, univariate functions. In particular, it can be used to construct a sequence of both MILP and LP relaxation that converge to the graph of the univariate function and its convex hull, respectively. It takes in the function with its domain and the JuMP variables and the JuMP model and populates the model with the relaxation. It returns variable and constraint references for the formulated relaxation. 
 
 ## Installation Guide
 
@@ -46,8 +46,6 @@ Notice from the above example that, for the above disjunction of triangles to be
 | ``x\|x\|`` | ``\{0\}``| 
 
 If the domain of the provided function contains an inflection point, then the requirement is that the inflection points should be provided as a discretization point; failing which the MILP relaxation need not be valid for the given function. 
-
-As far as the LP relaxation is concerned, the package will return the convex hull of the triangles as a linear (sparse) constraint matrix and an associated RHS vector. 
 
 ### Type of formulation used
 The MILP formulation, obtained as the disjunction of the triangles, is formulated using the incremental method (using the so-called ``\delta`` variables) and the convex hull of the triangles (the LP) is formulated using the standard ``\lambda``-method (V-representation). For details on the formulation and theoretical properties, interested readers are referred to the following paper:

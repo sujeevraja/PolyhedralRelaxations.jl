@@ -1,7 +1,7 @@
 module PolyhedralRelaxations
 
 using DataStructures
-using SparseArrays
+using JuMP
 
 import ForwardDiff
 import Memento
@@ -35,12 +35,12 @@ function logger_config!(level)
     Memento.config!(Memento.getlogger("PolyhedralRelaxations"), level)
 end
 
-const ϵ = 1e-3
-const ∞ = 1e12
+const EPS = 1e-6
+const INF = 1e12
 
 include("common.jl")
-include("lp_relaxation.jl")
-include("milp_relaxation.jl")
+include("univariate_lp_relaxation.jl")
+include("univariate_milp_relaxation.jl")
 include("api.jl")
 
 end

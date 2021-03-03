@@ -3,15 +3,27 @@ API
 
 
 ## Basic Usage
-Here is an example illustrating the basic API 
+Here is an example illustrating the basic API.
 
 ```julia 
-using PolyhderalRelaxations
-milp_relaxation, function_data = construct_milp_relaxation(x -> x^3, [-1.0, 0.0, 1.0])
-lp_relaxation, function_data = construct_lp_relaxation(x -> x^2, [-1.0, 0.0, 1.0])
+using PolyhderalRelaxations, JuMP
+m = Model() 
+@variable(m, -1.0 <= x <= 1.0)
+@variable(m, y)
+f = x -> x^3
+construct_univariate_relaxation!(m, f, x, y, [-1.0, 0.0, 1.0], true)
 ```
 
 For more examples and details on the helper functions, the reader is referred to the unit tests in the `test/` folder of the GitHub repository.
+
+## API for the MILP/LP Relaxation for Nonlinear Univariate function
+Both the MILP and the LP relaxations for a given nonlinear univariate function are
+
+```@docs 
+construct_univariate_relaxation!
+```
+
+The derivate of the function is an optional keyword argument. If the derivate is not specified, the package invokes `ForwardDiff.jl` to compute the derivative.
 
 
 ## Additional Algorithms
@@ -34,22 +46,8 @@ The main functions to produce the relaxations are also equipped with the followi
 
 2. `derivative_tolerance`: when the refinement algorithm is used with the `base_partition` not containing the inflection points of the function in its domain, the resulting relaxations will be erroneous i.e., there is no guarantee that the relaxation obtained is even valid. One necessary condition to detect this issue is by ensuring that the derivatives at successive partition points are not equal. This condition is checked up to the tolerance specified by this parameter. The default value of this parameter is ``\epsilon = 0.001``.
 
-## API for the MILP Relaxation
-The two main functions to obtain the MILP relaxation of a given univariate function are 
 
-```@docs 
-construct_milp_relaxation
-```
 
-The function without the derivative invokes the function with the derivative after computing it using the Julia package `ForwardDiff.jl`
-
-## API for the LP Relaxation
-The main functions to obtain the LP relaxation of a given univariate function are 
-
-```@docs 
-construct_lp_relaxation
-```
-The function without the derivative invokes the function with the derivative after computing it using the Julia package `ForwardDiff.jl`
 
 
 

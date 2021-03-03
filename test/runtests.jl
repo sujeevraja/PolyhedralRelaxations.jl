@@ -1,13 +1,12 @@
 using PolyhedralRelaxations
-using SparseArrays
 import Memento
+using JuMP
 
 const PR = PolyhedralRelaxations
 
 PR.logger_config!("debug")
 
 using Test
-using JuMP
 using Cbc
 
 cbc_optimizer = JuMP.optimizer_with_attributes(Cbc.Optimizer, "logLevel" => 0)

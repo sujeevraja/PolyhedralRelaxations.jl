@@ -1,204 +1,75 @@
-export construct_lp_relaxation,
-    construct_milp_relaxation,
-    get_variable_bounds,
-    get_variable_names,
-    has_geq_constraints,
-    get_geq_constraint_matrices,
-    get_error_bound,
-    has_eq_constraints,
-    has_leq_constraints,
-    get_eq_constraint_matrices,
-    get_leq_constraint_matrices,
-    get_num_variables,
-    has_eq_constraints,
-    get_variable_type,
-    get_function,
-    get_derivative,
-    get_domain_lb,
-    get_domain_ub,
-    get_domain,
-    get_partition
-
+export construct_univariate_relaxation!
 
 """
-    construct_milp_relaxation(f, base_partition; error_tolerance = NaN64, length_tolerance = ϵ, derivative_tolerance = ϵ, num_additional_partitions = 0)
+    construct_univariate_relaxation!(m,x,y,f,x_partition;f_dash=x->ForwardDiff.derivative(f,x),error_tolerance=NaN64,length_tolerance=ϵ,derivative_tolerance=ϵ,num_additional_partitions=0)
 
-This function is the entry point for constructing a MILP relaxation for the constraint ``y = f(x)``. The mandatory inputs to the functions are the function, the base partition. All other arguments are optional. The keyword argument `error_tolerance` is used to obtain an MILP relaxation by adding more partitions to the `base_partition`. Partitions are added till the vertical distance between the over-estimator and under-estimator of the relaxation is less than the `error_tolerance` for any value in the domain. `length_tolerance` is similar in the sense that it prohibits adding more partitions to an interval that is less than this value and `derivative_tolerance` is used to check if derivaties of the function as successive discretization points are not equal to each other. Finally, the `num_additional_partitions` can be used generate an LP relaxation of the function with a budget on the number of partitions. Note that if the number of partitions is ``n`` and the number of additional partitions is ``m``, then the function will return a relaxation with at most ``n+m`` partitions. 
+Add MILP relaxation of `y=f(x)` to given JuMP model and return an object with
+new variables and constraints.
+
+# Mandatory Arguments
+- `m::Jump.Model`: model to which relaxation is to be added.
+- `f::Function`: function or oracle for which a polyhedral relaxation is
+    required, usually non-linear.
+- `x::Jump.VariableRef`: JuMP variable for domain of `f`.
+- `y::JuMP.VariableRef`: JuMP variable for evaluation of `f`.
+- `x_partition::Vector{<:Real}`: partition of the domain of `f`.
+- `milp::Bool`: build MILP relaxation if true, LP relaxation otherwise. Note
+    that the MILP relaxation uses the incremental formulation presented in the
+    paper, but the LP relaxation uses a lambda form that builds a formulation
+    as the convex combination of triangle vertices that are at the intersection
+    of tangents to the curve.
+
+# Optional Arguments
+- `f_dash::Function`: function or oracle for derivative of `f`, defaults to 
+    the `derivative` function from the `ForwardDiff` package.
+- ` error_tolerance::Float64`: Maximum allowed vertical distance between over
+    and under estimators of `f`, defaults to NaN64.
+- `length_tolerance::Float64`: maximum length of a sub-interval in a partition,
+    defaults to 0.001.
+- `derivative_tolerance::Float64`: minimum absolute difference between
+    derivaties at successive elements of a partition for them to be considered
+    different, defaults to 0.001. If the difference of a partition sub-interval
+    is smaller than this value, that sub-interval will be refined.
+- `num_additional_partitions::Int64`: budget on number of sub-intervals in
+    partition, defaults to 0. Note that if the number of partitions is `n` and
+    the number of additional partitions is `m`, then the function will return a
+    relaxation with at most `n+m` partitions.
+
+Assume that:
+- `f` is a bounded function of 1 variable.
+- `x_partition` is a partition of the domain of `f` such that `f` is either
+    convex or concave each sub-interval of the partition.
+- `f_dash` is not equal at two consecutive elements of `x_partition`.
+
+This function builds an incremental formulation, which is the formulation
+presented in the paper.
 """
-function construct_milp_relaxation(
+function construct_univariate_relaxation!(
+    m::JuMP.Model,
     f::Function,
-    base_partition::Vector{<:Real};
+    x::JuMP.VariableRef,
+    y::JuMP.VariableRef,
+    x_partition::Vector{<:Real},
+    milp::Bool;
+    f_dash::Function = x -> ForwardDiff.derivative(f, x),
     error_tolerance::Float64 = NaN64,
-    length_tolerance::Float64 = ϵ,
-    derivative_tolerance::Float64 = ϵ,
+    length_tolerance::Float64 = EPS,
+    derivative_tolerance::Float64 = EPS,
     num_additional_partitions::Int64 = 0,
-)::Pair{MILPRelaxation,FunctionData}
-    return construct_milp_relaxation(
-        f,
-        x -> ForwardDiff.derivative(f, x),
-        base_partition,
-        error_tolerance = error_tolerance,
-        length_tolerance = length_tolerance,
-        derivative_tolerance = derivative_tolerance,
-        num_additional_partitions = num_additional_partitions,
-    )
-end
-
-"""
-    construct_milp_relaxation(f, f_dash, base_partition; error_tolerance = NaN64, length_tolerance = ϵ, derivative_tolerance = ϵ, num_additional_partitions = 0)
-    
-This function is the entry point for constructing a MILP relaxation for the constraint ``y = f(x)``. The mandatory inputs to the functions are the function, its derivative, and the base partition. All other arguments are optional. The keyword argument `error_tolerance` is used to obtain an MILP relaxation by adding more partitions to the `base_partition`. Partitions are added till the vertical distance between the over-estimator and under-estimator of the relaxation is less than the `error_tolerance` for any value in the domain. `length_tolerance` is similar in the sense that it prohibits adding more partitions to an interval that is less than this value and `derivative_tolerance` is used to check if derivaties of the function as successive discretization points are not equal to each other. Finally, the `num_additional_partitions` can be used generate an LP relaxation of the function with a budget on the number of partitions. Note that if the number of partitions is ``n`` and the number of additional partitions is ``m``, then the function will return a relaxation with at most ``n+m`` partitions. 
-"""
-function construct_milp_relaxation(
-    f::Function,
-    f_dash::Function,
-    base_partition::Vector{<:Real};
-    error_tolerance::Float64 = NaN64,
-    length_tolerance::Float64 = ϵ,
-    derivative_tolerance::Float64 = ϵ,
-    num_additional_partitions::Int64 = 0,
-)::Pair{MILPRelaxation,FunctionData}
-    function_data = FunctionData(
+)::FormulationInfo
+    univariate_function_data = UnivariateFunctionData(
         f,
         f_dash,
-        base_partition,
-        copy(base_partition),
+        x_partition,
         error_tolerance,
         length_tolerance,
         derivative_tolerance,
         num_additional_partitions,
+        length(x_partition),
     )
-    validate(function_data)
-    refine_partition!(function_data)
-    return build_milp_relaxation(function_data)
+    _validate(univariate_function_data)
+    _validate(x, x_partition)
+    _refine_partition!(univariate_function_data)
+    func = milp ? _build_univariate_milp_relaxation! : _build_univariate_lp_relaxation!
+    return func(m, x, y, univariate_function_data)
 end
-
-"""
-    construct_lp_relaxation(f, base_partition; error_tolerance = NaN64, length_tolerance = ϵ, derivative_tolerance = ϵ, num_additional_partitions = 0)
-
-This function is the entry point for constructing a LP relaxation for the constraint ``y = f(x)``. The mandatory inputs to the functions are the function, the base partition. All other arguments are optional. The keyword argument `error_tolerance` is used to obtain an LP relaxation by adding more partitions to the `base_partition`. Partitions are added till the vertical distance between the over-estimator and under-estimator of the relaxation is less than the `error_tolerance` for any value in the domain. `length_tolerance` is similar in the sense that it prohibits adding more partitions to an interval that is less than this value and `derivative_tolerance` is used to check if derivaties of the function as successive discretization points are not equal to each other. Finally, the `num_additional_partitions` can be used generate an LP relaxation of the function with a budget on the number of partitions. Note that if the number of partitions is ``n`` and the number of additional partitions is ``m``, then the function will return a relaxation with at most ``n+m`` partitions. 
-"""
-function construct_lp_relaxation(
-    f::Function,
-    base_partition::Vector{<:Real};
-    error_tolerance::Float64 = NaN64,
-    length_tolerance::Float64 = ϵ,
-    derivative_tolerance::Float64 = ϵ,
-    num_additional_partitions::Int64 = 0,
-)::Pair{LPRelaxation,FunctionData}
-    return construct_lp_relaxation(
-        f,
-        x -> ForwardDiff.derivative(f, x),
-        base_partition,
-        error_tolerance = error_tolerance,
-        length_tolerance = length_tolerance,
-        derivative_tolerance = derivative_tolerance,
-        num_additional_partitions = num_additional_partitions,
-    )
-end
-
-"""
-    construct_lp_relaxation(f, f_dash, base_partition; error_tolerance = NaN64, length_tolerance = ϵ, derivative_tolerance = ϵ, num_additional_partitions = 0)
-
-This function is the entry point for constructing a LP relaxation for the constraint ``y = f(x)``. The mandatory inputs to the functions are the function, the derivate, and the base partition. All other arguments are optional. The keyword argument `error_tolerance` is used to obtain an LP relaxation by adding more partitions to the `base_partition`. Partitions are added till the vertical distance between the over-estimator and under-estimator of the relaxation is less than the `error_tolerance` for any value in the domain. `length_tolerance` is similar in the sense that it prohibits adding more partitions to an interval that is less than this value and `derivative_tolerance` is used to check if derivaties of the function as successive discretization points are not equal to each other. Finally, the `num_additional_partitions` can be used generate an LP relaxation of the function with a budget on the number of partitions. Note that if the number of partitions is ``n`` and the number of additional partitions is ``m``, then the function will return a relaxation with at most ``n+m`` partitions. 
-"""
-function construct_lp_relaxation(
-    f::Function,
-    f_dash::Function,
-    base_partition::Vector{<:Real};
-    error_tolerance::Float64 = NaN64,
-    length_tolerance::Float64 = ϵ,
-    derivative_tolerance::Float64 = ϵ,
-    num_additional_partitions::Int64 = 0,
-)::Pair{LPRelaxation,FunctionData}
-    function_data = FunctionData(
-        f,
-        f_dash,
-        base_partition,
-        copy(base_partition),
-        error_tolerance,
-        length_tolerance,
-        derivative_tolerance,
-        num_additional_partitions,
-    )
-    validate(function_data)
-    refine_partition!(function_data)
-    return build_lp_relaxation(function_data)
-end
-
-"get variable bounds from formulation"
-@inline get_variable_bounds(formulation::AbstractFormulation) =
-    formulation.lower_bounds, formulation.upper_bounds
-
-"get variable names from formulation"
-@inline get_variable_names(formulation::AbstractFormulation) = formulation.variable_names
-
-"check if formulation has ``\\geq`` constraints"
-@inline has_geq_constraints(formulation::AbstractFormulation) = false
-
-"get the ``\\geq`` constraints from the formulation"
-@inline get_geq_constraint_matrices(formulation::AbstractFormulation) =
-    Memento.error(_LOGGER, "both the LP and the MILP relaxation have no >= constraints")
-
-"get the maximum vertical distance between the over- and under-estimators across any point in the domain"
-@inline get_error_bound(formulation::AbstractFormulation) = formulation.error_bound
-
-"check if the LP formulation has ``=`` constraints"
-@inline has_eq_constraints(lp::LPRelaxation) = true
-
-"check if the LP formulation has ``\\leq`` constraints"
-@inline has_leq_constraints(lp::LPRelaxation) = false
-
-"get the ``=`` constraints from the LP formulation"
-@inline get_eq_constraint_matrices(lp::LPRelaxation) = lp.A, lp.b
-
-"get the ``\\leq`` constraints from the LP formulation"
-@inline get_leq_constraint_matrices(lp::LPRelaxation) =
-    Memento.error(_LOGGER, "the LP relaxation has no <= constraints")
-
-"get number of variables from the LP formulation"
-@inline get_num_variables(lp::LPRelaxation) = length(lp.λ_indices) + 2
-
-"check if the MILP formulation has ``=`` constraints"
-@inline has_eq_constraints(milp::MILPRelaxation) = true
-
-"check if the MILP formulation has ``\\leq`` constraints"
-@inline has_leq_constraints(milp::MILPRelaxation) = true
-
-"get the ``=`` constraints from the MILP formulation"
-@inline get_eq_constraint_matrices(milp::MILPRelaxation) = milp.A_eq, milp.b_eq
-
-"get the ``\\leq`` constraints from the MILP formulation"
-@inline get_leq_constraint_matrices(milp::MILPRelaxation) = milp.A_leq, milp.b_leq
-
-"get the variable types (binary/continuous) from the MILP formulation"
-@inline get_variable_type(milp::MILPRelaxation) = milp.binary
-
-"get number of binary variables from the MILP formulation"
-@inline get_num_binary_variables(milp::MILPRelaxation) = length(milp.z_indices)
-
-"get number of variables from the MILP formulation"
-@inline get_num_variables(milp::MILPRelaxation) =
-    length(milp.δ_1_indices) + length(milp.δ_2_indices) + length(milp.z_indices) + 2
-
-"get the binary variable indices from the MILP formulation"
-@inline get_binary_indices(milp::MILPRelaxation) = findnz(milp.binary)[1]
-
-"get the function from `function_data`"
-@inline get_function(function_data::FunctionData) = function_data.f
-
-"get the derivative from `function_data`"
-@inline get_derivative(function_data::FunctionData) = function_data.f_dash
-
-"get the domain's lower bound from `function_data`"
-@inline get_domain_lb(function_data::FunctionData) = function_data.partition[1]
-
-"get the domain's upper bound from `function_data`"
-@inline get_domain_ub(function_data::FunctionData) = function_data.partition[end]
-
-"get the function's domain from `function_data`"
-@inline get_domain(function_data::FunctionData) =
-    get_domain_lb(function_data), get_domain_ub(function_data)
-
-"get the partition from `function_data`"
-@inline get_partition(function_data::FunctionData) = function_data.partition

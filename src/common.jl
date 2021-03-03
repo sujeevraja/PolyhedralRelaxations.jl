@@ -1,97 +1,54 @@
-"Abstract formulation class"
-abstract type AbstractFormulation end
-
-"Abstract variable index class"
-abstract type AbstractVariableIndices end
-
-"ConstraintMatrix contains the pair ``(A, b)`` where ``A`` is a sparse matrix"
-const ConstraintMatrix = Pair{SparseMatrixCSC{<:Real,Int64},Vector{<:Real}}
-
-"Vertex is a pair ``(x, y)``"
-const Vertex = Pair{<:Real,<:Real}
+export FormulationInfo, UnivariateFunctionData
+"Vertex2d is a pair ``(x, y)``"
+const Vertex2d = Pair{<:Real,<:Real}
 
 """
-The struct `FunctionData` holds the inputs provided by the user. It takes in the function and its derivative (as lambda expressions), the base partition that the user provides, the partition (refinement of the base partition), 3 tolerance values
-
-* error tolerance denotes the strength of the relaxation (the closer to zero the stronger
-    the relaxation),
-* length tolerance (maximum difference between successive derivative values), and
-* derivative tolerance denotes the tolerance for checking equality of derivative values at
-    subsequent partition points, and finally, the maximum number of additional partition intervals.
+The struct `FormulationInfo` holds two dictionaries, one for variable
+references and the other for constraint references.
 """
-struct FunctionData
+struct FormulationInfo
+    variables::Dict{Symbol,Any}
+    constraints::Dict{Symbol,Any}
+end
+
+"Empty contructor for struct `FormulationInfo`"
+FormulationInfo()::FormulationInfo = FormulationInfo(Dict{Symbol,Any}(), Dict{Symbol,Any}())
+
+"""
+The struct `UnivariateFunctionData` holds the inputs provided by the user. It
+takes in the function and its derivative (as lambda expressions), the partition
+on the independent variable that the user provides, and the following 3
+tolerance values:
+
+* error tolerance denotes the strength of the relaxation (the closer to zero
+    the stronger the relaxation)
+* length tolerance (maximum difference between successive derivative values)
+* derivative tolerance denotes the tolerance for checking equality of
+    derivative values at subsequent partition points, and finally, the maximum
+    number of additional partition intervals.
+"""
+struct UnivariateFunctionData
     f::Function
     f_dash::Function
-    base_partition::Vector{<:Real}
-    partition::Vector{<:Real}  # refinement of `base_partition` based on specified limits
-    error_tolerance::Float64  # maximum allowed error bound
-    length_tolerance::Float64  # maximum allowed distance between successive partition points
-    derivative_tolerance::Float64  # maximum difference between successive derivative values
-    num_additional_partitions::Int64  # maximum number of additional partition intervals
-end
-
-" This struct holds the constraint data. It contains info to create the sparse constraint matrices"
-mutable struct ConstraintData
-    constraint_row_indices::Vector{Int64}
-    constraint_column_indices::Vector{Int64}
-    constraint_coefficients::Vector{Float64}
-    rhs_row_indices::Vector{Int64}
-    rhs_values::Vector{Float64}
-    num_constraints::Int64
-end
-
-"Empty Constructor for ConstraintData"
-function ConstraintData()::ConstraintData
-    row_indices = Int64[]
-    col_indices = Int64[]
-    coefs = Float64[]
-    rhs_row_indices = Int64[]
-    rhs_values = Float64[]
-    num_constraints = 0
-    return ConstraintData(
-        row_indices,
-        col_indices,
-        coefs,
-        rhs_row_indices,
-        rhs_values,
-        num_constraints,
-    )
+    partition::Vector{<:Real}
+    error_tolerance::Float64
+    length_tolerance::Float64
+    derivative_tolerance::Float64
+    num_additional_partitions::Int64
+    initial_partition_length::Int64
 end
 
 """
-    get_constraint_matrix(constraint_data, num_variables)
+    _get_tangent_vertex(prev_secant_vertex, next_secant_vertex, derivative)
 
-Helper function to construct ConstraintMatrix from ConstraintData and number of variables
+Return ``(x,y)`` coordinates of the intersection of tangents drawn at
+`prev_secant_vertex` and `next_secant_vertex`.
 """
-function get_constraint_matrix(
-    constraint_data::ConstraintData,
-    num_variables::Int64,
-)::ConstraintMatrix
-    A = sparse(
-        constraint_data.constraint_row_indices,
-        constraint_data.constraint_column_indices,
-        constraint_data.constraint_coefficients,
-        constraint_data.num_constraints,
-        num_variables,
-    )
-    b = sparsevec(
-        constraint_data.rhs_row_indices,
-        constraint_data.rhs_values,
-        constraint_data.num_constraints,
-    )
-    return Pair(A, Vector(b))
-end
-
-"""
-    get_tangent_vertex(prev_secant_vertex, next_secant_vertex, derivative)
-
-Return ``(x,y)`` coordinates of the intersection of tangents drawn at `prev_secant_vertex` and `next_secant_vertex`.
-"""
-function get_tangent_vertex(
-    prev_secant_vertex::Vertex,
-    next_secant_vertex::Vertex,
+function _get_tangent_vertex(
+    prev_secant_vertex::Vertex2d,
+    next_secant_vertex::Vertex2d,
     derivative::Function,
-)::Vertex
+)::Vertex2d
     x_prev, f_prev = prev_secant_vertex
     x_next, f_next = next_secant_vertex
     d_prev, d_next = derivative(x_prev), derivative(x_next)
@@ -101,28 +58,33 @@ function get_tangent_vertex(
 end
 
 """
-    collect_vertices(function_data)
+    _collect_vertices(univariate_function_data)
 
-Return a pair of lists with secant vertices as the first element and tangent vertices as the second
-element.
+Return a pair of lists with secant vertices as the first element and tangent
+vertices as the second element.
 
 Each element in the secant vertex list is a pair (x,y) where
-* x is an element of `function_data.partition`,
+* x is an element of `univariate_function_data.partition`,
 * y is the value of the given univariate function at x.
+All secant vertices lie on the curve.
 
-Each element in the tangent vertex list is also a pair (x,y). Each position i of the list contains
-the vertex formed by intersection of tangents of the curve `y=function_data.f(x)` at
-`secant_vertices[i]` and `secant_vertices[i+1]`.
+Each element in the tangent vertex list is also a pair (x,y). Each position i
+of the list contains the vertex formed by intersection of tangents of the curve
+`y=univariate_function_data.f(x)` at `secant_vertices[i]` and
+`secant_vertices[i+1]`. No tangent vertex will lie on the curve (except for the
+trivial case where the curve is linear, and all triangles are flat lines).
 """
-function collect_vertices(function_data::FunctionData)::Pair{Vector{Vertex},Vector{Vertex}}
-    secant_vertices, tangent_vertices = Vertex[], Vertex[]
-    for x in function_data.partition
-        push!(secant_vertices, Pair(x, function_data.f(x)))
+function _collect_vertices(
+    univariate_function_data::UnivariateFunctionData,
+)::Pair{Vector{Vertex2d},Vector{Vertex2d}}
+    secant_vertices, tangent_vertices = Vertex2d[], Vertex2d[]
+    for x in univariate_function_data.partition
+        push!(secant_vertices, Pair(x, univariate_function_data.f(x)))
         if length(secant_vertices) >= 2
-            tv = get_tangent_vertex(
+            tv = _get_tangent_vertex(
                 secant_vertices[end-1],
                 secant_vertices[end],
-                function_data.f_dash,
+                univariate_function_data.f_dash,
             )
             push!(tangent_vertices, tv)
         end
@@ -131,74 +93,61 @@ function collect_vertices(function_data::FunctionData)::Pair{Vector{Vertex},Vect
 end
 
 """
-    add_coeff!(constraint_data, row, col, value)
+    _validate(x, partition)
 
-Add the coefficient `value` of the variable with index `col` to the constraint with index `row` to `constraint_data`.
+Variable bounds and partition consistency checker
 """
-function add_coeff!(constraint_data::ConstraintData, row::Int64, col::Int64, value::Float64)
-    push!(constraint_data.constraint_row_indices, row)
-    push!(constraint_data.constraint_column_indices, col)
-    push!(constraint_data.constraint_coefficients, value)
+function _validate(x::JuMP.VariableRef, partition::Vector{<:Real})
+    x_lb = isinf(JuMP.lower_bound(x)) ? -Inf : JuMP.lower_bound(x)
+    x_ub = isinf(JuMP.upper_bound(x)) ? Inf : JuMP.upper_bound(x)
+    lb = partition[1]
+    ub = partition[end]
+    if isfinite(x_lb) && !isapprox(x_lb, lb, rtol = 1e-8)
+        Memento.error(_LOGGER, "partition lower bound and variable lower bound not equal")
+    end
+    if isfinite(x_ub) && !isapprox(x_ub, ub, rtol = 1e-8)
+        Memento.error(_LOGGER, "partition upper bound and variable upper bound not equal")
+    end
+    (isinf(x_lb)) && (JuMP.set_lower_bound(x, lb))
+    (isinf(x_ub)) && (JuMP.set_upper_bound(x, ub))
 end
 
 """
-    add_rhs!(constraint_data, row, value)
-
-Add the right-hand-side `value` for row `row` to `constraint_data`.
-"""
-function add_rhs!(constraint_data::ConstraintData, row::Int64, value::Float64)
-    push!(constraint_data.rhs_row_indices, row)
-    push!(constraint_data.rhs_values, value)
-end
-
-"""
-    validate(constraint_data)
-
-ConstraintData validator - checks for correctness
-"""
-function validate(constraint_data::ConstraintData)
-    num_entries = length(constraint_data.constraint_row_indices)
-    @assert num_entries == length(constraint_data.constraint_column_indices)
-    @assert num_entries == length(constraint_data.constraint_coefficients)
-    @assert length(constraint_data.rhs_row_indices) == length(constraint_data.rhs_values)
-end
-
-"""
-    validate_point(function_data, x)
+    _validate_point(univariate_function_data, x)
 
 Input data point validator
 """
-function validate_point(function_data::FunctionData, x::Float64)
-    if !isfinite(x) || abs(x) >= ∞
+function _validate_point(univariate_function_data::UnivariateFunctionData, x::Float64)
+    if !isfinite(x) || abs(x) >= INF
         Memento.error(_LOGGER, "all partition points must be finite")
     end
 
-    fx = function_data.f(x)
-    if abs(fx) >= ∞
-        Memento.error(_LOGGER, "absolute function value at $x larger than $∞")
+    fx = univariate_function_data.f(x)
+    if abs(fx) >= INF
+        Memento.error(_LOGGER, "absolute function value at $x larger than $INF")
     end
 
-    dx = function_data.f_dash(x)
-    if abs(dx) >= ∞
-        Memento.error(_LOGGER, "absolute derivative value at $x larger than $∞")
+    dx = univariate_function_data.f_dash(x)
+    if abs(dx) >= INF
+        Memento.error(_LOGGER, "absolute derivative value at $x larger than $INF")
     end
 end
 
 """
-    validate(function_data)
+    _validate(univariate_function_data)
 
-Input data validator
+Input univariate function data validator
 """
-function validate(function_data::FunctionData)
-    if length(function_data.partition) < 2
+function _validate(univariate_function_data::UnivariateFunctionData)
+    if length(univariate_function_data.partition) < 2
         Memento.error(_LOGGER, "partition must have at least 2 points")
     end
 
     x_prev::Float64 = NaN64
     d_prev::Float64 = NaN64
-    for x in function_data.partition
-        validate_point(function_data, x)
-        dx = function_data.f_dash(x)
+    for x in univariate_function_data.partition
+        _validate_point(univariate_function_data, x)
+        dx = univariate_function_data.f_dash(x)
         if !isnan(x_prev)
             if x <= x_prev
                 Memento.error(
@@ -206,21 +155,21 @@ function validate(function_data::FunctionData)
                     "partition must be sorted, violation for $x, $x_prev",
                 )
             end
-            if x - x_prev <= function_data.length_tolerance
+            if x - x_prev <= univariate_function_data.length_tolerance
                 Memento.error(
                     _LOGGER,
                     string(
                         "$x_prev and $x difference less than ",
-                        "$(function_data.length_tolerance)",
+                        "$(univariate_function_data.length_tolerance)",
                     ),
                 )
             end
-            if abs(dx - d_prev) <= function_data.derivative_tolerance
+            if abs(dx - d_prev) <= univariate_function_data.derivative_tolerance
                 Memento.error(
                     _LOGGER,
                     string(
                         "difference of derivatives at $x and $x_prev less than ",
-                        "$(function_data.derivative_tolerance)",
+                        "$(univariate_function_data.derivative_tolerance)",
                     ),
                 )
             end
@@ -233,21 +182,22 @@ function validate(function_data::FunctionData)
 end
 
 """
-    refine_partition!(function_data)
+    _refine_partition!(univariate_function_data)
 
 Partition refinement schemes (interval bisection)
 """
-function refine_partition!(function_data::FunctionData)
+function _refine_partition!(univariate_function_data::UnivariateFunctionData)
     # Don't refine the partition if no additional constraints are specified.
-    if isnan(function_data.error_tolerance) && function_data.num_additional_partitions <= 0
+    if isnan(univariate_function_data.error_tolerance) &&
+       univariate_function_data.num_additional_partitions <= 0
         return
     end
 
-    error_queue = get_error_queue(function_data)
+    error_queue = _get_error_queue(univariate_function_data)
     num_partitions_added = 0
-    partition = function_data.partition
+    partition = univariate_function_data.partition
     while true
-        if !is_refinement_feasible(function_data, error_queue)
+        if !_is_refinement_feasible(univariate_function_data, error_queue)
             Memento.debug(_LOGGER, "stopping refinement")
             return
         end
@@ -258,7 +208,12 @@ function refine_partition!(function_data::FunctionData)
         Memento.debug(_LOGGER, "max error: $max_error between $x_start, $x_end")
 
         """
-        Errors of partition intervals in `error_queue` are indexed by positions of interval starts in `refined_partition`. As we will be inserting `x_new` into `refined_partition` between positions `start` and `start+1`, the positions of interval-starts after `x_new` will all increase by 1 after the insertions. Upade the queue with this new indexing.
+        Errors of partition intervals in `error_queue` are indexed by positions
+        of interval starts in `refined_partition`. As we will be inserting
+        `x_new` into `refined_partition` between positions `start` and
+        `start+1`, the positions of interval-starts after `x_new` will all
+        increase by 1 after the insertions. Upade the queue with this new
+        indexing.
         """
         num_starts = length(partition)
         for i = num_starts:-1:start+1
@@ -267,8 +222,10 @@ function refine_partition!(function_data::FunctionData)
 
         # Add errors of the new partition intervals to the queue.
         x_new = 0.5 * (x_start + x_end)
-        error_queue[start] = get_error_bound(function_data.f_dash, x_start, x_new)
-        error_queue[start+1] = get_error_bound(function_data.f_dash, x_new, x_end)
+        error_queue[start] =
+            _get_error_bound(univariate_function_data.f_dash, x_start, x_new)
+        error_queue[start+1] =
+            _get_error_bound(univariate_function_data.f_dash, x_new, x_end)
 
         # Add `x_new` to `refined_partition`.
         splice!(partition, start+1:start, x_new)
@@ -277,37 +234,44 @@ function refine_partition!(function_data::FunctionData)
 end
 
 """
-    is_refinement_feasible(function_data, error_queue)
+    _is_refinement_feasible(univariate_function_data, error_queue)
 
 This function checks if the refinement is feasible
 """
-function is_refinement_feasible(
-    function_data::FunctionData,
+function _is_refinement_feasible(
+    univariate_function_data::UnivariateFunctionData,
     error_queue::PriorityQueue,
 )::Bool
     # Check if error bound is below tolerance.
     start, max_error = peek(error_queue)
-    if !isnan(function_data.error_tolerance) && max_error <= function_data.error_tolerance
+    if !isnan(univariate_function_data.error_tolerance) &&
+       max_error <= univariate_function_data.error_tolerance
         Memento.debug(
             _LOGGER,
-            "error: $max_error less than limit: $(function_data.error_tolerance)",
+            "error: $max_error less than limit: $(univariate_function_data.error_tolerance)",
         )
         return false
     end
 
     # Check if the maximum allowed number of binary variables have been added.
-    if function_data.num_additional_partitions > 0
-        num_added = length(function_data.partition) - length(function_data.base_partition)
-        if num_added >= function_data.num_additional_partitions
+    if univariate_function_data.num_additional_partitions > 0
+        num_added =
+            length(univariate_function_data.partition) -
+            univariate_function_data.initial_partition_length
+        if num_added >= univariate_function_data.num_additional_partitions
             Memento.debug(_LOGGER, "number of new binary variables: $num_added")
-            Memento.debug(_LOGGER, "budget: $(function_data.num_additional_partitions)")
+            Memento.debug(
+                _LOGGER,
+                "budget: $(univariate_function_data.num_additional_partitions)",
+            )
             return false
         end
     end
 
     # Check if new partition lengths are smaller than allowed.
-    x_start, x_end = function_data.partition[start], function_data.partition[start+1]
-    if x_end - x_start <= (2 * function_data.length_tolerance)
+    x_start, x_end = univariate_function_data.partition[start],
+    univariate_function_data.partition[start+1]
+    if x_end - x_start <= (2 * univariate_function_data.length_tolerance)
         Memento.debug(_LOGGER, "start: $x_start, end: $x_end")
         Memento.debug(_LOGGER, "new interval length will be too small")
         return false
@@ -315,14 +279,15 @@ function is_refinement_feasible(
 
     # Check if function and derivative are well-defined at the new point.
     x_new = 0.5 * (x_start + x_end)
-    validate_point(function_data, x_new)
+    _validate_point(univariate_function_data, x_new)
 
     # Check if derivative differences at endpoints of new partitions are smaller than allowed.
-    d_start, d_end = function_data.f_dash(x_start), function_data.f_dash(x_end)
-    d_new = function_data.f_dash(x_new)
+    d_start, d_end =
+        univariate_function_data.f_dash(x_start), univariate_function_data.f_dash(x_end)
+    d_new = univariate_function_data.f_dash(x_new)
     if (
-        abs(d_new - d_start) <= function_data.derivative_tolerance ||
-        abs(d_end - d_new) <= function_data.derivative_tolerance
+        abs(d_new - d_start) <= univariate_function_data.derivative_tolerance ||
+        abs(d_end - d_new) <= univariate_function_data.derivative_tolerance
     )
         Memento.debug(_LOGGER, "d_start: $d_start, d_new: $d_new, d_end: $d_end")
         Memento.debug(_LOGGER, "adjacent derivative difference will be too small")
@@ -333,44 +298,46 @@ function is_refinement_feasible(
 end
 
 """
-    get_error_queue(function_data)
+    _get_error_queue(univariate_function_data)
 
-Build a max-priority-queue holding errors of each partition interval in `function_data.partition`.
-Keys of the queue are indices of starting positions of the partition interval in
-`function_data.partition`. Priorities are error bounds of partition intervals. The queue is built as
+Build a max-priority-queue holding errors of each partition interval in
+`univariate_function_data.partition`. Keys of the queue are indices of starting
+positions of the partition interval in `univariate_function_data.partition`.
+Priorities are error bounds of partition intervals. The queue is built as
 a max-queue for easy access to the  maximum error.
 """
-function get_error_queue(function_data::FunctionData)::PriorityQueue
+function _get_error_queue(univariate_function_data::UnivariateFunctionData)::PriorityQueue
     pq = PriorityQueue{Int64,Float64}(Base.Order.Reverse)
-    for i = 1:length(function_data.partition)-1
-        lb = function_data.partition[i]
-        ub = function_data.partition[i+1]
-        pq[i] = get_error_bound(function_data.f_dash, lb, ub)
+    for i = 1:length(univariate_function_data.partition)-1
+        lb = univariate_function_data.partition[i]
+        ub = univariate_function_data.partition[i+1]
+        pq[i] = _get_error_bound(univariate_function_data.f_dash, lb, ub)
     end
     return pq
 end
 
 """
-    get_error_bound(derivative, lb, ub)
+    _get_error_bound(derivative, lb, ub)
 
-Get error bound of a function with derivative `derivative` in the closed interval `[lb,ub]`.
+Get error bound of a function with derivative `derivative` in the closed
+interval `[lb,ub]`.
 """
-function get_error_bound(derivative::Function, lb::Float64, ub::Float64)
+function _get_error_bound(derivative::Function, lb::Float64, ub::Float64)
     return (ub - lb) * abs(derivative(ub) - derivative(lb)) / 4.0
 end
 
 """
-    get_max_error_bound(function_data)
+    _get_max_error_bound(univariate_function_data)
 
 Compute and return maximum value of error bound among all partition intervals.
 """
-function get_max_error_bound(function_data::FunctionData)::Float64
+function _get_max_error_bound(univariate_function_data::UnivariateFunctionData)::Float64
     max_err = -Inf
-    for i in length(function_data.partition) - 1
-        err = get_error_bound(
-            function_data.f_dash,
-            function_data.partition[i],
-            function_data.partition[i+1],
+    for i in length(univariate_function_data.partition) - 1
+        err = _get_error_bound(
+            univariate_function_data.f_dash,
+            univariate_function_data.partition[i],
+            univariate_function_data.partition[i+1],
         )
         max_err = max(err, max_err)
     end

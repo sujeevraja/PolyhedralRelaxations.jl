@@ -34,7 +34,7 @@ Objective: Minimize y[2] + y[3] - y[4] - y[5]
 function example_trig(; verbose = true)
     best_known_objective = -3.76250036
     cbc_optimizer = JuMP.optimizer_with_attributes(Cbc.Optimizer, "logLevel" => 0)
-    error_tolerances = [NaN64, 1e-1, 1e-2, 1e-3]
+    error_tolerances = [NaN64, 1e-1, 1e-2]
     # base partition holds the inflection points and the end-points for the trigonometric functions
     base_partition = Dict{Int,Vector{Float64}}()
     base_partition[1] = [-2.0, 0.0, π, 5.0]
@@ -50,144 +50,68 @@ function example_trig(; verbose = true)
     functions[4] = x -> sin(17 * x)
     functions[5] = x -> cos(19 * x)
     for i = 1:length(error_tolerances)
-        error_tolerance = error_tolerances[i]
-        milp_var = Dict{Int,Any}()
-        x_indexes = Dict{Int,Int}()
-        y_indexes = Dict{Int,Int}()
-        # construct MILP relaxations
+        err_tol = error_tolerances[i]
         milp = Model(cbc_optimizer)
+        @variable(milp, -2.0 <= x <= 5.0)
+        @variable(milp, -1.0 <= y[1:5] <= 1.0)
+
+        # construct MILP relaxations
         for j = 1:5
-            var, x_index, y_index = add_milp_relaxation(
-                functions[j],
-                base_partition[j],
-                error_tolerance,
+            f = functions[j]
+            p = deepcopy(base_partition[j])
+            construct_univariate_relaxation!(
                 milp,
-                name = string(j),
+                f,
+                x,
+                y[j],
+                p,
+                true,
+                error_tolerance = err_tol,
             )
-            milp_var[j] = var
-            x_indexes[j] = x_index
-            y_indexes[j] = y_index
-            (j == 1) && (continue)
-            @constraint(milp, var[x_index] == milp_var[1][x_indexes[1]])
         end
-        @constraint(milp, 5 * milp_var[1][y_indexes[1]] - milp_var[1][x_indexes[1]] <= 0.0)
-        @objective(
-            milp,
-            Min,
-            milp_var[2][y_indexes[2]] + milp_var[3][y_indexes[3]] -
-            milp_var[4][y_indexes[4]] - milp_var[5][y_indexes[5]]
-        )
+        @constraint(milp, 5 * y[1] - x <= 0.0)
+        @objective(milp, Min, y[2] + y[3] - y[4] - y[5])
         optimize!(milp)
         relaxation_objective = objective_value(milp)
         @test relaxation_objective ≤ best_known_objective
         relative_gap =
             abs(best_known_objective - relaxation_objective) / abs(relaxation_objective)
         if verbose
-            println("Optimal solution: $best_known_objective; MILP for $error_tolerance: $relaxation_objective; relative gap: $relative_gap")
+            println("Optimal solution: $best_known_objective; MILP for error tolerance $err_tol: $relaxation_objective; relative gap: $relative_gap")
         end
     end
 
     for i = 1:length(error_tolerances)
-        error_tolerance = error_tolerances[i]
-        lp_var = Dict{Int,Any}()
-        x_indexes = Dict{Int,Int}()
-        y_indexes = Dict{Int,Int}()
-        # construct MILP relaxations
+        err_tol = error_tolerances[i]
+        # construct LP relaxations
         lp = Model(cbc_optimizer)
+        @variable(lp, -2.0 <= x <= 5.0)
+        @variable(lp, -1.0 <= y[1:5] <= 1.0)
         for j = 1:5
-            var, x_index, y_index = add_lp_relaxation(
-                functions[j],
-                base_partition[j],
-                error_tolerance,
+            f = functions[j]
+            p = deepcopy(base_partition[j])
+            construct_univariate_relaxation!(
                 lp,
-                name = string(j),
+                f,
+                x,
+                y[j],
+                p,
+                true,
+                error_tolerance = err_tol,
             )
-            lp_var[j] = var
-            x_indexes[j] = x_index
-            y_indexes[j] = y_index
-            (j == 1) && (continue)
-            @constraint(lp, var[x_index] == lp_var[1][x_indexes[1]])
         end
-        @constraint(lp, 5 * lp_var[1][y_indexes[1]] - lp_var[1][x_indexes[1]] <= 0.0)
-        @objective(
-            lp,
-            Min,
-            lp_var[2][y_indexes[2]] + lp_var[3][y_indexes[3]] - lp_var[4][y_indexes[4]] -
-            lp_var[5][y_indexes[5]]
-        )
+        @constraint(lp, 5 * y[1] - x <= 0.0)
+        @objective(lp, Min, y[2] + y[3] - y[4] - y[5])
         optimize!(lp)
         relaxation_objective = objective_value(lp)
         @test relaxation_objective ≤ best_known_objective
         relative_gap =
             abs(best_known_objective - relaxation_objective) / abs(relaxation_objective)
         if verbose
-            println("Optimal solution: $best_known_objective; LP for $error_tolerance: $relaxation_objective; relative gap: $relative_gap")
+            println("Optimal solution: $best_known_objective; LP for error tolerance $err_tol: $relaxation_objective; relative gap: $relative_gap")
         end
     end
 
 end
-
-function add_milp_relaxation(
-    f::Function,
-    partition::Vector{Float64},
-    error_tolerance::Float64,
-    m::JuMP.AbstractModel;
-    name = "1",
-)
-    relaxation, _ = construct_milp_relaxation(
-        f,
-        partition,
-        length_tolerance = 1e-5,
-        derivative_tolerance = 1e-5,
-        error_tolerance = error_tolerance,
-    )
-    num_variables = get_num_variables(relaxation)
-    lb, ub = get_variable_bounds(relaxation)
-    names = get_variable_names(relaxation)
-    binary = relaxation.binary
-    x = @variable(
-        m,
-        [i = 1:num_variables],
-        lower_bound = lb[i],
-        upper_bound = ub[i],
-        binary = Bool(binary[i]),
-        base_name = names[i] * "_" * name
-    )
-    A, b = get_eq_constraint_matrices(relaxation)
-    @constraint(m, A * x .== b)
-    A, b = get_leq_constraint_matrices(relaxation)
-    @constraint(m, A * x .<= b)
-    return x, relaxation.x_index, relaxation.y_index
-end
-
-function add_lp_relaxation(
-    f::Function,
-    partition::Vector{Float64},
-    error_tolerance::Float64,
-    m::JuMP.AbstractModel;
-    name = "1",
-)
-    relaxation, _ = construct_lp_relaxation(
-        f,
-        partition,
-        length_tolerance = 1e-5,
-        derivative_tolerance = 1e-5,
-        error_tolerance = error_tolerance,
-    )
-    num_variables = get_num_variables(relaxation)
-    lb, ub = get_variable_bounds(relaxation)
-    names = get_variable_names(relaxation)
-    x = @variable(
-        m,
-        [i = 1:num_variables],
-        lower_bound = lb[i],
-        upper_bound = ub[i],
-        base_name = names[i] * "_" * name
-    )
-    A, b = get_eq_constraint_matrices(relaxation)
-    @constraint(m, A * x .== b)
-    return x, relaxation.x_index, relaxation.y_index
-end
-
 
 example_trig()

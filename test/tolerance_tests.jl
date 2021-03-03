@@ -1,39 +1,31 @@
 f = x -> x^3
+f_dash = x -> 3 * x^2
 partition = collect(-1.0:1.0:1.0)
 
 @testset "sampling tests with x^3 for error tolerance" begin
     PR.silence()
-    milp, function_data = construct_milp_relaxation(f, partition, error_tolerance = 1e-2)
-    lb, ub = get_domain(function_data)
-    var_lb, var_ub = get_variable_bounds(milp)
-    num_variables = get_num_variables(milp)
+    p = deepcopy(partition)
     for i = 1:10
+        lb = -1.0
+        ub = 1.0
         λ = rand()
         x_val = λ * lb + (1 - λ) * ub
         m = Model(cbc_optimizer)
-        @variable(
-            m,
-            var_lb[i] <= x[i = 1:num_variables] <= var_ub[i],
-            binary = Bool(get_variable_type(milp)[i]),
-            base_name = get_variable_names(milp)[i]
-        )
-        A, b = get_eq_constraint_matrices(milp)
-        @constraint(m, A * x .== b)
-        A, b = get_leq_constraint_matrices(milp)
-        @constraint(m, A * x .<= b)
-        @constraint(m, x[milp.x_index] == x_val)
+        @variable(m, -1.0 <= x <= 1.0)
+        @variable(m, y)
+        construct_univariate_relaxation!(m, f, x, y, p, true, error_tolerance = 1e-2)
+        @constraint(m, x == x_val)
 
         # solve for min y
-        @objective(m, Min, x[milp.y_index])
+        @objective(m, Min, y)
         optimize!(m)
         y_min = objective_value(m)
 
         # solve for max y
-        @objective(m, Max, x[milp.y_index])
+        @objective(m, Max, y)
         optimize!(m)
         y_max = objective_value(m)
         @test abs(y_max - y_min) <= 1e-2
-        @test get_error_bound(milp) <= 1e-2
     end
 end
 
@@ -42,43 +34,67 @@ end
     tol = 1e-5
     for l in [0.1, 0.25, 0.5, 1.0]
         base_partition = collect(-1.0:l:1.0)
-        milp, function_data = construct_milp_relaxation(
+        num_base = length(base_partition) - 1
+        m = Model(cbc_optimizer)
+        @variable(m, -1.0 <= x <= 1.0)
+        @variable(m, y)
+        formulation_info = construct_univariate_relaxation!(
+            m,
             f,
+            x,
+            y,
             base_partition,
+            true,
             error_tolerance = tol,
             num_additional_partitions = num_vars,
         )
-        num_base = length(function_data.base_partition) - 1
-        @test PR.get_num_binary_variables(milp) == num_base + num_vars
+        @test length(formulation_info.variables[:z]) == num_base + num_vars
     end
 end
 
 @testset "sampling tests with x^3 for length tolerance" begin
     err_tol = 1e-7
     len_tol = 0.1
-    _, function_data = construct_milp_relaxation(
+    p = deepcopy(partition)
+    m = Model(cbc_optimizer)
+    @variable(m, -1.0 <= x <= 1.0)
+    @variable(m, y)
+    construct_univariate_relaxation!(
+        m,
         f,
-        partition,
+        x,
+        y,
+        p,
+        true,
         error_tolerance = err_tol,
         length_tolerance = len_tol,
     )
-    for i = 1:length(function_data.partition)-1
-        @test function_data.partition[i+1] - function_data.partition[i] >= len_tol
+    for i = 1:length(p)-1
+        @test p[i+1] - p[i] >= len_tol
     end
 end
 
 @testset "sampling tests with x^3 for derivative tolerance" begin
     err_tol = 1e-7
     der_tol = 0.1
-    _, function_data = construct_milp_relaxation(
+    p = deepcopy(partition)
+    m = Model(cbc_optimizer)
+    @variable(m, -1.0 <= x <= 1.0)
+    @variable(m, y)
+    construct_univariate_relaxation!(
+        m,
         f,
-        partition,
+        x,
+        y,
+        p,
+        true,
         error_tolerance = err_tol,
         derivative_tolerance = der_tol,
     )
-    for i = 1:length(function_data.partition)-1
-        d = function_data.f_dash(function_data.partition[i])
-        d_next = function_data.f_dash(function_data.partition[i+1])
+
+    for i = 1:length(p)-1
+        d = f_dash(p[i])
+        d_next = f_dash(p[i+1])
         @test abs(d_next - d) >= der_tol
     end
 end
