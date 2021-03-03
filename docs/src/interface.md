@@ -50,7 +50,7 @@ has_leq_constraints
 get_eq_constraint_matrices
 get_leq_constraint_matrices
 get_num_variables
-get_error_bound
+_get_error_bound
 get_variable_type
 get_domain
 get_domain_lb

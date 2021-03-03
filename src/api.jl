@@ -1,4 +1,4 @@
-export construct_univariate_relaxation
+export construct_univariate_relaxation!
 
 """
     construct_univariate_relaxation!(m,x,y,f,x_partition;f_dash=x->ForwardDiff.derivative(f,x),error_tolerance=NaN64,length_tolerance=ϵ,derivative_tolerance=ϵ,num_additional_partitions=0)
@@ -51,11 +51,11 @@ function construct_univariate_relaxation!(
     y::JuMP.VariableRef,
     x_partition::Vector{<:Real},
     milp::Bool;
-    f_dash::Function=x -> ForwardDiff.derivative(f, x),
-    error_tolerance::Float64=NaN64,
-    length_tolerance::Float64=EPS,
-    derivative_tolerance::Float64=EPS,
-    num_additional_partitions::Int64=0,
+    f_dash::Function = x -> ForwardDiff.derivative(f, x),
+    error_tolerance::Float64 = NaN64,
+    length_tolerance::Float64 = EPS,
+    derivative_tolerance::Float64 = EPS,
+    num_additional_partitions::Int64 = 0,
 )::FormulationInfo
     univariate_function_data = UnivariateFunctionData(
         f,
@@ -65,10 +65,11 @@ function construct_univariate_relaxation!(
         length_tolerance,
         derivative_tolerance,
         num_additional_partitions,
+        length(x_partition),
     )
-    validate(univariate_function_data)
-    validate(x, x_partition)
-    refine_partition!(univariate_function_data)
-    func = milp ? build_univariate_milp_relaxation! : build_univariate_lp_relaxation!
+    _validate(univariate_function_data)
+    _validate(x, x_partition)
+    _refine_partition!(univariate_function_data)
+    func = milp ? _build_univariate_milp_relaxation! : _build_univariate_lp_relaxation!
     return func(m, x, y, univariate_function_data)
 end

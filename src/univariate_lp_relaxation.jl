@@ -1,13 +1,13 @@
 """
-    _get_lp_relaxation_vertices(univariate_function_data::UnivariateFunctionData)::Vector{Vertex}
+    _get_lp_relaxation_vertices(univariate_function_data::UnivariateFunctionData)::Vector{Vertex2d}
 
 Return vertices of the LP relaxation of the given function.
 """
 function _get_lp_relaxation_vertices(
     univariate_function_data::UnivariateFunctionData,
-)::Vector{Vertex}
-    sec_vs, tan_vs = collect_vertices(univariate_function_data)
-    vertices = Vertex[]
+)::Vector{Vertex2d}
+    sec_vs, tan_vs = _collect_vertices(univariate_function_data)
+    vertices = Vertex2d[]
     push!(vertices, sec_vs[1])
     append!(vertices, tan_vs)
     push!(vertices, sec_vs[end])
@@ -15,11 +15,11 @@ function _get_lp_relaxation_vertices(
 end
 
 """
-    build_univariate_lp_relaxation(univariate_function_data)
+    _build_univariate_lp_relaxation!(univariate_function_data)
 
 Build LP relaxation for ``y=f(x)`` given the univariate function data.
 """
-function build_univariate_lp_relaxation!(
+function _build_univariate_lp_relaxation!(
     m::JuMP.Model,
     x::JuMP.VariableRef,
     y::JuMP.VariableRef,
@@ -35,10 +35,10 @@ function build_univariate_lp_relaxation!(
 
     # add constraints 
     formulation_info.constraints[:sum_lambda] = @constraint(m, sum(lambda) == 1)
-    formulation_info.constraints[:x] = @constraint(m,
-        x == sum(lambda[i] * vertices[i][1] for i = 1:num_vars))
-    formulation_info.constraints[:y] = @constraint(m,
-        y == sum(lambda[i] * vertices[i][2] for i = 1:num_vars))
+    formulation_info.constraints[:x] =
+        @constraint(m, x == sum(lambda[i] * vertices[i][1] for i = 1:num_vars))
+    formulation_info.constraints[:y] =
+        @constraint(m, y == sum(lambda[i] * vertices[i][2] for i = 1:num_vars))
 
     return formulation_info
 end

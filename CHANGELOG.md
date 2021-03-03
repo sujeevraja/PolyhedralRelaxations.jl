@@ -1,8 +1,17 @@
 PolyhedralRelaxations.jl Change Log
 =========================
+
+### v0.2.0 
+- API refactor 
+- Move CI to GitHub Actions 
+- Make JuMP a dependency and populate relaxations in JuMP model directly 
+- Limit exports
+- Clean up documentation for new API
+- Refactor examples
+
 ### v0.1.2
 - patch release
-- Update Datastructures version 
+- Update DataStructures version 
 
 ### v0.1.1
 - patch release

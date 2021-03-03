@@ -1,61 +1,55 @@
 @testset "linear objective function tests" begin
     PR.logger_config!("error")
-    f, partition = x -> x^3, collect(-1.0:0.25:1.0)
+    f, partition = a -> a^3, collect(-1.0:0.25:1.0)
+    ufd = UnivariateFunctionData(
+        f,
+        a -> 3 * a^2,
+        partition,
+        NaN64,
+        1e-3,
+        1e-3,
+        0,
+        length(partition),
+    )
 
     # create LP relaxation of the MILP relaxation of the univariate function.
-    milp_relaxation, milp_function_data = construct_milp_relaxation(f, partition)
     milp = Model(cbc_optimizer)
-    lb, ub = get_variable_bounds(milp_relaxation)
-    num_variables = get_num_variables(milp_relaxation)
-    @variable(milp, lb[i] <= x[i = 1:num_variables] <= ub[i])
-    A, b = get_eq_constraint_matrices(milp_relaxation)
-    @constraint(milp, A * x .== b)
-    A, b = get_leq_constraint_matrices(milp_relaxation)
-    @constraint(milp, A * x .<= b)
-    binary_indices, _ = findnz(milp_relaxation.binary)
+    @variable(milp, -1.0 <= x <= 1.0)
+    @variable(milp, y)
+    construct_univariate_relaxation!(milp, f, x, y, partition, true)
 
     # create LP relaxation of the univariate function using the convex hull formulation.
-    lp_relaxation, lp_function_data = construct_lp_relaxation(f, partition)
     lp = Model(cbc_optimizer)
-    lb, ub = get_variable_bounds(lp_relaxation)
-    num_variables = get_num_variables(lp_relaxation)
-    @variable(lp, lb[i] <= y[i = 1:num_variables] <= ub[i])
-    A, b = get_eq_constraint_matrices(lp_relaxation)
-    @constraint(lp, A * y .== b)
+    @variable(lp, -1.0 <= x_lp <= 1.0)
+    @variable(lp, y_lp)
+    construct_univariate_relaxation!(lp, f, x_lp, y_lp, partition, false)
+
+    # univariate function data
 
     # Collect possible solutions of relaxations.
-    sec_verts, tan_verts = PR.collect_vertices(milp_function_data)
-    sln_verts = PR.Vertex[]
+    sec_verts, tan_verts = PR._collect_vertices(ufd)
+    sln_verts = PR.Vertex2d[]
     push!(sln_verts, sec_verts[1])
     append!(sln_verts, tan_verts)
     push!(sln_verts, sec_verts[end])
 
     tol = 1e-5
 
-    for α ∈ collect(π/20:π/20:(2*π/5))
-        set_objective_function(
-            milp,
-            x[milp_relaxation.y_index] - (x[milp_relaxation.x_index] * tan(α)),
-        )
-        set_objective_function(
-            lp,
-            y[lp_relaxation.y_index] - (y[lp_relaxation.x_index] * tan(α)),
-        )
+    for α in collect(π/20:π/20:(2*π/5))
+        set_objective_function(milp, y - x * tan(α))
+        set_objective_function(lp, y_lp - x_lp * tan(α))
 
         for s in [MOI.MIN_SENSE, MOI.MAX_SENSE]
             # Solve MILP relaxation.
             set_objective_sense(milp, s)
-            for k in binary_indices
-                set_binary(x[k])
-            end
             optimize!(milp)
             @test termination_status(milp) == MOI.OPTIMAL
 
             # Verify that the solution is one of the candidate solutions in `sln_verts`.
             milp_obj = objective_value(milp)
             sln_found = false
-            x_sln = value.(x[milp_relaxation.x_index])
-            y_sln = value.(x[milp_relaxation.y_index])
+            x_sln = value.(x)
+            y_sln = value.(y)
             for v in sln_verts
                 if isapprox(v[1], x_sln, atol = tol) && isapprox(v[2], y_sln, atol = tol)
                     sln_found = true
@@ -66,9 +60,7 @@
 
             # Verify that the LP relaxation obtained by dropping binary restrictions gives the
             # same objective value as the MILP relaxation.
-            for k in binary_indices
-                unset_binary(x[k])
-            end
+            JuMP.relax_integrality(milp)
             optimize!(milp)
             @test termination_status(milp) == MOI.OPTIMAL
             lp1_obj = objective_value(milp)
