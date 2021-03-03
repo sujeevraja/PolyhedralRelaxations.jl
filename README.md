@@ -1,8 +1,6 @@
-[![Build Status](https://github.com//sujeevraja/PolyhedralRelaxations.jl/workflows/CI/badge.svg?branch=master)](https://github.com/sujeevraja/PolyhedralRelaxations.jl/actions?query=workflow%3ACI) 
+Status: [![Build Status](https://github.com//sujeevraja/PolyhedralRelaxations.jl/workflows/CI/badge.svg?branch=master)](https://github.com/sujeevraja/PolyhedralRelaxations.jl/actions?query=workflow%3ACI) 
 [![codecov](https://codecov.io/gh/sujeevraja/PolyhedralRelaxations.jl/branch/master/graph/badge.svg)](https://codecov.io/gh/sujeevraja/PolyhedralRelaxations.jl)
-[![Coverage Status](https://coveralls.io/repos/github/sujeevraja/PolyhedralRelaxations.jl/badge.svg?branch=master)](https://coveralls.io/github/sujeevraja/PolyhedralRelaxations.jl?branch=master)
-[![](https://img.shields.io/badge/docs-stable-blue.svg)](https://sujeevraja.github.io/PolyhedralRelaxations.jl/stable/)
-[![](https://img.shields.io/badge/docs-latest-blue.svg)](https://sujeevraja.github.io/PolyhedralRelaxations.jl/latest/)
+[![](https://github.com//sujeevraja/PolyhedralRelaxations.jl/workflows/Documentation/badge.svg)](https://sujeevraja.github.io/PolyhedralRelaxations.jl/stable/)
 
 # PolyhedralRelaxations.jl
 PolyhedralRelaxations.jl is a Julia package to construct mixed-integer linear programming and linear programming (MILP and LP) relaxations for univariate, continuous, and differentiable functions whose domain is also bounded. 
