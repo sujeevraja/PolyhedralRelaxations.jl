@@ -34,7 +34,7 @@ Objective: Minimize y[2] + y[3] - y[4] - y[5]
 function example_trig(; verbose = true)
     best_known_objective = -3.76250036
     cbc_optimizer = JuMP.optimizer_with_attributes(Cbc.Optimizer, "logLevel" => 0)
-    error_tolerances = [NaN64, 1e-1, 1e-2, 1e-3]
+    error_tolerances = [NaN64, 1e-1, 1e-2]
     # base partition holds the inflection points and the end-points for the trigonometric functions
     base_partition = Dict{Int,Vector{Float64}}()
     base_partition[1] = [-2.0, 0.0, π, 5.0]
@@ -66,7 +66,7 @@ function example_trig(; verbose = true)
                 y[j],
                 p,
                 true,
-                error_tolerance = err_tol
+                error_tolerance = err_tol,
             )
         end
         @constraint(milp, 5 * y[1] - x <= 0.0)
@@ -77,7 +77,7 @@ function example_trig(; verbose = true)
         relative_gap =
             abs(best_known_objective - relaxation_objective) / abs(relaxation_objective)
         if verbose
-            println("Optimal solution: $best_known_objective; MILP for $error_tolerance: $relaxation_objective; relative gap: $relative_gap")
+            println("Optimal solution: $best_known_objective; MILP for error tolerance $err_tol: $relaxation_objective; relative gap: $relative_gap")
         end
     end
 
@@ -85,8 +85,8 @@ function example_trig(; verbose = true)
         err_tol = error_tolerances[i]
         # construct LP relaxations
         lp = Model(cbc_optimizer)
-        @variable(milp, -2.0 <= x <= 5.0)
-        @variable(milp, -1.0 <= y[1:5] <= 1.0)
+        @variable(lp, -2.0 <= x <= 5.0)
+        @variable(lp, -1.0 <= y[1:5] <= 1.0)
         for j = 1:5
             f = functions[j]
             p = deepcopy(base_partition[j])
@@ -97,7 +97,7 @@ function example_trig(; verbose = true)
                 y[j],
                 p,
                 true,
-                error_tolerance = err_tol
+                error_tolerance = err_tol,
             )
         end
         @constraint(lp, 5 * y[1] - x <= 0.0)
@@ -108,7 +108,7 @@ function example_trig(; verbose = true)
         relative_gap =
             abs(best_known_objective - relaxation_objective) / abs(relaxation_objective)
         if verbose
-            println("Optimal solution: $best_known_objective; LP for $error_tolerance: $relaxation_objective; relative gap: $relative_gap")
+            println("Optimal solution: $best_known_objective; LP for error tolerance $err_tol: $relaxation_objective; relative gap: $relative_gap")
         end
     end
 

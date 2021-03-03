@@ -30,7 +30,9 @@ function _build_univariate_lp_relaxation!(
     formulation_info = FormulationInfo()
 
     # add variables 
-    @variable(m, 0 <= lambda[1:num_vars] <= 1)
+    lambda =
+        formulation_info.variables[:lambda] =
+            @variable(m, [1:num_vars], lower_bound = 0.0, upper_bound = 1.0)
     formulation_info.variables[:lambda] = lambda
 
     # add constraints 

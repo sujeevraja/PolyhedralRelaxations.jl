@@ -15,12 +15,14 @@ function _build_univariate_milp_relaxation!(
 
     # create variables
     num_vars = length(univariate_function_data.partition) - 1
-    @variable(m, 0 <= delta_1[1:num_vars] <= 1)
-    @variable(m, 0 <= delta_2[1:num_vars] <= 1)
-    @variable(m, 0 <= z[1:num_vars] <= 1, Bin)
-    formulation_info.variables[:delta_1] = delta_1
-    formulation_info.variables[:delta_2] = delta_2
-    formulation_info.variables[:z] = z
+
+    delta_1 =
+        formulation_info.variables[:delta_1] =
+            @variable(m, [1:num_vars], lower_bound = 0.0, upper_bound = 1.0)
+    delta_2 =
+        formulation_info.variables[:delta_2] =
+            @variable(m, [1:num_vars], lower_bound = 0.0, upper_bound = 1.0)
+    z = formulation_info.variables[:z] = @variable(m, [1:num_vars], binary = true)
 
     # add x constraints
     formulation_info.constraints[:x] = @constraint(
@@ -47,10 +49,10 @@ function _build_univariate_milp_relaxation!(
         @constraint(m, delta_1[1] + delta_2[1] <= 1)
 
     # add linking constraints between delta_1, delta_2 and z
-    @constraint(m, zcon1[i = 2:num_vars], delta_1[i] + delta_2[i] <= z[i-1])
-    formulation_info.constraints[:below_z] = zcon1
-    @constraint(m, z_con2[i = 2:num_vars], z[i-1] <= delta_2[i-1])
-    formulation_info.constraints[:above_z] = z_con2
+    formulation_info.constraints[:below_z] =
+        @constraint(m, [i = 2:num_vars], delta_1[i] + delta_2[i] <= z[i-1])
+    formulation_info.constraints[:above_z] =
+        @constraint(m, [i = 2:num_vars], z[i-1] <= delta_2[i-1])
 
     return formulation_info
 end
