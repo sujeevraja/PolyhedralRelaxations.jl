@@ -74,6 +74,35 @@ function construct_univariate_relaxation!(
     return func(m, x, y, univariate_function_data)
 end
 
-function construct_bilinear_relaxation(m, x, y, z, partition_x, partition_y)
+"""
+    construct_bilinear_relaxation!(m,x,y,z,partition_x,partition_y)
 
+Add polyhedral relaxation of `z = xy` to given JuMP model and return an object with
+new variables and constraints.
+
+# Mandatory Arguments
+- `m::Jump.Model`: model to which relaxation is to be added.
+- `x::Jump.VariableRef`: JuMP variable `x`.
+- `y::JuMP.VariableRef`: JuMP variable `y`.
+- `z::JuMP.VariableRef`: JuMP variable `z`.
+- `partition_x::Vector{<:Real}`: partition of the domain of `x`.
+- `partition_y::Vector{<:Real}`: partition of the domain of `y`.
+
+This function builds an incremental formulation, and currently supports more than 
+one partition only on one of the variables `x` or `y` and not on both. It will 
+throw an error when more than one partitions are provided on both variables. 
+When exactly one partition is input for both variables, it populates the model 
+with the McCormick relaxation. The incremental formulation is similar to the triangle 
+chain relaxation in the manuscript with the triangles replaced with quadrilaterals. 
+"""
+function construct_bilinear_relaxation!(
+    m::JuMP.Model,
+    x::JuMP.VariableRef,
+    y::JuMP.VariableRef,
+    z::JuMP.VariableRef,
+    partition_x::Vector{<:Real},
+    partition_y::Vector{<:Real}
+)::FormulationInfo
+    _validate(x, y, partition_x, partition_y)
+    return build_bilinear_relaxation!(m, x, y, z, partition_x, partition_y)
 end 

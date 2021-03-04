@@ -113,6 +113,20 @@ function _validate(x::JuMP.VariableRef, partition::Vector{<:Real})
 end
 
 """
+    _validate(x, y, partition_x, partition_y)
+
+Variable bounds and partition consistency checker for bilinear terms
+"""
+function _validate(x::JuMP.VariableRef, y::JuMP.VariableRef, 
+    partition_x::Vector{<:Real}, partition_y::Vector{<:Real})
+    if length(partition_x) > 2 && length(partition_y) > 2
+        Memento.error(_LOGGER, "package does not support bilinear relaxations with > 2 partitions on both variables")
+    end 
+    _validate(x, partition_x)
+    _validate(y, partition_y)
+end 
+
+"""
     _validate_point(univariate_function_data, x)
 
 Input data point validator
