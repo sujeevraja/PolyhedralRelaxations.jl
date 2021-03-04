@@ -73,3 +73,7 @@ function construct_univariate_relaxation!(
     func = milp ? _build_univariate_milp_relaxation! : _build_univariate_lp_relaxation!
     return func(m, x, y, univariate_function_data)
 end
+
+function construct_bilinear_relaxation(m, x, y, z, partition_x, partition_y)
+
+end 

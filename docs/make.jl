@@ -1,4 +1,7 @@
 using Documenter, PolyhedralRelaxations
+using DocumenterTools: Themes
+
+Themes.compile(joinpath(@__DIR__,"src/assets/pr.scss"))
 
 makedocs(
     sitename = "PolyhedralRelaxations",
