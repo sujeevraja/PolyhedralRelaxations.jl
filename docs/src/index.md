@@ -61,6 +61,6 @@ Now suppose that for the variable ``x_2``, we have partitioned the domain  has m
 
 ![MILP relaxation](assets/incremental-mccormick.png)
 
-Similar to the univariate MILP relaxations, an incremental method is used to formulate this disjunction of tetrahedrons. To the best of our knowledge, this formulation is not found any where in the literature. The properties that it has for the univariate function also hold for the MILP relaxation of the bilinear term (the proofs follow a similar pattern).
+Similar to the univariate MILP relaxations, an incremental method is used to formulate this disjunction of tetrahedrons. To the best of our knowledge, this incremental formulation is not found any where in the literature and is assumed to be common knowledge. 
 
 Currently the package does not support more than one partition on both the variables ``x_1`` and ``x_2``. Nevertheless, this support will be added in the future versions. 
