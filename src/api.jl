@@ -1,4 +1,5 @@
-export construct_univariate_relaxation!
+export construct_univariate_relaxation!,
+construct_bilinear_relaxation!
 
 """
     construct_univariate_relaxation!(m,x,y,f,x_partition;f_dash=x->ForwardDiff.derivative(f,x),error_tolerance=NaN64,length_tolerance=ϵ,derivative_tolerance=ϵ,num_additional_partitions=0)
