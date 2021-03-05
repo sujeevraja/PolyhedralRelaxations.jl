@@ -6,8 +6,8 @@ Themes.compile(joinpath(@__DIR__,"src/assets/pr.scss"), joinpath(@__DIR__,"src/a
 makedocs(
     sitename = "PolyhedralRelaxations",
     format = Documenter.HTML(
-        # See https://github.com/JuliaDocs/Documenter.jl/issues/868
-        prettyurls = get(ENV, "CI", nothing) == "true",
+        mathengine = Documenter.MathJax(),
+        prettyurls = get(ENV, "CI", nothing) == "true"
     ),
     strict = true,
     authors = "Sujeevraja Sanjeevi and Kaarthik Sundar",

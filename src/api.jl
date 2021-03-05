@@ -106,5 +106,6 @@ function construct_bilinear_relaxation!(
     _validate(x, y, partition_x, partition_y)
     if length(partition_x) == 2 && length(partition_y) == 2
         return _build_mccormick_relaxation!(m, x, y, z)
+    end
     return _build_bilinear_milp_relaxation!(m, x, y, z, partition_x, partition_y)
 end 

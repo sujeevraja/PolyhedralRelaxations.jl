@@ -26,9 +26,8 @@ lp = Model(cbc_optimizer)
 formulation_info_lp = construct_univariate_relaxation!(milp, f, x_lp, y_lp, partition, false)
 ```
 
-The `formulation_info_milp` and `formulation_info_lp` contains variable and constraint references for all the additional variables and constraints that are used to formulate the polyhedral relaxation. It definition can be found in [`FormulationInfo`](@ref).
-
-
+The `formulation_info_milp` and `formulation_info_lp` contains variable and constraint references for all the additional variables and constraints that are used to formulate the polyhedral relaxation. It definition can be found in [`FormulationInfo`](@ref). A similar syntax holds for bilinear relaxations as well. Users are referred to [`construct_bilinear_relaxation!`](@ref) for the documentation of the function for constructing a relaxation for bilinear terms.
+ 
 The reader is referred to [manuscript](https://arxiv.org/abs/2005.13445) for details on the formulation.
 
 For an exhaustive list of functions, the reader is referred to [PolyhedralRelaxations.jl Function Reference](@ref). 
