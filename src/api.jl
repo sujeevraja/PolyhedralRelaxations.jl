@@ -93,7 +93,8 @@ one partition only on one of the variables `x` or `y` and not on both. It will
 throw an error when more than one partitions are provided on both variables. 
 When exactly one partition is input for both variables, it populates the model 
 with the McCormick relaxation. The incremental formulation is similar to the triangle 
-chain relaxation in the manuscript with the triangles replaced with quadrilaterals. 
+chain relaxation in the manuscript with the triangles replaced with tetrahedrons. 
+Adjacent tetrahedrons share an edge (instead of a point in the triangles case). 
 """
 function construct_bilinear_relaxation!(
     m::JuMP.Model,

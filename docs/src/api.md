@@ -70,9 +70,9 @@ The refinement algorithm will stop if either of the above two stopping criteria 
 ## Tolerance parameters
 The main functions to produce the relaxations are also equipped with the following two tolerance parameters:
 
-1. `length_tolerance`: this parameter is used to control the refinement algorithm. A partition whose length is less than the `length_tolerance` is not partitioned further. The default value of this parameter is ``\epsilon = 0.001``.
+1. `length_tolerance`: this parameter is used to control the refinement algorithm. A partition whose length is less than the `length_tolerance` is not partitioned further. The default value of this parameter is ``\epsilon = 1 \times 10^{-6}``.
 
-2. `derivative_tolerance`: when the refinement algorithm is used with the `base_partition` not containing the inflection points of the function in its domain, the resulting relaxations will be erroneous i.e., there is no guarantee that the relaxation obtained is even valid. One necessary condition to detect this issue is by ensuring that the derivatives at successive partition points are not equal. This condition is checked up to the tolerance specified by this parameter. The default value of this parameter is ``\epsilon = 0.001``.
+2. `derivative_tolerance`: when the refinement algorithm is used with the `base_partition` not containing the inflection points of the function in its domain, the resulting relaxations will be erroneous i.e., there is no guarantee that the relaxation obtained is even valid. One necessary condition to detect this issue is by ensuring that the derivatives at successive partition points are not equal. This condition is checked up to the tolerance specified by this parameter. The default value of this parameter is ``\epsilon = 1 \times 10^{-6}``.
 
 
 
