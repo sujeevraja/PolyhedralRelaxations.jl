@@ -1,7 +1,8 @@
 [![Build Status](https://github.com//sujeevraja/PolyhedralRelaxations.jl/workflows/CI/badge.svg?branch=master)](https://github.com/sujeevraja/PolyhedralRelaxations.jl/actions?query=workflow%3ACI) 
 [![codecov](https://codecov.io/gh/sujeevraja/PolyhedralRelaxations.jl/branch/master/graph/badge.svg)](https://codecov.io/gh/sujeevraja/PolyhedralRelaxations.jl)
-[![](https://github.com//sujeevraja/PolyhedralRelaxations.jl/workflows/Documentation/badge.svg)](https://sujeevraja.github.io/PolyhedralRelaxations.jl/stable/)
-[![Dev documentation](https://github.com//sujeevraja/PolyhedralRelaxations.jl/workflows/Documentation/badge.svg)](https://sujeevraja.github.io/PolyhedralRelaxations.jl/dev/)
+
+Latest: [![](https://github.com//sujeevraja/PolyhedralRelaxations.jl/workflows/Documentation/badge.svg)](https://sujeevraja.github.io/PolyhedralRelaxations.jl/stable/)
+Dev: [![](https://github.com//sujeevraja/PolyhedralRelaxations.jl/workflows/Documentation/badge.svg)](https://sujeevraja.github.io/PolyhedralRelaxations.jl/dev/)
 
 # PolyhedralRelaxations.jl
 PolyhedralRelaxations.jl is a Julia package to construct mixed-integer linear programming and linear programming (MILP and LP) relaxations for (i) univariate, continuous, and differentiable functions whose domain is also bounded (ii) bilinear terms with partitions on one of the variables.
