@@ -95,7 +95,7 @@ function _collect_vertices(
 end
 
 """
-    _collect_bilinear_vertices(partition_x, partition_y)
+    _collect_bilinear_vertices(x_partition, y_partition)
 
 Return a pair of lists with origin vertices as the first element 
 and the non origin vertices as the second element.
@@ -103,29 +103,30 @@ and the non origin vertices as the second element.
 Each vertex is an object of the struct Vertex3d ``(x, y, xy)``
 """
 function _collect_bilinear_vertices(
-    partition_x::Vector{<:Real}, 
-    partition_y::Vector{<:Real}
+    x_partition::Vector{<:Real}, 
+    y_partition::Vector{<:Real}
 )::Pair{Vector{Vertex3d},Vector{Vertex3d}}
     origin_vertices, non_origin_vertices = Vertex3d[], Vertex3d[]
-    x_len, y_len = length(partition_x), length(partition_y)
+    x_len, y_len = length(x_partition), length(y_partition)
     if (x_len == 2) 
-        lb = partition_x[1]
-        ub = partition_x[2]
-        for i in partition_y
-            v1 = Vertex3d(lb, i, lb*i)
-            v2 = Vertex3d(ub, i, ub*i)
+        lb = x_partition[1]
+        ub = x_partition[2]
+        for i in y_partition
+            v1 = (lb, i, lb*i)
+            v2 = (ub, i, ub*i)
             push!(origin_vertices, v1)
             push!(non_origin_vertices, v2)
         end 
     else 
-        lb = partition_y[1]
-        ub = partition_y[2]
-        for i in partition_x
-            v1 = Vertex3d(i, lb, i*lb)
-            v2 = Vertex3d(i, ub, i*ub)
+        lb = y_partition[1]
+        ub = y_partition[2]
+        for i in x_partition
+            v1 = (i, lb, i*lb)
+            v2 = (i, ub, i*ub)
             push!(origin_vertices, v1)
             push!(non_origin_vertices, v2)
         end 
+    end
     return Pair(origin_vertices, non_origin_vertices)
 end 
 
@@ -175,17 +176,17 @@ function _validate(x::JuMP.VariableRef, partition::Vector{<:Real})
 end
 
 """
-    _validate(x, y, partition_x, partition_y)
+    _validate(x, y, x_partition, y_partition)
 
 Variable bounds and partition consistency checker for bilinear terms
 """
 function _validate(x::JuMP.VariableRef, y::JuMP.VariableRef, 
-    partition_x::Vector{<:Real}, partition_y::Vector{<:Real})
-    if length(partition_x) > 2 && length(partition_y) > 2
+    x_partition::Vector{<:Real}, y_partition::Vector{<:Real})
+    if length(x_partition) > 2 && length(y_partition) > 2
         Memento.error(_LOGGER, "package does not support bilinear relaxations with > 2 partitions on both variables")
     end 
-    _validate(x, partition_x)
-    _validate(y, partition_y)
+    _validate(x, x_partition)
+    _validate(y, y_partition)
 end 
 
 """
