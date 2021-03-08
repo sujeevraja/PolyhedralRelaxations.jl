@@ -2,8 +2,13 @@ using Documenter, PolyhedralRelaxations
 using DocumenterTools: Themes
 
 Themes.compile(
-    joinpath(@__DIR__, "src/assets/pr.scss"),
+    joinpath(@__DIR__, "src/assets/pr-light.scss"),
     joinpath(@__DIR__, "src/assets/themes/documenter-light.css"),
+)
+
+Themes.compile(
+    joinpath(@__DIR__, "src/assets/pr-dark.scss"),
+    joinpath(@__DIR__, "src/assets/themes/documenter-dark.css"),
 )
 
 makedocs(
