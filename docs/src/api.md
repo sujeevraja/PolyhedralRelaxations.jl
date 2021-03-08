@@ -3,7 +3,7 @@ API
 
 
 ## Basic Usage
-Here is an example illustrating the basic API.
+Here is an example illustrating the basic API for univariate functions.
 
 ```julia 
 using PolyhderalRelaxations, JuMP
@@ -14,10 +14,32 @@ f = x -> x^3
 construct_univariate_relaxation!(m, f, x, y, [-1.0, 0.0, 1.0], true)
 ```
 
-For more examples and details on the helper functions, the reader is referred to the unit tests in the `test/` folder of the GitHub repository.
+For bilinear functions, the basic API is as follows:
+
+```julia 
+using PolyhderalRelaxations, JuMP
+m = Model() 
+@variable(m, -1.0 <= x <= 1.0)
+@variable(m, -10.0 <= y <= 12.0)
+@variable(m, z)
+construct_bilinear_relaxation!(m, x, y, z, [-1.0, 1.0], [-10.0, 12.0])
+```
+
+If there is only one partition (like above) for each variable, then the function formulates the McCormick relaxation. The package supports more than one partition only one of the variables `x` or `y`. Support for multi-variable partitioning will be added in the future versions. The following example illustrates the API for more than one partitions on the `x2` variable:
+
+```julia 
+using PolyhderalRelaxations, JuMP
+m = Model() 
+@variable(m, -1.0 <= x1 <= 1.0)
+@variable(m, -1.0 <= x2 <= 1.0)
+@variable(m, z)
+construct_bilinear_relaxation!(m, x1, x2, z, [-1.0, 1.0], [-1.0, -0.25, 0.25, 1.0])
+```
+
+For more examples and details on the helper functions, the reader is referred to the unit tests in the `test/` folder of the GitHub repository. 
 
 ## API for the MILP/LP Relaxation for Nonlinear Univariate function
-Both the MILP and the LP relaxations for a given nonlinear univariate function are
+The API documentation for both the MILP and the LP relaxations for a given nonlinear univariate function is as follows:
 
 ```@docs 
 construct_univariate_relaxation!
@@ -25,8 +47,14 @@ construct_univariate_relaxation!
 
 The derivate of the function is an optional keyword argument. If the derivate is not specified, the package invokes `ForwardDiff.jl` to compute the derivative.
 
+## API for the MILP/LP Relaxation for Bilinear Term
+The API for both the MILP and the LP relaxations for a bilinear term is as follows:
 
-## Additional Algorithms
+```@docs 
+construct_bilinear_relaxation!
+```
+
+## Additional Algorithms for Relaxations of Univariate Functions
 Apart from providing MILP and LP relaxations of graphs of univariate function ``y=f(x)`` for a given partition, the package also implements some basic partitioning algorithms to refine the partition and provide tighter relaxations. Given a partition, PolyhedralRelaxations.jl can refine the partition using an interval-bisection algorithm detailed in the following reference: 
 
 * K. Sundar, S. Sanjeevi, and H, Nagarajan (2020). Sequence of Polyhedral Relaxations for Nonlinear Univariate Functions. ([arxiv link](https://arxiv.org/abs/2005.13445))

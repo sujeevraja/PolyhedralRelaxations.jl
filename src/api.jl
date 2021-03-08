@@ -1,7 +1,7 @@
-export construct_univariate_relaxation!
+export construct_univariate_relaxation!, construct_bilinear_relaxation!
 
 """
-    construct_univariate_relaxation!(m,x,y,f,x_partition;f_dash=x->ForwardDiff.derivative(f,x),error_tolerance=NaN64,length_tolerance=ϵ,derivative_tolerance=ϵ,num_additional_partitions=0)
+    construct_univariate_relaxation!(m,f,x,y,x_partition;f_dash=x->ForwardDiff.derivative(f,x),error_tolerance=NaN64,length_tolerance=ϵ,derivative_tolerance=ϵ,num_additional_partitions=0)
 
 Add MILP relaxation of `y=f(x)` to given JuMP model and return an object with
 new variables and constraints.
@@ -72,4 +72,40 @@ function construct_univariate_relaxation!(
     _refine_partition!(univariate_function_data)
     func = milp ? _build_univariate_milp_relaxation! : _build_univariate_lp_relaxation!
     return func(m, x, y, univariate_function_data)
+end
+
+"""
+    construct_bilinear_relaxation!(m,x,y,z,x_partition,y_partition)
+
+Add polyhedral relaxation of `z = xy` to given JuMP model and return an object with
+new variables and constraints.
+
+# Mandatory Arguments
+- `m::Jump.Model`: model to which relaxation is to be added.
+- `x::Jump.VariableRef`: JuMP variable `x`.
+- `y::JuMP.VariableRef`: JuMP variable `y`.
+- `z::JuMP.VariableRef`: JuMP variable `z`.
+- `x_partition::Vector{<:Real}`: partition of the domain of `x`.
+- `y_partition::Vector{<:Real}`: partition of the domain of `y`.
+
+This function builds an incremental formulation, and currently supports more than 
+one partition only on one of the variables `x` or `y` and not on both. It will 
+throw an error when more than one partitions are provided on both variables. 
+When exactly one partition is input for both variables, it populates the model 
+with the McCormick relaxation. The incremental formulation is similar to the triangle 
+chain relaxation in the manuscript with the triangles replaced with quadrilaterals. 
+"""
+function construct_bilinear_relaxation!(
+    m::JuMP.Model,
+    x::JuMP.VariableRef,
+    y::JuMP.VariableRef,
+    z::JuMP.VariableRef,
+    x_partition::Vector{<:Real},
+    y_partition::Vector{<:Real},
+)::FormulationInfo
+    _validate(x, y, x_partition, y_partition)
+    if length(x_partition) == 2 && length(y_partition) == 2
+        return _build_mccormick_relaxation!(m, x, y, z)
+    end
+    return _build_bilinear_milp_relaxation!(m, x, y, z, x_partition, y_partition)
 end

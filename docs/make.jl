@@ -1,9 +1,15 @@
 using Documenter, PolyhedralRelaxations
+using DocumenterTools: Themes
+
+Themes.compile(
+    joinpath(@__DIR__, "src/assets/pr.scss"),
+    joinpath(@__DIR__, "src/assets/themes/documenter-light.css"),
+)
 
 makedocs(
     sitename = "PolyhedralRelaxations",
     format = Documenter.HTML(
-        # See https://github.com/JuliaDocs/Documenter.jl/issues/868
+        mathengine = Documenter.MathJax(),
         prettyurls = get(ENV, "CI", nothing) == "true",
     ),
     strict = true,

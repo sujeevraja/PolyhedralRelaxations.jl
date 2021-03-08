@@ -23,3 +23,6 @@ docs/site/
 # environment.
 Manifest.toml
 examples/Manifest.toml
+
+# Mac files 
+*.DS_Store

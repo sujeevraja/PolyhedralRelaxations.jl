@@ -77,7 +77,9 @@ function example_trig(; verbose = true)
         relative_gap =
             abs(best_known_objective - relaxation_objective) / abs(relaxation_objective)
         if verbose
-            println("Optimal solution: $best_known_objective; MILP for error tolerance $err_tol: $relaxation_objective; relative gap: $relative_gap")
+            println(
+                "Optimal solution: $best_known_objective; MILP for error tolerance $err_tol: $relaxation_objective; relative gap: $relative_gap",
+            )
         end
     end
 
@@ -108,7 +110,9 @@ function example_trig(; verbose = true)
         relative_gap =
             abs(best_known_objective - relaxation_objective) / abs(relaxation_objective)
         if verbose
-            println("Optimal solution: $best_known_objective; LP for error tolerance $err_tol: $relaxation_objective; relative gap: $relative_gap")
+            println(
+                "Optimal solution: $best_known_objective; LP for error tolerance $err_tol: $relaxation_objective; relative gap: $relative_gap",
+            )
         end
     end
 

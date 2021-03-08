@@ -41,6 +41,7 @@ const INF = 1e12
 include("common.jl")
 include("univariate_lp_relaxation.jl")
 include("univariate_milp_relaxation.jl")
+include("bilinear_relaxation.jl")
 include("api.jl")
 
 end
