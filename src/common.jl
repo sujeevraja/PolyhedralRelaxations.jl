@@ -1,6 +1,8 @@
 export FormulationInfo, UnivariateFunctionData
 "Vertex2d is a pair ``(x, y)``"
 const Vertex2d = Pair{<:Real,<:Real}
+"Vertex3d is a pair ``(x, y, z)``"
+const Vertex3d = Tuple{<:Real,<:Real,<:Real}
 
 """
 The struct `FormulationInfo` holds two dictionaries, one for variable
@@ -93,13 +95,73 @@ function _collect_vertices(
 end
 
 """
+    _collect_bilinear_vertices(partition_x, partition_y)
+
+Return a pair of lists with origin vertices as the first element 
+and the non origin vertices as the second element.
+
+Each vertex is an object of the struct Vertex3d ``(x, y, xy)``
+"""
+function _collect_bilinear_vertices(
+    partition_x::Vector{<:Real}, 
+    partition_y::Vector{<:Real}
+)::Pair{Vector{Vertex3d},Vector{Vertex3d}}
+    origin_vertices, non_origin_vertices = Vertex3d[], Vertex3d[]
+    x_len, y_len = length(partition_x), length(partition_y)
+    if (x_len == 2) 
+        lb = partition_x[1]
+        ub = partition_x[2]
+        for i in partition_y
+            v1 = Vertex3d(lb, i, lb*i)
+            v2 = Vertex3d(ub, i, ub*i)
+            push!(origin_vertices, v1)
+            push!(non_origin_vertices, v2)
+        end 
+    else 
+        lb = partition_y[1]
+        ub = partition_y[2]
+        for i in partition_x
+            v1 = Vertex3d(i, lb, i*lb)
+            v2 = Vertex3d(i, ub, i*ub)
+            push!(origin_vertices, v1)
+            push!(non_origin_vertices, v2)
+        end 
+    return Pair(origin_vertices, non_origin_vertices)
+end 
+
+"""
+    function _variable_domain(var)
+
+Computes the valid domain of a given JuMP variable taking into account bounds
+and the varaible's implicit bounds (e.g. binary).
+"""
+function _variable_domain(var::JuMP.VariableRef)
+    lb = -Inf
+    if JuMP.has_lower_bound(var)
+        lb = JuMP.lower_bound(var)
+    end
+    if JuMP.is_binary(var)
+        lb = max(lb, 0.0)
+    end
+
+    ub = Inf
+    if JuMP.has_upper_bound(var)
+        ub = JuMP.upper_bound(var)
+    end
+    if JuMP.is_binary(var)
+        ub = min(ub, 1.0)
+    end
+
+    return (lower_bound=lb, upper_bound=ub)
+end
+
+"""
     _validate(x, partition)
 
 Variable bounds and partition consistency checker
 """
 function _validate(x::JuMP.VariableRef, partition::Vector{<:Real})
-    x_lb = isinf(JuMP.lower_bound(x)) ? -Inf : JuMP.lower_bound(x)
-    x_ub = isinf(JuMP.upper_bound(x)) ? Inf : JuMP.upper_bound(x)
+    x_lb, x_ub = _variable_domain(x)
     lb = partition[1]
     ub = partition[end]
     if isfinite(x_lb) && !isapprox(x_lb, lb, rtol = 1e-8)

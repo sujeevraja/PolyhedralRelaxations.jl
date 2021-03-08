@@ -1,30 +1,4 @@
 """
-    function _variable_domain(var)
-
-Computes the valid domain of a given JuMP variable taking into account bounds
-and the varaible's implicit bounds (e.g. binary).
-"""
-function _variable_domain(var::JuMP.VariableRef)
-    lb = -Inf
-    if JuMP.has_lower_bound(var)
-        lb = JuMP.lower_bound(var)
-    end
-    if JuMP.is_binary(var)
-        lb = max(lb, 0.0)
-    end
-
-    ub = Inf
-    if JuMP.has_upper_bound(var)
-        ub = JuMP.upper_bound(var)
-    end
-    if JuMP.is_binary(var)
-        ub = min(ub, 1.0)
-    end
-
-    return (lower_bound=lb, upper_bound=ub)
-end
-
-"""
     function _build_mccormick_relaxation!(m, x, y, z)
 
 McCormick relaxation of binlinear term 
@@ -63,6 +37,67 @@ function _build_bilinear_milp_relaxation!(
     partition_x::Vector{<:Real},
     partition_y::Vector{<:Real}
 )::FormulationInfo
+    
+    origin_vs, non_origin_vs = 
+        _collect_bilinear_vertices(partition_x, partition_y)
+    formulation_info = FormulationInfo()
+    num_vars = max(length(x_partition), length(y_partition)) - 1
+    
 
-    return FormulationInfo()
+    # add variables
+    delta_1 =
+        formulation_info.variables[:delta_1] =
+            @variable(m, [1:num_vars], lower_bound = 0.0, upper_bound = 1.0)
+    delta_2 =
+        formulation_info.variables[:delta_2] =
+            @variable(m, [1:num_vars], lower_bound = 0.0, upper_bound = 1.0)
+    delta_3 =
+        formulation_info.variables[:delta_3] =
+                @variable(m, [1:num_vars], lower_bound = 0.0, upper_bound = 1.0)
+    z = formulation_info.variables[:z] = @variable(m, [1:num_vars], binary = true)
+
+    # add x constraints
+    formulation_info.constraints[:x] = @constraint(
+        m,
+        x ==
+        origin_vs[1][1] + sum(
+            delta_1[i] * (non_origin_vs[i][1] - origin_vs[i][1]) +
+            delta_2[i] * (non_origin_vs[i][1] - origin_vs[i][1]) +
+            delta_3[i] * (origin_vs[i+1][1] - origin_vs[i][1]) for i = 1:num_vars
+        )
+    )
+
+    # add y constraints
+    formulation_info.constraints[:y] = @constraint(
+        m,
+        y ==
+        origin_vs[1][2] + sum(
+            delta_1[i] * (non_origin_vs[i][2] - origin_vs[i][2]) +
+            delta_2[i] * (non_origin_vs[i][2] - origin_vs[i][2]) +
+            delta_3[i] * (origin_vs[i+1][2] - origin_vs[i][2]) for i = 1:num_vars
+        )
+    )
+
+    # add z constraints
+    formulation_info.constraints[:z] = @constraint(
+        m,
+        z ==
+        origin_vs[1][3] + sum(
+            delta_1[i] * (non_origin_vs[i][3] - origin_vs[i][3]) +
+            delta_2[i] * (non_origin_vs[i][3] - origin_vs[i][3]) +
+            delta_3[i] * (origin_vs[i+1][3] - origin_vs[i][3]) for i = 1:num_vars
+        )
+    )
+
+    # add first delta constraint
+    formulation_info.constraints[:first_delta] =
+        @constraint(m, delta_1[1] + delta_2[1] + delta_3[1] <= 1)
+
+    # add linking constraints between delta_1, delta_2 and z
+    formulation_info.constraints[:below_z] =
+        @constraint(m, [i = 2:num_vars], delta_1[i] + delta_2[i] + delta_3[i] <= z[i-1])
+    formulation_info.constraints[:above_z] =
+        @constraint(m, [i = 2:num_vars], z[i-1] <= delta_3[i-1])
+
+    return formulation_info
 end 
