@@ -10,6 +10,7 @@ makedocs(
     sitename = "PolyhedralRelaxations",
     format = Documenter.HTML(
         mathengine = Documenter.MathJax(),
+        assets=[asset("https://fonts.googleapis.com/css?family=Montserrat|Source+Code+Pro&display=swap", class=:css)],
         prettyurls = get(ENV, "CI", nothing) == "true",
     ),
     strict = true,
