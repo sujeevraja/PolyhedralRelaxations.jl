@@ -103,32 +103,32 @@ and the non origin vertices as the second element.
 Each vertex is an object of the struct Vertex3d ``(x, y, xy)``
 """
 function _collect_bilinear_vertices(
-    x_partition::Vector{<:Real}, 
-    y_partition::Vector{<:Real}
+    x_partition::Vector{<:Real},
+    y_partition::Vector{<:Real},
 )::Pair{Vector{Vertex3d},Vector{Vertex3d}}
     origin_vertices, non_origin_vertices = Vertex3d[], Vertex3d[]
     x_len, y_len = length(x_partition), length(y_partition)
-    if (x_len == 2) 
+    if (x_len == 2)
         lb = x_partition[1]
         ub = x_partition[2]
         for i in y_partition
-            v1 = (lb, i, lb*i)
-            v2 = (ub, i, ub*i)
+            v1 = (lb, i, lb * i)
+            v2 = (ub, i, ub * i)
             push!(origin_vertices, v1)
             push!(non_origin_vertices, v2)
-        end 
-    else 
+        end
+    else
         lb = y_partition[1]
         ub = y_partition[2]
         for i in x_partition
-            v1 = (i, lb, i*lb)
-            v2 = (i, ub, i*ub)
+            v1 = (i, lb, i * lb)
+            v2 = (i, ub, i * ub)
             push!(origin_vertices, v1)
             push!(non_origin_vertices, v2)
-        end 
+        end
     end
     return Pair(origin_vertices, non_origin_vertices)
-end 
+end
 
 """
     function _variable_domain(var)
@@ -153,7 +153,7 @@ function _variable_domain(var::JuMP.VariableRef)
         ub = min(ub, 1.0)
     end
 
-    return (lower_bound=lb, upper_bound=ub)
+    return (lower_bound = lb, upper_bound = ub)
 end
 
 """
@@ -180,14 +180,21 @@ end
 
 Variable bounds and partition consistency checker for bilinear terms
 """
-function _validate(x::JuMP.VariableRef, y::JuMP.VariableRef, 
-    x_partition::Vector{<:Real}, y_partition::Vector{<:Real})
+function _validate(
+    x::JuMP.VariableRef,
+    y::JuMP.VariableRef,
+    x_partition::Vector{<:Real},
+    y_partition::Vector{<:Real},
+)
     if length(x_partition) > 2 && length(y_partition) > 2
-        Memento.error(_LOGGER, "package does not support bilinear relaxations with > 2 partitions on both variables")
-    end 
+        Memento.error(
+            _LOGGER,
+            "package does not support bilinear relaxations with > 2 partitions on both variables",
+        )
+    end
     _validate(x, x_partition)
     _validate(y, y_partition)
-end 
+end
 
 """
     _validate_point(univariate_function_data, x)

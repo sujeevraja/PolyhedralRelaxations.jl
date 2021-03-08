@@ -61,8 +61,8 @@
         construct_univariate_relaxation!(m, a -> a^2, x, y, [0.0, 1e-16], true)
     )
 
-    x_lb, x_ub = 10*rand(2).*[-1,1]
-    y_lb, y_ub = 10*rand(2).*[-1,1]
+    x_lb, x_ub = 10 * rand(2) .* [-1, 1]
+    y_lb, y_ub = 10 * rand(2) .* [-1, 1]
     x_mid = (x_lb + x_ub) / 2.0
     y_mid = (y_lb + y_ub) / 2.0
     m = JuMP.Model(cbc_optimizer)
@@ -72,7 +72,14 @@
     @test_throws(
         logger,
         ErrorException,
-        construct_bilinear_relaxation!(m, x, y, z, [x_lb, x_mid, x_ub], [y_lb, y_mid, y_ub])
+        construct_bilinear_relaxation!(
+            m,
+            x,
+            y,
+            z,
+            [x_lb, x_mid, x_ub],
+            [y_lb, y_mid, y_ub],
+        )
     )
-    
+
 end

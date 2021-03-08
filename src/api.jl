@@ -1,5 +1,4 @@
-export construct_univariate_relaxation!,
-construct_bilinear_relaxation!
+export construct_univariate_relaxation!, construct_bilinear_relaxation!
 
 """
     construct_univariate_relaxation!(m,f,x,y,x_partition;f_dash=x->ForwardDiff.derivative(f,x),error_tolerance=NaN64,length_tolerance=ϵ,derivative_tolerance=ϵ,num_additional_partitions=0)
@@ -102,11 +101,11 @@ function construct_bilinear_relaxation!(
     y::JuMP.VariableRef,
     z::JuMP.VariableRef,
     x_partition::Vector{<:Real},
-    y_partition::Vector{<:Real}
+    y_partition::Vector{<:Real},
 )::FormulationInfo
     _validate(x, y, x_partition, y_partition)
     if length(x_partition) == 2 && length(y_partition) == 2
         return _build_mccormick_relaxation!(m, x, y, z)
     end
     return _build_bilinear_milp_relaxation!(m, x, y, z, x_partition, y_partition)
-end 
+end

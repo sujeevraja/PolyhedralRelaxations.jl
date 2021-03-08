@@ -9,16 +9,25 @@ z <= JuMP.lower_bound(x)*y + JuMP.upper_bound(y)*x - JuMP.lower_bound(x)*JuMP.up
 z <= JuMP.upper_bound(x)*y + JuMP.lower_bound(y)*x - JuMP.upper_bound(x)*JuMP.lower_bound(y)
 ```
 """
-function _build_mccormick_relaxation!(m::JuMP.Model, x::JuMP.VariableRef, y::JuMP.VariableRef, z::JuMP.VariableRef)::FormulationInfo
+function _build_mccormick_relaxation!(
+    m::JuMP.Model,
+    x::JuMP.VariableRef,
+    y::JuMP.VariableRef,
+    z::JuMP.VariableRef,
+)::FormulationInfo
     x_lb, x_ub = _variable_domain(x)
     y_lb, y_ub = _variable_domain(y)
 
     formulation_info = FormulationInfo()
 
-    formulation_info.constraints[:lb_1] = @constraint(m, z >= x_lb*y + y_lb*x - x_lb*y_lb)
-    formulation_info.constraints[:lb_2] = @constraint(m, z >= x_ub*y + y_ub*x - x_ub*y_ub)
-    formulation_info.constraints[:ub_1] = @constraint(m, z <= x_lb*y + y_ub*x - x_lb*y_ub)
-    formulation_info.constraints[:ub_2] = @constraint(m, z <= x_ub*y + y_lb*x - x_ub*y_lb)
+    formulation_info.constraints[:lb_1] =
+        @constraint(m, z >= x_lb * y + y_lb * x - x_lb * y_lb)
+    formulation_info.constraints[:lb_2] =
+        @constraint(m, z >= x_ub * y + y_ub * x - x_ub * y_ub)
+    formulation_info.constraints[:ub_1] =
+        @constraint(m, z <= x_lb * y + y_ub * x - x_lb * y_ub)
+    formulation_info.constraints[:ub_2] =
+        @constraint(m, z <= x_ub * y + y_lb * x - x_ub * y_lb)
 
     return formulation_info
 end
@@ -35,14 +44,13 @@ function _build_bilinear_milp_relaxation!(
     y::JuMP.VariableRef,
     z::JuMP.VariableRef,
     x_partition::Vector{<:Real},
-    y_partition::Vector{<:Real}
+    y_partition::Vector{<:Real},
 )::FormulationInfo
-    
-    origin_vs, non_origin_vs = 
-        _collect_bilinear_vertices(x_partition, y_partition)
+
+    origin_vs, non_origin_vs = _collect_bilinear_vertices(x_partition, y_partition)
     formulation_info = FormulationInfo()
     num_vars = max(length(x_partition), length(y_partition)) - 1
-    
+
 
     # add variables
     delta_1 =
@@ -53,7 +61,7 @@ function _build_bilinear_milp_relaxation!(
             @variable(m, [1:num_vars], lower_bound = 0.0, upper_bound = 1.0)
     delta_3 =
         formulation_info.variables[:delta_3] =
-                @variable(m, [1:num_vars], lower_bound = 0.0, upper_bound = 1.0)
+            @variable(m, [1:num_vars], lower_bound = 0.0, upper_bound = 1.0)
     z_bin = formulation_info.variables[:z_bin] = @variable(m, [1:num_vars], binary = true)
 
     # add x constraints
@@ -100,4 +108,4 @@ function _build_bilinear_milp_relaxation!(
         @constraint(m, [i = 2:num_vars], z_bin[i-1] <= delta_3[i-1])
 
     return formulation_info
-end 
+end
