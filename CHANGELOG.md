@@ -1,6 +1,9 @@
 PolyhedralRelaxations.jl Change Log
 =========================
 
+### Staged 
+- Documentation updates
+
 ### v0.3.0
 - Add piecewise bilinear relaxations with partition on one variable
 - API support for the above

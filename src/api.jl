@@ -1,7 +1,7 @@
 export construct_univariate_relaxation!, construct_bilinear_relaxation!
 
 """
-    construct_univariate_relaxation!(m,f,x,y,x_partition;f_dash=x->ForwardDiff.derivative(f,x),error_tolerance=NaN64,length_tolerance=ϵ,derivative_tolerance=ϵ,num_additional_partitions=0)
+    construct_univariate_relaxation!(m,f,x,y,x_partition;f_dash=x->ForwardDiff.derivative(f,x),error_tolerance=NaN64,length_tolerance=1e-6,derivative_tolerance=1e-6,num_additional_partitions=0)
 
 Add MILP relaxation of `y=f(x)` to given JuMP model and return an object with
 new variables and constraints.
@@ -25,10 +25,10 @@ new variables and constraints.
 - ` error_tolerance::Float64`: Maximum allowed vertical distance between over
     and under estimators of `f`, defaults to NaN64.
 - `length_tolerance::Float64`: maximum length of a sub-interval in a partition,
-    defaults to 0.001.
+    defaults to ``1 \\times 10^{-6}``.
 - `derivative_tolerance::Float64`: minimum absolute difference between
     derivaties at successive elements of a partition for them to be considered
-    different, defaults to 0.001. If the difference of a partition sub-interval
+    different, defaults to ``1 \\times 10^{-6}``. If the difference of a partition sub-interval
     is smaller than this value, that sub-interval will be refined.
 - `num_additional_partitions::Int64`: budget on number of sub-intervals in
     partition, defaults to 0. Note that if the number of partitions is `n` and

@@ -36,7 +36,7 @@ m = Model()
 construct_bilinear_relaxation!(m, x1, x2, z, [-1.0, 1.0], [-1.0, -0.25, 0.25, 1.0])
 ```
 
-For more examples and details on the helper functions, the reader is referred to the unit tests in the `test/` folder of the GitHub repository. 
+For examples, the reader is referred to the unit tests in the `test/` folder of the GitHub repository. 
 
 ## API for the MILP/LP Relaxation for Nonlinear Univariate function
 The API documentation for both the MILP and the LP relaxations for a given nonlinear univariate function is as follows:
