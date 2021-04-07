@@ -26,3 +26,6 @@ examples/Manifest.toml
 
 # Mac files 
 *.DS_Store
+
+# bug fixes foler
+bug-fixing/
