@@ -23,9 +23,22 @@ Please report any issues via the Github **[issue tracker]**. All types of issues
 [issue tracker]: https://github.com/sujeevraja/PolyhedralRelaxations.jl/issues
 
 ## Citation
-If you find PolyhedralRelaxations.jl useful in your work, we kindly request that you cite the following paper: 
+If you find PolyhedralRelaxations.jl useful in your work, we kindly request that you cite the following paper ([arxiv link](https://arxiv.org/abs/2005.13445)): 
 
-K. Sundar, S. Sanjeevi, and H, Nagarajan (2020). Sequence of Polyhedral Relaxations for Nonlinear Univariate Functions. ([arxiv link](https://arxiv.org/abs/2005.13445))
+If you find JuMP useful in your work, we kindly request that you cite the
+following paper ([pdf](https://mlubin.github.io/pdf/jump-sirev.pdf)):
+
+```bibtex
+@article{SundarSanjeeviNagarajan2021,
+  title={Sequence of polyhedral relaxations for nonlinear univariate functions},
+  author={Sundar, Kaarthik and Sanjeevi, Sujeevraja and Nagarajan, Harsha},
+  journal={Optimization and Engineering},
+  pages={1--18},
+  year={2021},
+  publisher={Springer},
+  doi = {10.1007/s11081-021-09609-z},
+}
+```
 
 The MILP relaxations for the bilinear term is not documented any where, but is an extension of the formulation proposed for the univariate MILP relaxation in the above paper. The MILP relaxation for nonlinear, univariate functions is a disjunction of a chain of triangles. For a bilinear term, they can be thought of as a disjunction of a chain of tetrahedrons that share edges (see the [documentation](https://sujeevraja.github.io/PolyhedralRelaxations.jl/stable/) for a visualization).
 
