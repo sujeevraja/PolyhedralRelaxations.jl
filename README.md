@@ -25,9 +25,6 @@ Please report any issues via the Github **[issue tracker]**. All types of issues
 ## Citation
 If you find PolyhedralRelaxations.jl useful in your work, we kindly request that you cite the following paper ([arxiv link](https://arxiv.org/abs/2005.13445)): 
 
-If you find JuMP useful in your work, we kindly request that you cite the
-following paper ([pdf](https://mlubin.github.io/pdf/jump-sirev.pdf)):
-
 ```bibtex
 @article{SundarSanjeeviNagarajan2021,
   title={Sequence of polyhedral relaxations for nonlinear univariate functions},
