@@ -2,7 +2,11 @@ PolyhedralRelaxations.jl Change Log
 =========================
 
 ### Staged 
+
+### v0.3.1
 - Documentation updates
+- Adds base name prefixes as optional argument
+- Memento version update
 
 ### v0.3.0
 - Add piecewise bilinear relaxations with partition on one variable

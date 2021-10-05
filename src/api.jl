@@ -34,6 +34,8 @@ new variables and constraints.
     partition, defaults to 0. Note that if the number of partitions is `n` and
     the number of additional partitions is `m`, then the function will return a
     relaxation with at most `n+m` partitions.
+- `variable_pre_base_name::AbstractString`: base_name that needs to be added to the auxiliary
+    variables for meaningful LP files
 
 Assume that:
 - `f` is a bounded function of 1 variable.
@@ -56,6 +58,7 @@ function construct_univariate_relaxation!(
     length_tolerance::Float64 = EPS,
     derivative_tolerance::Float64 = EPS,
     num_additional_partitions::Int64 = 0,
+    variable_pre_base_name::AbstractString = ""
 )::FormulationInfo
     univariate_function_data = UnivariateFunctionData(
         f,
@@ -71,7 +74,7 @@ function construct_univariate_relaxation!(
     _validate(x, x_partition)
     _refine_partition!(univariate_function_data)
     func = milp ? _build_univariate_milp_relaxation! : _build_univariate_lp_relaxation!
-    return func(m, x, y, univariate_function_data)
+    return func(m, x, y, univariate_function_data, variable_pre_base_name)
 end
 
 """
@@ -88,6 +91,11 @@ new variables and constraints.
 - `x_partition::Vector{<:Real}`: partition of the domain of `x`.
 - `y_partition::Vector{<:Real}`: partition of the domain of `y`.
 
+# Optional Arguments
+- `variable_pre_base_name::AbstractString`: base_name that needs to be added to the auxiliary
+    variables for meaningful LP files
+
+
 This function builds an incremental formulation, and currently supports more than 
 one partition only on one of the variables `x` or `y` and not on both. It will 
 throw an error when more than one partitions are provided on both variables. 
@@ -102,11 +110,12 @@ function construct_bilinear_relaxation!(
     y::JuMP.VariableRef,
     z::JuMP.VariableRef,
     x_partition::Vector{<:Real},
-    y_partition::Vector{<:Real},
+    y_partition::Vector{<:Real};
+    variable_pre_base_name::AbstractString = ""
 )::FormulationInfo
     _validate(x, y, x_partition, y_partition)
     if length(x_partition) == 2 && length(y_partition) == 2
         return _build_mccormick_relaxation!(m, x, y, z)
     end
-    return _build_bilinear_milp_relaxation!(m, x, y, z, x_partition, y_partition)
+    return _build_bilinear_milp_relaxation!(m, x, y, z, x_partition, y_partition, variable_pre_base_name)
 end

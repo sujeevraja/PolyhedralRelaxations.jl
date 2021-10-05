@@ -1,5 +1,5 @@
 """
-    _build_univariate_milp_relaxation!(m,x,y,function_data)
+    _build_univariate_milp_relaxation!(m,x,y,function_data,pre_base_name)
 
 Return a MILPRelaxation object with constraint and RHS information of the MILP
 formulation of the polyhedral relaxation.
@@ -9,6 +9,7 @@ function _build_univariate_milp_relaxation!(
     x::JuMP.VariableRef,
     y::JuMP.VariableRef,
     univariate_function_data::UnivariateFunctionData,
+    pre_base_name::AbstractString
 )::FormulationInfo
     sec_vs, tan_vs = _collect_vertices(univariate_function_data)
     formulation_info = FormulationInfo()
@@ -18,11 +19,16 @@ function _build_univariate_milp_relaxation!(
 
     delta_1 =
         formulation_info.variables[:delta_1] =
-            @variable(m, [1:num_vars], lower_bound = 0.0, upper_bound = 1.0)
+            @variable(m, [1:num_vars], 
+                lower_bound = 0.0, upper_bound = 1.0,
+                base_name = pre_base_name * "delta_1")
     delta_2 =
         formulation_info.variables[:delta_2] =
-            @variable(m, [1:num_vars], lower_bound = 0.0, upper_bound = 1.0)
-    z = formulation_info.variables[:z] = @variable(m, [1:num_vars], binary = true)
+            @variable(m, [1:num_vars], 
+                lower_bound = 0.0, upper_bound = 1.0,
+                base_name = pre_base_name * "delta_2")
+    z = formulation_info.variables[:z] = 
+        @variable(m, [1:num_vars], binary = true, base_name = pre_base_name * "z")
 
     # add x constraints
     formulation_info.constraints[:x] = @constraint(
