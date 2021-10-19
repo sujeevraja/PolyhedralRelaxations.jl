@@ -37,7 +37,9 @@ new variables and constraints.
 - `variable_pre_base_name::AbstractString`: base_name that needs to be added to the auxiliary
     variables for meaningful LP files
 - `constraint_pre_base_name::AbstractString`: base_name that needs to be added to the constraints
-    in the relaxation
+    in the relaxation.
+- `use_formulation_info::FormulationInfo` : `FormulationInfo` for another univariate function on the 
+    same variable that can be reused for the current relaxation. 
 
 Assume that:
 - `f` is a bounded function of 1 variable.
@@ -61,7 +63,8 @@ function construct_univariate_relaxation!(
     derivative_tolerance::Float64 = EPS,
     num_additional_partitions::Int64 = 0,
     variable_pre_base_name::AbstractString = "",
-    constraint_pre_base_name::AbstractString = ""
+    constraint_pre_base_name::AbstractString = "",
+    formulation_info::FormulationInfo = FormulationInfo()
 )::FormulationInfo
     univariate_function_data = UnivariateFunctionData(
         f,
@@ -77,7 +80,10 @@ function construct_univariate_relaxation!(
     _validate(x, x_partition)
     _refine_partition!(univariate_function_data)
     func = milp ? _build_univariate_milp_relaxation! : _build_univariate_lp_relaxation!
-    return func(m, x, y, univariate_function_data, variable_pre_base_name, constraint_pre_base_name)
+    return func(m, x, y, univariate_function_data, 
+        variable_pre_base_name, 
+        constraint_pre_base_name, 
+        formulation_info)
 end
 
 """
