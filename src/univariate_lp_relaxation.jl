@@ -27,7 +27,7 @@ function _build_univariate_lp_relaxation!(
     univariate_function_data::UnivariateFunctionData,
     variable_pre_base_name::AbstractString,
     constraint_pre_base_name::AbstractString,
-    _::FormulationInfo
+    ::FormulationInfo
 )::FormulationInfo
     vertices = _get_lp_relaxation_vertices(univariate_function_data)
     num_vars = length(vertices)
