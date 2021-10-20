@@ -425,26 +425,3 @@ function _get_max_error_bound(
     end
     return max_err
 end
-
-"""
-    _check_consistency(formulation_info, num_vars, milp) 
-
-Checks consistency between provided variables and partition sizes 
-""" 
-function _check_consistency(formulation_info::FormulationInfo, num_vars, milp::Bool)::Bool 
-    var = formulation_info.variables 
-    if milp
-        if haskey(var, :z)
-            (length(var[:z]) == num_vars) && (return true)
-            return false
-        end 
-        return false 
-    else 
-        if haskey(var, :lambda)
-            (length(var[:lambda]) == num_vars) && (return true)
-            return false 
-        end 
-        return false
-    end 
-    return false
-end 
