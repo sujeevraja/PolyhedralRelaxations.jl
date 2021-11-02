@@ -66,6 +66,22 @@ The partition refinement scheme is equipped with multiple stopping criteria that
 2. `num_additional_partitions`: this parameter as the name suggests will refine the partition using the interval bisection algorithm till the total number of additional partitions reaches this number. It's default value is set to 0. 
 
 The refinement algorithm will stop if either of the above two stopping criteria is satisfied. 
+The following example illustrates the API for refining the partition using interval-bisection for a univariate function. 
+
+```julia 
+using PolyhderalRelaxations, 
+partition = [1.0, 2.0]
+refine_partition!(x -> x^2, partition, num_additional_partitions=2)
+```
+
+The new partition would now be `[0.0, 0.5, 0.75, 1.0]`.
+
+## API for the partition refinement
+The API for partition refinement using interval bisection is as follows:
+
+```@docs 
+refine_partition!
+```
 
 ## Tolerance parameters
 The main functions to produce the relaxations are also equipped with the following two tolerance parameters:

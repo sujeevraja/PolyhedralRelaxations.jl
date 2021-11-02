@@ -42,6 +42,22 @@ end
     @test haskey(formulation_info.constraints, :y)
 end
 
+@testset "test (interval-bisection) partition refining API" begin
+    PR.logger_config!("error")
+    partition = [0.0, 1.0]
+
+    refine_partition!(a -> a^3, partition, num_additional_partitions=0)
+    @test length(partition) == 2
+
+    refine_partition!(a -> a^3, partition, num_additional_partitions=2)
+    @test length(partition) == 4
+
+    refine_partition!(a -> a^3, partition, num_additional_partitions=5)
+    @test length(partition) == 9
+end
+
+
+
 @testset "test bilinear relaxation API (McCormick)" begin
     replicates = 10
     tolerance = 1e-3

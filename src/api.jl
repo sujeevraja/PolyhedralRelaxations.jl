@@ -1,7 +1,10 @@
-export construct_univariate_relaxation!, construct_bilinear_relaxation!
+export construct_univariate_relaxation!, 
+    refine_partition!,
+    construct_bilinear_relaxation!
 
 """
-    construct_univariate_relaxation!(m,f,x,y,x_partition;f_dash=x->ForwardDiff.derivative(f,x),error_tolerance=NaN64,length_tolerance=1e-6,derivative_tolerance=1e-6,num_additional_partitions=0)
+    construct_univariate_relaxation!(m,f,x,y,x_partition;f_dash=x->ForwardDiff.derivative(f,x),error_tolerance=NaN64,length_tolerance=1e-6,derivative_tolerance=1e-6,num_additional_partitions=0,
+    constraint_pre_base_name="",variable_pre_base_name="",use_formulation_info=FormulationInfo())
 
 Add MILP relaxation of `y=f(x)` to given JuMP model and return an object with
 new variables and constraints.
@@ -85,6 +88,61 @@ function construct_univariate_relaxation!(
         constraint_pre_base_name, 
         formulation_info)
 end
+
+"""
+    refine_partition!(f, partition;f_dash=x->ForwardDiff.derivative(f,x),error_tolerance=NaN64,length_tolerance=1e-6,derivative_tolerance=1e-6,num_additional_partitions=0)
+
+Refine the partition (in-place) using bisection scheme for relaxing the function `y=f(x)`. 
+
+# Mandatory Arguments
+- `f::Function`: function or oracle for which a polyhedral relaxation is
+    required, usually non-linear.
+- `partition::Vector{<:Real}`: partition of the domain of `f`.
+
+# Optional Arguments
+- `f_dash::Function`: function or oracle for derivative of `f`, defaults to 
+    the `derivative` function from the `ForwardDiff` package.
+- ` error_tolerance::Float64`: Maximum allowed vertical distance between over
+    and under estimators of `f`, defaults to NaN64.
+- `length_tolerance::Float64`: maximum length of a sub-interval in a partition,
+    defaults to ``1 \\times 10^{-6}``.
+- `derivative_tolerance::Float64`: minimum absolute difference between
+    derivaties at successive elements of a partition for them to be considered
+    different, defaults to ``1 \\times 10^{-6}``. If the difference of a partition sub-interval
+    is smaller than this value, that sub-interval will be refined.
+- `num_additional_partitions::Int64`: budget on number of sub-intervals in
+    partition, defaults to 0. Note that if the number of partitions is `n` and
+    the number of additional partitions is `m`, then the function will return a
+    relaxation with at most `n+m` partitions.
+
+Assume that:
+- `f` is a bounded function of 1 variable.
+- `partition` is a partition of the domain of `f` such that `f` is either
+    convex or concave each sub-interval of the partition.
+- `f_dash` is not equal at two consecutive elements of `x_partition`.
+"""
+function refine_partition!(
+    f::Function,
+    partition::Vector{<:Real};
+    f_dash::Function = x -> ForwardDiff.derivative(f, x),
+    error_tolerance::Float64 = NaN64,
+    length_tolerance::Float64 = EPS,
+    derivative_tolerance::Float64 = EPS,
+    num_additional_partitions::Int64 = 0,
+)   
+    univariate_function_data = UnivariateFunctionData(
+        f,
+        f_dash,
+        partition,
+        error_tolerance,
+        length_tolerance,
+        derivative_tolerance,
+        num_additional_partitions,
+        length(partition)
+    )
+    _validate(univariate_function_data)
+    _refine_partition!(univariate_function_data)
+end 
 
 """
     construct_bilinear_relaxation!(m,x,y,z,x_partition,y_partition)

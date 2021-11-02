@@ -203,10 +203,14 @@ end
 
 Input data point validator
 """
+<<<<<<< HEAD
 function _validate_point(
     univariate_function_data::UnivariateFunctionData,
     x::Float64,
 )
+=======
+function _validate_point(univariate_function_data::UnivariateFunctionData, x::Real)
+>>>>>>> exposes partition refinement as an API
     if !isfinite(x) || abs(x) >= INF
         error("all partition points must be finite")
     end
@@ -402,7 +406,7 @@ end
 Get error bound of a function with derivative `derivative` in the closed
 interval `[lb,ub]`.
 """
-function _get_error_bound(derivative::Function, lb::Float64, ub::Float64)
+function _get_error_bound(derivative::Function, lb::Real, ub::Real)
     return (ub - lb) * abs(derivative(ub) - derivative(lb)) / 4.0
 end
 

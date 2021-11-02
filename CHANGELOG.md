@@ -4,6 +4,7 @@ PolyhedralRelaxations.jl Change Log
 ### Staged 
 - Add base name prefixes for constraints as optional arguments
 - Reuse partition variables in one relaxation to another 
+- Exposes the interval bisection partitioning API
 
 ### v0.3.4
 - Allow for JuMP 1.0
