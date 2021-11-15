@@ -269,6 +269,9 @@ function construct_univariate_on_off_relaxation!(
     _validate(x, x_partition)
     _validate(z)
     _refine_partition!(univariate_function_data)
-
-
+    return _build_univariate_on_off_relaxation!(m, x, y, z, 
+        univariate_function_data,
+        active_when_z_is_one, 
+        variable_pre_base_name, 
+        constraint_pre_base_name)
 end 
