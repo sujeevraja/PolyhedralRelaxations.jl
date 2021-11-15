@@ -5,7 +5,7 @@ export construct_univariate_relaxation!,
 
 """
     construct_univariate_relaxation!(m,f,x,y,x_partition;f_dash=x->ForwardDiff.derivative(f,x),error_tolerance=NaN64,length_tolerance=1e-6,derivative_tolerance=1e-6,num_additional_partitions=0,
-    constraint_pre_base_name="",variable_pre_base_name="",use_formulation_info=FormulationInfo())
+    constraint_pre_base_name="",variable_pre_base_name="",formulation_info=FormulationInfo())
 
 Add MILP relaxation of `y=f(x)` to given JuMP model and return an object with
 new variables and constraints.
@@ -42,7 +42,7 @@ new variables and constraints.
     variables for meaningful LP files
 - `constraint_pre_base_name::AbstractString`: base_name that needs to be added to the constraints
     in the relaxation.
-- `use_formulation_info::FormulationInfo` : `FormulationInfo` for another univariate function on the 
+- `formulation_info::FormulationInfo` : `FormulationInfo` for another univariate function on the 
     same variable that can be reused for the current relaxation. 
 
 Assume that:

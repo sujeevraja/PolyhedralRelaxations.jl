@@ -91,10 +91,29 @@ function _build_univariate_on_off_relaxation(
                 base_name = constraint_pre_base_name * "sum_lambda") 
         end 
 
-    # these constraints have to be converted to inequality constraints on two sides 
-    formulation_info.constraints[:x] = 
-        @constraint(m, x == sum(lambda[i] * vertices[i][1] for i = 1:num_vars), 
-            base_name = constraint_pre_base_name * "x")
+    # `x` constraints are slightly different because `x` has to be within its limit when `y=f(x)` is not active 
+    x_lb, x_ub = _variable_domain(x)
+    formulation_info.constraints[:x_lb] = 
+        if active_when_z_is_one == true
+            @constraint(m, x >= 
+                sum(lambda[i] * vertices[i][1] for i = 1:num_vars) + (1 - z) * x_lb, 
+                base_name = constraint_pre_base_name * "x_lb")
+        else 
+            @constraint(m, x >= 
+                sum(lambda[i] * vertices[i][1] for i = 1:num_vars) + z * x_lb, 
+                base_name = constraint_pre_base_name * "x_lb")
+        end
+    
+    formulation_info.constraints[:x_ub] = 
+        if active_when_z_is_one == true
+            @constraint(m, x <= 
+                sum(lambda[i] * vertices[i][1] for i = 1:num_vars) + (1 - z) * x_ub, 
+                base_name = constraint_pre_base_name * "x_ub")
+        else 
+            @constraint(m, x <= 
+                sum(lambda[i] * vertices[i][1] for i = 1:num_vars) + z * x_ub, 
+                base_name = constraint_pre_base_name * "x_ub")
+        end 
     
     formulation_info.constraints[:y] =
         @constraint(m, y == sum(lambda[i] * vertices[i][2] for i = 1:num_vars),
