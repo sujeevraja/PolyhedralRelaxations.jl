@@ -1,6 +1,7 @@
 export construct_univariate_relaxation!, 
     refine_partition!,
-    construct_bilinear_relaxation!
+    construct_bilinear_relaxation!,
+    construct_univariate_on_off_relaxation!
 
 """
     construct_univariate_relaxation!(m,f,x,y,x_partition;f_dash=x->ForwardDiff.derivative(f,x),error_tolerance=NaN64,length_tolerance=1e-6,derivative_tolerance=1e-6,num_additional_partitions=0,
@@ -254,5 +255,20 @@ function construct_univariate_on_off_relaxation!(
     variable_pre_base_name::AbstractString="",
     constraint_pre_base_name::AbstractString=""
 )::FormulationInfo 
+    univariate_function_data = UnivariateFunctionData(
+        f,
+        f_dash,
+        x_partition,
+        error_tolerance,
+        length_tolerance,
+        derivative_tolerance,
+        num_additional_partitions,
+        length(x_partition),
+    )
+    _validate(univariate_function_data)
+    _validate(x, x_partition)
+    _validate(z)
+    _refine_partition!(univariate_function_data)
+
 
 end 
