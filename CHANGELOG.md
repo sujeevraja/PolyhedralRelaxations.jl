@@ -2,6 +2,8 @@ PolyhedralRelaxations.jl Change Log
 =========================
 
 ### Staged 
+- Update tests to conform to JuMP v0.22
+- Add on-off LP relaxations to the API
 - Add base name prefixes for constraints as optional arguments
 - Reuse partition variables in one relaxation to another 
 - Exposes the interval bisection partitioning API
