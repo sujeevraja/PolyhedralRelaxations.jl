@@ -1,7 +1,7 @@
 name = "PolyhedralRelaxations"
 uuid = "2e741578-48fa-11ea-2d62-b52c946f73a0"
 authors = ["Kaarthik Sundar", "Sujeevraja Sanjeevi"]
-version = "0.3.1"
+version = "0.3.2"
 
 [deps]
 DataStructures = "864edb3b-99cc-5e75-8d2d-829cb0a9cfe8"
