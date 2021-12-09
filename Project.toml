@@ -1,7 +1,7 @@
 name = "PolyhedralRelaxations"
 uuid = "2e741578-48fa-11ea-2d62-b52c946f73a0"
 authors = ["Kaarthik Sundar", "Sujeevraja Sanjeevi"]
-version = "0.3.1"
+version = "0.3.2"
 
 [deps]
 DataStructures = "864edb3b-99cc-5e75-8d2d-829cb0a9cfe8"
@@ -12,7 +12,7 @@ Memento = "f28f55f0-a522-5efc-85c2-fe41dfb9b2d9"
 [compat]
 DataStructures = "~0.17, ~0.18"
 ForwardDiff = "~0.5.0, ~0.6, ~0.7, ~0.8, ~0.9, ~0.10"
-JuMP = "^0.21.0"
+JuMP = "^0.21.0, ~0.22"
 Memento = "~0.10, ~0.11, ~0.12, ~0.13, ~1.0, ~1.1, ~1"
 julia = "1"
 
