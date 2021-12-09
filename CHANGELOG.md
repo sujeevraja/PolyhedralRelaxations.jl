@@ -2,7 +2,7 @@ PolyhedralRelaxations.jl Change Log
 =========================
 
 ### Staged 
-- Update tests to conform to JuMP v0.22
+- Update tests to conform to JuMP v0.22 and remove dependency on JuMP v0.21
 - Add on-off LP relaxations to the API
 - Add base name prefixes for constraints as optional arguments
 - Reuse partition variables in one relaxation to another 
