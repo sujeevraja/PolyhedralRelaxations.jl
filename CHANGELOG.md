@@ -1,6 +1,9 @@
 PolyhedralRelaxations.jl Change Log
 =========================
 
+### v0.3.3
+- Allow for JuMP 0.23
+
 ### v0.3.2
 - Allow for JuMP 0.22
 
