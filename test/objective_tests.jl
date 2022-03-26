@@ -1,5 +1,5 @@
 @testset "linear objective function tests" begin
-    PR.logger_config!("error")
+    PR.silence!()
     f, partition = a -> a^3, collect(-1.0:0.25:1.0)
     ufd = UnivariateFunctionData(
         f,
@@ -51,7 +51,8 @@
             x_sln = value.(x)
             y_sln = value.(y)
             for v in sln_verts
-                if isapprox(v[1], x_sln, atol = tol) && isapprox(v[2], y_sln, atol = tol)
+                if isapprox(v[1], x_sln, atol = tol) &&
+                   isapprox(v[2], y_sln, atol = tol)
                     sln_found = true
                     break
                 end

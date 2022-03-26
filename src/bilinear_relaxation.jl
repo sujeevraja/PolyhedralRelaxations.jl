@@ -32,7 +32,6 @@ function _build_mccormick_relaxation!(
     return formulation_info
 end
 
-
 """
     _build_bilinear_relaxation!(m, x, y, z, x_partition, y_partition, pre_base_name)
 
@@ -45,32 +44,45 @@ function _build_bilinear_milp_relaxation!(
     z::JuMP.VariableRef,
     x_partition::Vector{<:Real},
     y_partition::Vector{<:Real},
-    pre_base_name::AbstractString
+    pre_base_name::AbstractString,
 )::FormulationInfo
-
-    origin_vs, non_origin_vs = _collect_bilinear_vertices(x_partition, y_partition)
+    origin_vs, non_origin_vs =
+        _collect_bilinear_vertices(x_partition, y_partition)
     formulation_info = FormulationInfo()
     num_vars = max(length(x_partition), length(y_partition)) - 1
 
-
     # add variables
     delta_1 =
-        formulation_info.variables[:delta_1] =
-            @variable(m, [1:num_vars], 
-                lower_bound = 0.0, upper_bound = 1.0,
-                base_name = pre_base_name * "delta_1")
+        formulation_info.variables[:delta_1] = @variable(
+            m,
+            [1:num_vars],
+            lower_bound = 0.0,
+            upper_bound = 1.0,
+            base_name = pre_base_name * "delta_1"
+        )
     delta_2 =
-        formulation_info.variables[:delta_2] =
-            @variable(m, [1:num_vars], 
-                lower_bound = 0.0, upper_bound = 1.0,
-                base_name = pre_base_name * "delta_2")
+        formulation_info.variables[:delta_2] = @variable(
+            m,
+            [1:num_vars],
+            lower_bound = 0.0,
+            upper_bound = 1.0,
+            base_name = pre_base_name * "delta_2"
+        )
     delta_3 =
-        formulation_info.variables[:delta_3] =
-            @variable(m, [1:num_vars], 
-                lower_bound = 0.0, upper_bound = 1.0,
-                base_name = pre_base_name * "delta_3")
-    z_bin = formulation_info.variables[:z_bin] = 
-        @variable(m, [1:num_vars], binary = true, base_name = pre_base_name * "z")
+        formulation_info.variables[:delta_3] = @variable(
+            m,
+            [1:num_vars],
+            lower_bound = 0.0,
+            upper_bound = 1.0,
+            base_name = pre_base_name * "delta_3"
+        )
+    z_bin =
+        formulation_info.variables[:z_bin] = @variable(
+            m,
+            [1:num_vars],
+            binary = true,
+            base_name = pre_base_name * "z"
+        )
 
     # add x constraints
     formulation_info.constraints[:x] = @constraint(
@@ -79,7 +91,8 @@ function _build_bilinear_milp_relaxation!(
         origin_vs[1][1] + sum(
             delta_1[i] * (non_origin_vs[i][1] - origin_vs[i][1]) +
             delta_2[i] * (non_origin_vs[i+1][1] - origin_vs[i][1]) +
-            delta_3[i] * (origin_vs[i+1][1] - origin_vs[i][1]) for i = 1:num_vars
+            delta_3[i] * (origin_vs[i+1][1] - origin_vs[i][1]) for
+            i in 1:num_vars
         )
     )
 
@@ -90,7 +103,8 @@ function _build_bilinear_milp_relaxation!(
         origin_vs[1][2] + sum(
             delta_1[i] * (non_origin_vs[i][2] - origin_vs[i][2]) +
             delta_2[i] * (non_origin_vs[i+1][2] - origin_vs[i][2]) +
-            delta_3[i] * (origin_vs[i+1][2] - origin_vs[i][2]) for i = 1:num_vars
+            delta_3[i] * (origin_vs[i+1][2] - origin_vs[i][2]) for
+            i in 1:num_vars
         )
     )
 
@@ -101,7 +115,8 @@ function _build_bilinear_milp_relaxation!(
         origin_vs[1][3] + sum(
             delta_1[i] * (non_origin_vs[i][3] - origin_vs[i][3]) +
             delta_2[i] * (non_origin_vs[i+1][3] - origin_vs[i][3]) +
-            delta_3[i] * (origin_vs[i+1][3] - origin_vs[i][3]) for i = 1:num_vars
+            delta_3[i] * (origin_vs[i+1][3] - origin_vs[i][3]) for
+            i in 1:num_vars
         )
     )
 
@@ -110,8 +125,11 @@ function _build_bilinear_milp_relaxation!(
         @constraint(m, delta_1[1] + delta_2[1] + delta_3[1] <= 1)
 
     # add linking constraints between delta_1, delta_2 and z
-    formulation_info.constraints[:below_z] =
-        @constraint(m, [i = 2:num_vars], delta_1[i] + delta_2[i] + delta_3[i] <= z_bin[i-1])
+    formulation_info.constraints[:below_z] = @constraint(
+        m,
+        [i = 2:num_vars],
+        delta_1[i] + delta_2[i] + delta_3[i] <= z_bin[i-1]
+    )
     formulation_info.constraints[:above_z] =
         @constraint(m, [i = 2:num_vars], z_bin[i-1] <= delta_3[i-1])
 

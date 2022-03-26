@@ -58,7 +58,7 @@ function construct_univariate_relaxation!(
     length_tolerance::Float64 = EPS,
     derivative_tolerance::Float64 = EPS,
     num_additional_partitions::Int64 = 0,
-    variable_pre_base_name::AbstractString = ""
+    variable_pre_base_name::AbstractString = "",
 )::FormulationInfo
     univariate_function_data = UnivariateFunctionData(
         f,
@@ -73,7 +73,9 @@ function construct_univariate_relaxation!(
     _validate(univariate_function_data)
     _validate(x, x_partition)
     _refine_partition!(univariate_function_data)
-    func = milp ? _build_univariate_milp_relaxation! : _build_univariate_lp_relaxation!
+    func =
+        milp ? _build_univariate_milp_relaxation! :
+        _build_univariate_lp_relaxation!
     return func(m, x, y, univariate_function_data, variable_pre_base_name)
 end
 
@@ -111,11 +113,19 @@ function construct_bilinear_relaxation!(
     z::JuMP.VariableRef,
     x_partition::Vector{<:Real},
     y_partition::Vector{<:Real};
-    variable_pre_base_name::AbstractString = ""
+    variable_pre_base_name::AbstractString = "",
 )::FormulationInfo
     _validate(x, y, x_partition, y_partition)
     if length(x_partition) == 2 && length(y_partition) == 2
         return _build_mccormick_relaxation!(m, x, y, z)
     end
-    return _build_bilinear_milp_relaxation!(m, x, y, z, x_partition, y_partition, variable_pre_base_name)
+    return _build_bilinear_milp_relaxation!(
+        m,
+        x,
+        y,
+        z,
+        x_partition,
+        y_partition,
+        variable_pre_base_name,
+    )
 end

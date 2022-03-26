@@ -33,7 +33,8 @@ Objective: Minimize y[2] + y[3] - y[4] - y[5]
 
 function example_trig(; verbose = true)
     best_known_objective = -3.76250036
-    cbc_optimizer = JuMP.optimizer_with_attributes(Cbc.Optimizer, "logLevel" => 0)
+    cbc_optimizer =
+        JuMP.optimizer_with_attributes(Cbc.Optimizer, "logLevel" => 0)
     error_tolerances = [NaN64, 1e-1, 1e-2]
     # base partition holds the inflection points and the end-points for the trigonometric functions
     base_partition = Dict{Int,Vector{Float64}}()
@@ -49,14 +50,14 @@ function example_trig(; verbose = true)
     functions[3] = x -> cos(13 * x)
     functions[4] = x -> sin(17 * x)
     functions[5] = x -> cos(19 * x)
-    for i = 1:length(error_tolerances)
+    for i in 1:length(error_tolerances)
         err_tol = error_tolerances[i]
         milp = Model(cbc_optimizer)
         @variable(milp, -2.0 <= x <= 5.0)
         @variable(milp, -1.0 <= y[1:5] <= 1.0)
 
         # construct MILP relaxations
-        for j = 1:5
+        for j in 1:5
             f = functions[j]
             p = deepcopy(base_partition[j])
             construct_univariate_relaxation!(
@@ -75,7 +76,8 @@ function example_trig(; verbose = true)
         relaxation_objective = objective_value(milp)
         @test relaxation_objective ≤ best_known_objective
         relative_gap =
-            abs(best_known_objective - relaxation_objective) / abs(relaxation_objective)
+            abs(best_known_objective - relaxation_objective) /
+            abs(relaxation_objective)
         if verbose
             println(
                 "Optimal solution: $best_known_objective; MILP for error tolerance $err_tol: $relaxation_objective; relative gap: $relative_gap",
@@ -83,13 +85,13 @@ function example_trig(; verbose = true)
         end
     end
 
-    for i = 1:length(error_tolerances)
+    for i in 1:length(error_tolerances)
         err_tol = error_tolerances[i]
         # construct LP relaxations
         lp = Model(cbc_optimizer)
         @variable(lp, -2.0 <= x <= 5.0)
         @variable(lp, -1.0 <= y[1:5] <= 1.0)
-        for j = 1:5
+        for j in 1:5
             f = functions[j]
             p = deepcopy(base_partition[j])
             construct_univariate_relaxation!(
@@ -108,14 +110,14 @@ function example_trig(; verbose = true)
         relaxation_objective = objective_value(lp)
         @test relaxation_objective ≤ best_known_objective
         relative_gap =
-            abs(best_known_objective - relaxation_objective) / abs(relaxation_objective)
+            abs(best_known_objective - relaxation_objective) /
+            abs(relaxation_objective)
         if verbose
             println(
                 "Optimal solution: $best_known_objective; LP for error tolerance $err_tol: $relaxation_objective; relative gap: $relative_gap",
             )
         end
     end
-
 end
 
 example_trig()

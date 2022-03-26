@@ -14,7 +14,8 @@ struct FormulationInfo
 end
 
 "Empty contructor for struct `FormulationInfo`"
-FormulationInfo()::FormulationInfo = FormulationInfo(Dict{Symbol,Any}(), Dict{Symbol,Any}())
+FormulationInfo()::FormulationInfo =
+    FormulationInfo(Dict{Symbol,Any}(), Dict{Symbol,Any}())
 
 """
 The struct `UnivariateFunctionData` holds the inputs provided by the user. It
@@ -54,7 +55,9 @@ function _get_tangent_vertex(
     x_prev, f_prev = prev_secant_vertex
     x_next, f_next = next_secant_vertex
     d_prev, d_next = derivative(x_prev), derivative(x_next)
-    x_t = (f_next - f_prev + (d_prev * x_prev) - (d_next * x_next)) / (d_prev - d_next)
+    x_t =
+        (f_next - f_prev + (d_prev * x_prev) - (d_next * x_next)) /
+        (d_prev - d_next)
     y_t = f_prev + (d_prev * (x_t - x_prev))
     return Pair(x_t, y_t)
 end
@@ -166,13 +169,13 @@ function _validate(x::JuMP.VariableRef, partition::Vector{<:Real})
     lb = partition[1]
     ub = partition[end]
     if isfinite(x_lb) && !isapprox(x_lb, lb, rtol = 1e-8)
-        Memento.error(_LOGGER, "partition lower bound and variable lower bound not equal")
+        error("partition lower bound and variable lower bound not equal")
     end
     if isfinite(x_ub) && !isapprox(x_ub, ub, rtol = 1e-8)
-        Memento.error(_LOGGER, "partition upper bound and variable upper bound not equal")
+        error("partition upper bound and variable upper bound not equal")
     end
     (isinf(x_lb)) && (JuMP.set_lower_bound(x, lb))
-    (isinf(x_ub)) && (JuMP.set_upper_bound(x, ub))
+    return (isinf(x_ub)) && (JuMP.set_upper_bound(x, ub))
 end
 
 """
@@ -187,13 +190,12 @@ function _validate(
     y_partition::Vector{<:Real},
 )
     if length(x_partition) > 2 && length(y_partition) > 2
-        Memento.error(
-            _LOGGER,
+        error(
             "package does not support bilinear relaxations with > 2 partitions on both variables",
         )
     end
     _validate(x, x_partition)
-    _validate(y, y_partition)
+    return _validate(y, y_partition)
 end
 
 """
@@ -201,19 +203,22 @@ end
 
 Input data point validator
 """
-function _validate_point(univariate_function_data::UnivariateFunctionData, x::Float64)
+function _validate_point(
+    univariate_function_data::UnivariateFunctionData,
+    x::Float64,
+)
     if !isfinite(x) || abs(x) >= INF
-        Memento.error(_LOGGER, "all partition points must be finite")
+        error("all partition points must be finite")
     end
 
     fx = univariate_function_data.f(x)
     if abs(fx) >= INF
-        Memento.error(_LOGGER, "absolute function value at $x larger than $INF")
+        error("absolute function value at $x larger than $INF")
     end
 
     dx = univariate_function_data.f_dash(x)
     if abs(dx) >= INF
-        Memento.error(_LOGGER, "absolute derivative value at $x larger than $INF")
+        error("absolute derivative value at $x larger than $INF")
     end
 end
 
@@ -224,7 +229,7 @@ Input univariate function data validator
 """
 function _validate(univariate_function_data::UnivariateFunctionData)
     if length(univariate_function_data.partition) < 2
-        Memento.error(_LOGGER, "partition must have at least 2 points")
+        error("partition must have at least 2 points")
     end
 
     x_prev::Float64 = NaN64
@@ -234,14 +239,10 @@ function _validate(univariate_function_data::UnivariateFunctionData)
         dx = univariate_function_data.f_dash(x)
         if !isnan(x_prev)
             if x <= x_prev
-                Memento.error(
-                    _LOGGER,
-                    "partition must be sorted, violation for $x, $x_prev",
-                )
+                error("partition must be sorted, violation for $x, $x_prev")
             end
             if x - x_prev <= univariate_function_data.length_tolerance
-                Memento.error(
-                    _LOGGER,
+                error(
                     string(
                         "$x_prev and $x difference less than ",
                         "$(univariate_function_data.length_tolerance)",
@@ -249,8 +250,7 @@ function _validate(univariate_function_data::UnivariateFunctionData)
                 )
             end
             if abs(dx - d_prev) <= univariate_function_data.derivative_tolerance
-                Memento.error(
-                    _LOGGER,
+                error(
                     string(
                         "difference of derivatives at $x and $x_prev less than ",
                         "$(univariate_function_data.derivative_tolerance)",
@@ -262,7 +262,7 @@ function _validate(univariate_function_data::UnivariateFunctionData)
         d_prev = dx
     end
 
-    Memento.debug(_LOGGER, "input data valid.")
+    @debug "input data valid."
 end
 
 """
@@ -282,14 +282,14 @@ function _refine_partition!(univariate_function_data::UnivariateFunctionData)
     partition = univariate_function_data.partition
     while true
         if !_is_refinement_feasible(univariate_function_data, error_queue)
-            Memento.debug(_LOGGER, "stopping refinement")
+            @debug "stopping refinement"
             return
         end
 
         start, max_error = peek(error_queue)
         x_start = partition[start]
         x_end = partition[start+1]
-        Memento.debug(_LOGGER, "max error: $max_error between $x_start, $x_end")
+        @debug "max error: $max_error between $x_start, $x_end"
 
         """
         Errors of partition intervals in `error_queue` are indexed by positions
@@ -300,7 +300,7 @@ function _refine_partition!(univariate_function_data::UnivariateFunctionData)
         indexing.
         """
         num_starts = length(partition)
-        for i = num_starts:-1:start+1
+        for i in num_starts:-1:start+1
             error_queue[i] = error_queue[i-1]
         end
 
@@ -330,10 +330,7 @@ function _is_refinement_feasible(
     start, max_error = peek(error_queue)
     if !isnan(univariate_function_data.error_tolerance) &&
        max_error <= univariate_function_data.error_tolerance
-        Memento.debug(
-            _LOGGER,
-            "error: $max_error less than limit: $(univariate_function_data.error_tolerance)",
-        )
+        @debug "error: $max_error less than limit: $(univariate_function_data.error_tolerance)"
         return false
     end
 
@@ -343,11 +340,8 @@ function _is_refinement_feasible(
             length(univariate_function_data.partition) -
             univariate_function_data.initial_partition_length
         if num_added >= univariate_function_data.num_additional_partitions
-            Memento.debug(_LOGGER, "number of new binary variables: $num_added")
-            Memento.debug(
-                _LOGGER,
-                "budget: $(univariate_function_data.num_additional_partitions)",
-            )
+            @debug "number of new binary variables: $num_added"
+            @debug "budget: $(univariate_function_data.num_additional_partitions)"
             return false
         end
     end
@@ -356,8 +350,8 @@ function _is_refinement_feasible(
     x_start, x_end = univariate_function_data.partition[start],
     univariate_function_data.partition[start+1]
     if x_end - x_start <= (2 * univariate_function_data.length_tolerance)
-        Memento.debug(_LOGGER, "start: $x_start, end: $x_end")
-        Memento.debug(_LOGGER, "new interval length will be too small")
+        @debug "start: $x_start, end: $x_end"
+        @debug "new interval length will be too small"
         return false
     end
 
@@ -366,15 +360,15 @@ function _is_refinement_feasible(
     _validate_point(univariate_function_data, x_new)
 
     # Check if derivative differences at endpoints of new partitions are smaller than allowed.
-    d_start, d_end =
-        univariate_function_data.f_dash(x_start), univariate_function_data.f_dash(x_end)
+    d_start, d_end = univariate_function_data.f_dash(x_start),
+    univariate_function_data.f_dash(x_end)
     d_new = univariate_function_data.f_dash(x_new)
     if (
         abs(d_new - d_start) <= univariate_function_data.derivative_tolerance ||
         abs(d_end - d_new) <= univariate_function_data.derivative_tolerance
     )
-        Memento.debug(_LOGGER, "d_start: $d_start, d_new: $d_new, d_end: $d_end")
-        Memento.debug(_LOGGER, "adjacent derivative difference will be too small")
+        @debug "d_start: $d_start, d_new: $d_new, d_end: $d_end"
+        @debug "adjacent derivative difference will be too small"
         return false
     end
 
@@ -390,9 +384,11 @@ positions of the partition interval in `univariate_function_data.partition`.
 Priorities are error bounds of partition intervals. The queue is built as
 a max-queue for easy access to the  maximum error.
 """
-function _get_error_queue(univariate_function_data::UnivariateFunctionData)::PriorityQueue
+function _get_error_queue(
+    univariate_function_data::UnivariateFunctionData,
+)::PriorityQueue
     pq = PriorityQueue{Int64,Float64}(Base.Order.Reverse)
-    for i = 1:length(univariate_function_data.partition)-1
+    for i in 1:length(univariate_function_data.partition)-1
         lb = univariate_function_data.partition[i]
         ub = univariate_function_data.partition[i+1]
         pq[i] = _get_error_bound(univariate_function_data.f_dash, lb, ub)
@@ -415,7 +411,9 @@ end
 
 Compute and return maximum value of error bound among all partition intervals.
 """
-function _get_max_error_bound(univariate_function_data::UnivariateFunctionData)::Float64
+function _get_max_error_bound(
+    univariate_function_data::UnivariateFunctionData,
+)::Float64
     max_err = -Inf
     for i in length(univariate_function_data.partition) - 1
         err = _get_error_bound(

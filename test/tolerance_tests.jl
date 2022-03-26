@@ -3,9 +3,9 @@ f_dash = x -> 3 * x^2
 partition = collect(-1.0:1.0:1.0)
 
 @testset "sampling tests with x^3 for error tolerance" begin
-    PR.silence()
+    PR.silence!()
     p = deepcopy(partition)
-    for i = 1:10
+    for i in 1:10
         lb = -1.0
         ub = 1.0
         λ = rand()
@@ -13,7 +13,15 @@ partition = collect(-1.0:1.0:1.0)
         m = Model(cbc_optimizer)
         @variable(m, -1.0 <= x <= 1.0)
         @variable(m, y)
-        construct_univariate_relaxation!(m, f, x, y, p, true, error_tolerance = 1e-2)
+        construct_univariate_relaxation!(
+            m,
+            f,
+            x,
+            y,
+            p,
+            true,
+            error_tolerance = 1e-2,
+        )
         @constraint(m, x == x_val)
 
         # solve for min y
@@ -69,7 +77,7 @@ end
         error_tolerance = err_tol,
         length_tolerance = len_tol,
     )
-    for i = 1:length(p)-1
+    for i in 1:length(p)-1
         @test p[i+1] - p[i] >= len_tol
     end
 end
@@ -92,7 +100,7 @@ end
         derivative_tolerance = der_tol,
     )
 
-    for i = 1:length(p)-1
+    for i in 1:length(p)-1
         d = f_dash(p[i])
         d_next = f_dash(p[i+1])
         @test abs(d_next - d) >= der_tol
