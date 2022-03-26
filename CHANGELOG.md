@@ -1,6 +1,12 @@
 PolyhedralRelaxations.jl Change Log
 =========================
 
+### v0.3.4
+- Allow for JuMP 1.0
+- Move logging to Logging.jl and LoggingExtras.jl from Memento
+- Fix tests
+- Drop Memento from dependencies
+
 ### v0.3.3
 - Allow for JuMP 0.23
 

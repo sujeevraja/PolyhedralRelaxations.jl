@@ -1,5 +1,5 @@
 @testset "test MILP relaxation API" begin
-    PR.logger_config!("error")
+    PR.silence!()
     m = Model(cbc_optimizer)
     @variable(m, -1.0 <= x <= 1.0)
     @variable(m, y)
@@ -17,7 +17,7 @@
 end
 
 @testset "test LP relaxation API" begin
-    PR.logger_config!("error")
+    PR.silence!()
     m = Model(cbc_optimizer)
     @variable(m, -1.0 <= x <= 1.0)
     @variable(m, y)

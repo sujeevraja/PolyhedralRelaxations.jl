@@ -1,5 +1,5 @@
 @testset "linear objective function tests" begin
-    PR.logger_config!("error")
+    PR.silence!()
     f, partition = a -> a^3, collect(-1.0:0.25:1.0)
     ufd = UnivariateFunctionData(
         f,

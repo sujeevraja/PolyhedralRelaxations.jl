@@ -3,7 +3,7 @@ f_dash = x -> 3 * x^2
 partition = collect(-1.0:1.0:1.0)
 
 @testset "sampling tests with x^3 for error tolerance" begin
-    PR.silence()
+    PR.silence!()
     p = deepcopy(partition)
     for i = 1:10
         lb = -1.0
