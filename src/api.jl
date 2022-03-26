@@ -1,4 +1,4 @@
-export construct_univariate_relaxation!, 
+export construct_univariate_relaxation!,
     refine_partition!,
     construct_bilinear_relaxation!,
     construct_univariate_on_off_relaxation!
@@ -68,7 +68,7 @@ function construct_univariate_relaxation!(
     num_additional_partitions::Int64 = 0,
     variable_pre_base_name::AbstractString = "",
     constraint_pre_base_name::AbstractString = "",
-    formulation_info::FormulationInfo = FormulationInfo()
+    formulation_info::FormulationInfo = FormulationInfo(),
 )::FormulationInfo
     univariate_function_data = UnivariateFunctionData(
         f,
@@ -83,11 +83,18 @@ function construct_univariate_relaxation!(
     _validate(univariate_function_data)
     _validate(x, x_partition)
     _refine_partition!(univariate_function_data)
-    func = milp ? _build_univariate_milp_relaxation! : _build_univariate_lp_relaxation!
-    return func(m, x, y, univariate_function_data, 
-        variable_pre_base_name, 
-        constraint_pre_base_name, 
-        formulation_info)
+    func =
+        milp ? _build_univariate_milp_relaxation! :
+        _build_univariate_lp_relaxation!
+    return func(
+        m,
+        x,
+        y,
+        univariate_function_data,
+        variable_pre_base_name,
+        constraint_pre_base_name,
+        formulation_info,
+    )
 end
 
 """
@@ -130,7 +137,7 @@ function refine_partition!(
     length_tolerance::Float64 = EPS,
     derivative_tolerance::Float64 = EPS,
     num_additional_partitions::Int64 = 0,
-)   
+)
     univariate_function_data = UnivariateFunctionData(
         f,
         f_dash,
@@ -139,11 +146,11 @@ function refine_partition!(
         length_tolerance,
         derivative_tolerance,
         num_additional_partitions,
-        length(partition)
+        length(partition),
     )
     _validate(univariate_function_data)
-    _refine_partition!(univariate_function_data)
-end 
+    return _refine_partition!(univariate_function_data)
+end
 
 """
     construct_bilinear_relaxation!(m,x,y,z,x_partition,y_partition)
@@ -182,14 +189,28 @@ function construct_bilinear_relaxation!(
     x_partition::Vector{<:Real},
     y_partition::Vector{<:Real};
     variable_pre_base_name::AbstractString = "",
-    constraint_pre_base_name::AbstractString = ""
+    constraint_pre_base_name::AbstractString = "",
 )::FormulationInfo
     _validate(x, y, x_partition, y_partition)
     if length(x_partition) == 2 && length(y_partition) == 2
-        return _build_mccormick_relaxation!(m, x, y, z, constraint_pre_base_name)
+        return _build_mccormick_relaxation!(
+            m,
+            x,
+            y,
+            z,
+            constraint_pre_base_name,
+        )
     end
-    return _build_bilinear_milp_relaxation!(m, x, y, z, x_partition, y_partition, 
-        variable_pre_base_name, constraint_pre_base_name)
+    return _build_bilinear_milp_relaxation!(
+        m,
+        x,
+        y,
+        z,
+        x_partition,
+        y_partition,
+        variable_pre_base_name,
+        constraint_pre_base_name,
+    )
 end
 
 """
@@ -240,10 +261,10 @@ Assume that:
     
 """
 function construct_univariate_on_off_relaxation!(
-    m::JuMP.Model, 
+    m::JuMP.Model,
     f::Function,
-    x::JuMP.VariableRef, 
-    y::JuMP.VariableRef, 
+    x::JuMP.VariableRef,
+    y::JuMP.VariableRef,
     z::JuMP.VariableRef,
     x_partition::Vector{<:Real};
     f_dash::Function = x -> ForwardDiff.derivative(f, x),
@@ -251,10 +272,10 @@ function construct_univariate_on_off_relaxation!(
     length_tolerance::Float64 = EPS,
     derivative_tolerance::Float64 = EPS,
     num_additional_partitions::Int64 = 0,
-    active_when_z_is_one::Bool=true,
-    variable_pre_base_name::AbstractString="",
-    constraint_pre_base_name::AbstractString=""
-)::FormulationInfo 
+    active_when_z_is_one::Bool = true,
+    variable_pre_base_name::AbstractString = "",
+    constraint_pre_base_name::AbstractString = "",
+)::FormulationInfo
     univariate_function_data = UnivariateFunctionData(
         f,
         f_dash,
@@ -269,9 +290,14 @@ function construct_univariate_on_off_relaxation!(
     _validate(x, x_partition)
     _validate(z)
     _refine_partition!(univariate_function_data)
-    return _build_univariate_on_off_relaxation!(m, x, y, z, 
+    return _build_univariate_on_off_relaxation!(
+        m,
+        x,
+        y,
+        z,
         univariate_function_data,
-        active_when_z_is_one, 
-        variable_pre_base_name, 
-        constraint_pre_base_name)
-end 
+        active_when_z_is_one,
+        variable_pre_base_name,
+        constraint_pre_base_name,
+    )
+end
