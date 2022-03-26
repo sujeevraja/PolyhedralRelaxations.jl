@@ -6,7 +6,10 @@ MetaFormatter for ConsoleLogger for PR to adjust log message format
 function _pr_metafmt(level::Logging.LogLevel, _module, group, id, file, line)
     @nospecialize
     color = Logging.default_logcolor(level)
-    prefix = "$(_module) | " * (level == Logging.Warn ? "Warning" : string(level)) * " ] :"
+    prefix =
+        "$(_module) | " *
+        (level == Logging.Warn ? "Warning" : string(level)) *
+        " ] :"
     suffix = ""
     Logging.Info <= level < Logging.Warn && return color, prefix, suffix
     _module !== nothing && (suffix *= "$(_module)")
@@ -22,16 +25,14 @@ function _pr_metafmt(level::Logging.LogLevel, _module, group, id, file, line)
     return color, prefix, suffix
 end
 
-
 """
     silence!()
 
 Sets loglevel for PMD to :Error, silencing Info and Warn
 """
 function silence!()
-    set_logging_level!(:Error)
+    return set_logging_level!(:Error)
 end
-
 
 """
     reset_logging_level!()
@@ -44,7 +45,6 @@ function reset_logging_level!()
     return
 end
 
-
 """
     restore_global_logger!()
 
@@ -56,7 +56,6 @@ function restore_global_logger!()
     return
 end
 
-
 """
     set_logging_level!(level::Symbol)
 
@@ -67,7 +66,6 @@ function set_logging_level!(level::Symbol)
 
     return
 end
-
 
 """
     _make_filtered_logger(level::Logging.LogLevel)

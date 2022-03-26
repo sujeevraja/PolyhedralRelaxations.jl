@@ -51,7 +51,8 @@
             x_sln = value.(x)
             y_sln = value.(y)
             for v in sln_verts
-                if isapprox(v[1], x_sln, atol = tol) && isapprox(v[2], y_sln, atol = tol)
+                if isapprox(v[1], x_sln, atol = tol) &&
+                   isapprox(v[2], y_sln, atol = tol)
                     sln_found = true
                     break
                 end

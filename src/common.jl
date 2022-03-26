@@ -14,7 +14,8 @@ struct FormulationInfo
 end
 
 "Empty contructor for struct `FormulationInfo`"
-FormulationInfo()::FormulationInfo = FormulationInfo(Dict{Symbol,Any}(), Dict{Symbol,Any}())
+FormulationInfo()::FormulationInfo =
+    FormulationInfo(Dict{Symbol,Any}(), Dict{Symbol,Any}())
 
 """
 The struct `UnivariateFunctionData` holds the inputs provided by the user. It
@@ -54,7 +55,9 @@ function _get_tangent_vertex(
     x_prev, f_prev = prev_secant_vertex
     x_next, f_next = next_secant_vertex
     d_prev, d_next = derivative(x_prev), derivative(x_next)
-    x_t = (f_next - f_prev + (d_prev * x_prev) - (d_next * x_next)) / (d_prev - d_next)
+    x_t =
+        (f_next - f_prev + (d_prev * x_prev) - (d_next * x_next)) /
+        (d_prev - d_next)
     y_t = f_prev + (d_prev * (x_t - x_prev))
     return Pair(x_t, y_t)
 end
@@ -172,7 +175,7 @@ function _validate(x::JuMP.VariableRef, partition::Vector{<:Real})
         error("partition upper bound and variable upper bound not equal")
     end
     (isinf(x_lb)) && (JuMP.set_lower_bound(x, lb))
-    (isinf(x_ub)) && (JuMP.set_upper_bound(x, ub))
+    return (isinf(x_ub)) && (JuMP.set_upper_bound(x, ub))
 end
 
 """
@@ -187,10 +190,12 @@ function _validate(
     y_partition::Vector{<:Real},
 )
     if length(x_partition) > 2 && length(y_partition) > 2
-        error("package does not support bilinear relaxations with > 2 partitions on both variables")
+        error(
+            "package does not support bilinear relaxations with > 2 partitions on both variables",
+        )
     end
     _validate(x, x_partition)
-    _validate(y, y_partition)
+    return _validate(y, y_partition)
 end
 
 """
@@ -198,7 +203,10 @@ end
 
 Input data point validator
 """
-function _validate_point(univariate_function_data::UnivariateFunctionData, x::Float64)
+function _validate_point(
+    univariate_function_data::UnivariateFunctionData,
+    x::Float64,
+)
     if !isfinite(x) || abs(x) >= INF
         error("all partition points must be finite")
     end
@@ -234,17 +242,19 @@ function _validate(univariate_function_data::UnivariateFunctionData)
                 error("partition must be sorted, violation for $x, $x_prev")
             end
             if x - x_prev <= univariate_function_data.length_tolerance
-                error(string(
+                error(
+                    string(
                         "$x_prev and $x difference less than ",
                         "$(univariate_function_data.length_tolerance)",
-                    )
+                    ),
                 )
             end
             if abs(dx - d_prev) <= univariate_function_data.derivative_tolerance
-                error(string(
+                error(
+                    string(
                         "difference of derivatives at $x and $x_prev less than ",
                         "$(univariate_function_data.derivative_tolerance)",
-                    )
+                    ),
                 )
             end
         end
@@ -290,7 +300,7 @@ function _refine_partition!(univariate_function_data::UnivariateFunctionData)
         indexing.
         """
         num_starts = length(partition)
-        for i = num_starts:-1:start+1
+        for i in num_starts:-1:start+1
             error_queue[i] = error_queue[i-1]
         end
 
@@ -350,8 +360,8 @@ function _is_refinement_feasible(
     _validate_point(univariate_function_data, x_new)
 
     # Check if derivative differences at endpoints of new partitions are smaller than allowed.
-    d_start, d_end =
-        univariate_function_data.f_dash(x_start), univariate_function_data.f_dash(x_end)
+    d_start, d_end = univariate_function_data.f_dash(x_start),
+    univariate_function_data.f_dash(x_end)
     d_new = univariate_function_data.f_dash(x_new)
     if (
         abs(d_new - d_start) <= univariate_function_data.derivative_tolerance ||
@@ -374,9 +384,11 @@ positions of the partition interval in `univariate_function_data.partition`.
 Priorities are error bounds of partition intervals. The queue is built as
 a max-queue for easy access to the  maximum error.
 """
-function _get_error_queue(univariate_function_data::UnivariateFunctionData)::PriorityQueue
+function _get_error_queue(
+    univariate_function_data::UnivariateFunctionData,
+)::PriorityQueue
     pq = PriorityQueue{Int64,Float64}(Base.Order.Reverse)
-    for i = 1:length(univariate_function_data.partition)-1
+    for i in 1:length(univariate_function_data.partition)-1
         lb = univariate_function_data.partition[i]
         ub = univariate_function_data.partition[i+1]
         pq[i] = _get_error_bound(univariate_function_data.f_dash, lb, ub)
@@ -399,7 +411,9 @@ end
 
 Compute and return maximum value of error bound among all partition intervals.
 """
-function _get_max_error_bound(univariate_function_data::UnivariateFunctionData)::Float64
+function _get_max_error_bound(
+    univariate_function_data::UnivariateFunctionData,
+)::Float64
     max_err = -Inf
     for i in length(univariate_function_data.partition) - 1
         err = _get_error_bound(

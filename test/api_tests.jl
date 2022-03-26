@@ -3,8 +3,14 @@
     m = Model(cbc_optimizer)
     @variable(m, -1.0 <= x <= 1.0)
     @variable(m, y)
-    formulation_info =
-        construct_univariate_relaxation!(m, a -> a^3, x, y, collect(-1.0:1.0:1.0), true)
+    formulation_info = construct_univariate_relaxation!(
+        m,
+        a -> a^3,
+        x,
+        y,
+        collect(-1.0:1.0:1.0),
+        true,
+    )
 
     @test size(formulation_info.variables[:delta_1])[1] == 2
     @test size(formulation_info.variables[:delta_2])[1] == 2
@@ -21,8 +27,14 @@ end
     m = Model(cbc_optimizer)
     @variable(m, -1.0 <= x <= 1.0)
     @variable(m, y)
-    formulation_info =
-        construct_univariate_relaxation!(m, a -> a^3, x, y, collect(-1.0:1.0:1.0), false)
+    formulation_info = construct_univariate_relaxation!(
+        m,
+        a -> a^3,
+        x,
+        y,
+        collect(-1.0:1.0:1.0),
+        false,
+    )
 
     @test size(formulation_info.variables[:lambda])[1] == 4
     @test haskey(formulation_info.constraints, :sum_lambda)
@@ -30,11 +42,10 @@ end
     @test haskey(formulation_info.constraints, :y)
 end
 
-
 @testset "test bilinear relaxation API (McCormick)" begin
     replicates = 10
     tolerance = 1e-3
-    for r = 1:replicates
+    for r in 1:replicates
         x_lb, x_ub = 10 * rand(2) .* [-1, 1]
         y_lb, y_ub = 10 * rand(2) .* [-1, 1]
 
@@ -71,7 +82,7 @@ end
 function refine!(partition, val)
     num_partitions = length(partition) - 1
     val_in_partition = 0
-    for i = 1:num_partitions
+    for i in 1:num_partitions
         if val > partition[i] && val < partition[i+1]
             val_in_partition = i
         end
@@ -90,7 +101,7 @@ end
 
     x_p = [-10.0, 10.0]
     y_p = [-10.0, 10.0]
-    for _ = 1:20
+    for _ in 1:20
         x_lb, x_ub = x_p[1], x_p[end]
         y_lb, y_ub = y_p[1], y_p[end]
         epsilon_x = refine!(x_p, point)
@@ -111,7 +122,7 @@ end
         @test abs(max_y) ≈ epsilon_x * epsilon_y atol = 1e-5
         @test abs(min_y) ≈ epsilon_x * epsilon_y atol = 1e-5
     end
-    for _ = 1:20
+    for _ in 1:20
         x_lb, x_ub = x_p[1], x_p[end]
         y_lb, y_ub = y_p[1], y_p[end]
         epsilon_x = 10.0
