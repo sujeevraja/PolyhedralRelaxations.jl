@@ -68,7 +68,7 @@ function construct_univariate_relaxation!(
     num_additional_partitions::Int64 = 0,
     variable_pre_base_name::AbstractString = "",
     constraint_pre_base_name::AbstractString = "",
-    formulation_info::FormulationInfo = FormulationInfo(),
+    formulation_info::FormulationInfo = FormulationInfo()
 )::FormulationInfo
     univariate_function_data = UnivariateFunctionData(
         f,
@@ -78,7 +78,7 @@ function construct_univariate_relaxation!(
         length_tolerance,
         derivative_tolerance,
         num_additional_partitions,
-        length(x_partition),
+        length(x_partition)
     )
     _validate(univariate_function_data)
     _validate(x, x_partition)
@@ -93,7 +93,7 @@ function construct_univariate_relaxation!(
         univariate_function_data,
         variable_pre_base_name,
         constraint_pre_base_name,
-        formulation_info,
+        formulation_info
     )
 end
 
@@ -146,7 +146,7 @@ function refine_partition!(
         length_tolerance,
         derivative_tolerance,
         num_additional_partitions,
-        length(partition),
+        length(partition)
     )
     _validate(univariate_function_data)
     return _refine_partition!(univariate_function_data)
@@ -171,6 +171,8 @@ new variables and constraints.
     variables for meaningful LP files
 - `constraint_pre_base_name::AbstractString`: base_name that needs to be added to the constraints
     in the relaxation
+- `formulation_info::FormulationInfo` : `FormulationInfo` for another bilinear function where the 
+    variables that is partitioned has to be same on both; to enable partition variable reuse
 
 
 This function builds an incremental formulation, and currently supports more than 
@@ -190,6 +192,7 @@ function construct_bilinear_relaxation!(
     y_partition::Vector{<:Real};
     variable_pre_base_name::AbstractString = "",
     constraint_pre_base_name::AbstractString = "",
+    formulation_info::FormulationInfo = FormulationInfo()
 )::FormulationInfo
     _validate(x, y, x_partition, y_partition)
     if length(x_partition) == 2 && length(y_partition) == 2
@@ -198,7 +201,7 @@ function construct_bilinear_relaxation!(
             x,
             y,
             z,
-            constraint_pre_base_name,
+            constraint_pre_base_name
         )
     end
     return _build_bilinear_milp_relaxation!(
@@ -210,6 +213,7 @@ function construct_bilinear_relaxation!(
         y_partition,
         variable_pre_base_name,
         constraint_pre_base_name,
+        formulation_info
     )
 end
 

@@ -59,6 +59,7 @@ function _build_bilinear_milp_relaxation!(
     y_partition::Vector{<:Real},
     variable_pre_base_name::AbstractString,
     constraint_pre_base_name::AbstractString,
+    reuse::FormulationInfo
 )::FormulationInfo
     origin_vs, non_origin_vs =
         _collect_bilinear_vertices(x_partition, y_partition)
