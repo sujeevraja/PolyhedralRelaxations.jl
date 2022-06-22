@@ -46,6 +46,19 @@ function _build_mccormick_relaxation!(
 end
 
 """
+    _check_partition_variable_consistency(formulation_info, num_vars) 
+
+Checks consistency between provided variables and partition sizes 
+"""
+function _check_partition_variable_consistency(formulation_info::FormulationInfo, num_vars)::Bool
+    var = formulation_info.variables
+    if haskey(var, :z_bin)
+        (length(var[:z_bin]) == num_vars) && (return true)
+    end
+    return false
+end
+
+"""
     _build_bilinear_relaxation!(m, x, y, z, x_partition, y_partition, pre_base_name)
 
 Build incremental formulation for ``z = xy`` given partition data.
@@ -65,6 +78,10 @@ function _build_bilinear_milp_relaxation!(
         _collect_bilinear_vertices(x_partition, y_partition)
     formulation_info = FormulationInfo()
     num_vars = max(length(x_partition), length(y_partition)) - 1
+
+    reuse_variables = reuse.variables
+
+    is_consistent = _check_partition_variable_consistency(reuse, num_vars)
 
     # add variables
     delta_1 =
@@ -92,12 +109,14 @@ function _build_bilinear_milp_relaxation!(
             base_name = variable_pre_base_name * "delta_3"
         )
     z_bin =
-        formulation_info.variables[:z_bin] = @variable(
-            m,
-            [1:num_vars],
-            binary = true,
-            base_name = variable_pre_base_name * "z"
+        (is_consistent) ? reuse_variables[:z_bin] :
+        @variable(
+                m,
+                [1:num_vars],
+                binary = true,
+                base_name = variable_pre_base_name * "z"
         )
+    formulation_info.variables[:z_bin] = z_bin
 
     # add x constraints
     formulation_info.constraints[:x] = @constraint(
