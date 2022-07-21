@@ -9,8 +9,11 @@ using Test
 using HiGHS
 using Ipopt
 
-
-milp_optimizer = JuMP.optimizer_with_attributes(HiGHS.Optimizer, "presolve" => "on")
+milp_optimizer = JuMP.optimizer_with_attributes(
+    HiGHS.Optimizer,
+    "presolve" => "on",
+    "log_to_console" => false,
+)
 ipopt_optimizer = JuMP.optimizer_with_attributes(
     Ipopt.Optimizer,
     "print_level" => 0,
