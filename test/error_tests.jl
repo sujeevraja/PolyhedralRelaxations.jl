@@ -1,7 +1,7 @@
 @testset "test for errors" begin
     PR.silence!()
 
-    m = Model(cbc_optimizer)
+    m = Model(milp_optimizer)
     @variable(m, -1.0 <= x <= 1.0)
     @variable(m, y)
 
@@ -88,7 +88,7 @@
     y_lb, y_ub = 10 * rand(2) .* [-1, 1]
     x_mid = (x_lb + x_ub) / 2.0
     y_mid = (y_lb + y_ub) / 2.0
-    m = JuMP.Model(cbc_optimizer)
+    m = JuMP.Model(milp_optimizer)
     JuMP.@variable(m, x_lb <= x <= x_ub)
     JuMP.@variable(m, y_lb <= y <= y_ub)
     JuMP.@variable(m, z)

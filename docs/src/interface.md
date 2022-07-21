@@ -8,19 +8,19 @@ The following examples illustrate the interfacing code for ``y = x^3`` on the pa
 
 ```julia 
 # Create MILP relaxation 
-using PolyhderalRelaxations, JuMP, Cbc
-cbc_optimizer = JuMP.optimizer_with_attributes(Cbc.Optimizer, "logLevel" => 0)
+using PolyhderalRelaxations, JuMP, HiGHS
+milp_optimizer = JuMP.optimizer_with_attributes(HiGHS.Optimizer, "presolve" => "on")
 
 f, partition = x -> x^3, collect(-1.0:0.25:1.0)
 
 # create the MILP relaxation of the univariate function.
-milp = Model(cbc_optimizer)
+milp = Model(milp_optimizer)
 @variable(milp, -1.0 <= x <= 1.0)
 @variable(milp, y)
 formulation_info_milp = construct_univariate_relaxation!(milp, f, x, y, partition, true)
 
 # create the LP relaxation of the univariate function.
-lp = Model(cbc_optimizer)
+lp = Model(milp_optimizer)
 @variable(lp, -1.0 <= x_lp <= 1.0)
 @variable(lp, y_lp)
 formulation_info_lp = construct_univariate_relaxation!(milp, f, x_lp, y_lp, partition, false)

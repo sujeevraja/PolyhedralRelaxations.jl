@@ -13,13 +13,13 @@
     )
 
     # create LP relaxation of the MILP relaxation of the univariate function.
-    milp = Model(cbc_optimizer)
+    milp = Model(milp_optimizer)
     @variable(milp, -1.0 <= x <= 1.0)
     @variable(milp, y)
     construct_univariate_relaxation!(milp, f, x, y, partition, true)
 
     # create LP relaxation of the univariate function using the convex hull formulation.
-    lp = Model(cbc_optimizer)
+    lp = Model(milp_optimizer)
     @variable(lp, -1.0 <= x_lp <= 1.0)
     @variable(lp, y_lp)
     construct_univariate_relaxation!(lp, f, x_lp, y_lp, partition, false)

@@ -1,6 +1,6 @@
 @testset "test MILP relaxation API" begin
     PR.silence!()
-    m = Model(cbc_optimizer)
+    m = Model(milp_optimizer)
     @variable(m, -1.0 <= x <= 1.0)
     @variable(m, y)
     formulation_info = construct_univariate_relaxation!(
@@ -24,7 +24,7 @@ end
 
 @testset "test LP relaxation API" begin
     PR.silence!()
-    m = Model(cbc_optimizer)
+    m = Model(milp_optimizer)
     @variable(m, -1.0 <= x <= 1.0)
     @variable(m, y)
     formulation_info = construct_univariate_relaxation!(
@@ -57,7 +57,7 @@ end
         JuMP.@constraint(m, x * y == z)
         status = JuMP.optimize!(m)
 
-        rm = JuMP.Model(cbc_optimizer)
+        rm = JuMP.Model(milp_optimizer)
         JuMP.@variable(rm, x_lb <= x <= x_ub)
         JuMP.@variable(rm, y_lb <= y <= y_ub)
         JuMP.@variable(rm, z)
@@ -106,7 +106,7 @@ end
         y_lb, y_ub = y_p[1], y_p[end]
         epsilon_x = refine!(x_p, point)
         epsilon_y = 10.0
-        m = JuMP.Model(cbc_optimizer)
+        m = JuMP.Model(milp_optimizer)
         JuMP.@variable(m, x_lb <= x <= x_ub)
         JuMP.@variable(m, y_lb <= y <= y_ub)
         JuMP.@variable(m, z)
@@ -127,7 +127,7 @@ end
         y_lb, y_ub = y_p[1], y_p[end]
         epsilon_x = 10.0
         epsilon_y = refine!(y_p, point)
-        m = JuMP.Model(cbc_optimizer)
+        m = JuMP.Model(milp_optimizer)
         JuMP.@variable(m, x_lb <= x <= x_ub)
         JuMP.@variable(m, y_lb <= y <= y_ub)
         JuMP.@variable(m, z)

@@ -10,7 +10,7 @@ partition = collect(-1.0:1.0:1.0)
         ub = 1.0
         λ = rand()
         x_val = λ * lb + (1 - λ) * ub
-        m = Model(cbc_optimizer)
+        m = Model(milp_optimizer)
         @variable(m, -1.0 <= x <= 1.0)
         @variable(m, y)
         construct_univariate_relaxation!(
@@ -43,7 +43,7 @@ end
     for l in [0.1, 0.25, 0.5, 1.0]
         base_partition = collect(-1.0:l:1.0)
         num_base = length(base_partition) - 1
-        m = Model(cbc_optimizer)
+        m = Model(milp_optimizer)
         @variable(m, -1.0 <= x <= 1.0)
         @variable(m, y)
         formulation_info = construct_univariate_relaxation!(
@@ -64,7 +64,7 @@ end
     err_tol = 1e-7
     len_tol = 0.1
     p = deepcopy(partition)
-    m = Model(cbc_optimizer)
+    m = Model(milp_optimizer)
     @variable(m, -1.0 <= x <= 1.0)
     @variable(m, y)
     construct_univariate_relaxation!(
@@ -86,7 +86,7 @@ end
     err_tol = 1e-7
     der_tol = 0.1
     p = deepcopy(partition)
-    m = Model(cbc_optimizer)
+    m = Model(milp_optimizer)
     @variable(m, -1.0 <= x <= 1.0)
     @variable(m, y)
     construct_univariate_relaxation!(

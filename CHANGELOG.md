@@ -4,6 +4,8 @@ PolyhedralRelaxations.jl Change Log
 ### staged
 
 ### v0.3.5 
+- Add compat entries for test dependencies
+- Move Cbc test dependency to HiGHS
 - Allow for JuMP v1.X 
 - Update versioning for LoggingExtras.jl
 

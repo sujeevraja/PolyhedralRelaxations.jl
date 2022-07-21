@@ -6,10 +6,11 @@ const PR = PolyhedralRelaxations
 PR.set_logging_level!(:Debug)
 
 using Test
-using Cbc
+using HiGHS
 using Ipopt
 
-cbc_optimizer = JuMP.optimizer_with_attributes(Cbc.Optimizer, "logLevel" => 0)
+
+milp_optimizer = JuMP.optimizer_with_attributes(HiGHS.Optimizer, "presolve" => "on")
 ipopt_optimizer = JuMP.optimizer_with_attributes(
     Ipopt.Optimizer,
     "print_level" => 0,

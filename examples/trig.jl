@@ -1,4 +1,4 @@
-using PolyhedralRelaxations, JuMP, Cbc, Test
+using PolyhedralRelaxations, JuMP, HiGHS, Test
 
 """
     example_trig(; verbose = true)
@@ -33,8 +33,8 @@ Objective: Minimize y[2] + y[3] - y[4] - y[5]
 
 function example_trig(; verbose = true)
     best_known_objective = -3.76250036
-    cbc_optimizer =
-        JuMP.optimizer_with_attributes(Cbc.Optimizer, "logLevel" => 0)
+    milp_optimizer =
+    JuMP.optimizer_with_attributes(HiGHS.Optimizer, "presolve" => "on")
     error_tolerances = [NaN64, 1e-1, 1e-2]
     # base partition holds the inflection points and the end-points for the trigonometric functions
     base_partition = Dict{Int,Vector{Float64}}()
@@ -52,7 +52,7 @@ function example_trig(; verbose = true)
     functions[5] = x -> cos(19 * x)
     for i in 1:length(error_tolerances)
         err_tol = error_tolerances[i]
-        milp = Model(cbc_optimizer)
+        milp = Model(milp_optimizer)
         @variable(milp, -2.0 <= x <= 5.0)
         @variable(milp, -1.0 <= y[1:5] <= 1.0)
 
@@ -88,7 +88,7 @@ function example_trig(; verbose = true)
     for i in 1:length(error_tolerances)
         err_tol = error_tolerances[i]
         # construct LP relaxations
-        lp = Model(cbc_optimizer)
+        lp = Model(milp_optimizer)
         @variable(lp, -2.0 <= x <= 5.0)
         @variable(lp, -1.0 <= y[1:5] <= 1.0)
         for j in 1:5
