@@ -129,3 +129,46 @@ function construct_bilinear_relaxation!(
         variable_pre_base_name,
     )
 end
+
+"""
+    construct_multilinear_relaxation!(m,x,y,z,x_partition,y_partition)
+
+Add polyhedral relaxation of `z = product(x)` to given JuMP model and return an object with
+new variables and constraints.
+
+# Mandatory Arguments
+- `m::Jump.Model`: model to which relaxation is to be added.
+- `x::Vector{Jump.VariableRef}`: JuMP variable vector `x`.
+- `z::JuMP.VariableRef`: JuMP variable `z`.
+- `partitions::Dict{JuMP.VariableRef,Vector{<:Real}}`: partition of the domain of the `x` variables.
+
+# Optional Arguments
+- `variable_pre_base_name::AbstractString`: base_name that needs to be added to the auxiliary
+    variables for meaningful LP files
+
+
+This function builds an lambda based SOS2 formulation for the piecewise polyhedral relaxation. 
+The relaxations are presented in the manuscript: https://arxiv.org/abs/2001.00514 
+"""
+function construct_multilinear_relaxation!(
+    m::JuMP.Model,
+    x::Vector{JuMP.VariableRef}
+    z::JuMP.VariableRef,
+    partitions::Dict{JuMP.VariableRef, Vector{<:Real}},
+    variable_pre_base_name::AbstractString = "",
+)::FormulationInfo
+    _validate(x, partitions)
+    lp = all([it -> length(it) for it in values(partitions)])
+    if lp && (length(x) == 2)
+        return _build_mccormick_relaxation!(m, x, y, z)
+    end
+    return _build_bilinear_milp_relaxation!(
+        m,
+        x,
+        y,
+        z,
+        x_partition,
+        y_partition,
+        variable_pre_base_name,
+    )
+end

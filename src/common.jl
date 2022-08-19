@@ -160,6 +160,30 @@ function _variable_domain(var::JuMP.VariableRef)
 end
 
 """
+    _validate(x, partitions) 
+
+Variable bounds and partition consistency checker
+"""
+function _validate(x::Vector{JuMP.VariableRef}, partitions::Dict{JuMP.VariableRef, Vector{<:Real}})
+    for x_var in x 
+        x_lb, x_ub = _variable_domain(x_var)
+        (!haskey(partitions, x_var)) && (error("no partitions found for JuMP variable"))
+        partition = partitions[x_var]
+        lb = partition[1]
+        ub = partition[end]
+        if isfinite(x_lb) && !isapprox(x_lb, lb, rtol = 1e-8)
+            error("partition lower bound and variable lower bound not equal")
+        end
+        if isfinite(x_ub) && !isapprox(x_ub, ub, rtol = 1e-8)
+            error("partition upper bound and variable upper bound not equal")
+        end
+        (isinf(x_lb)) && (JuMP.set_lower_bound(x_var, lb))
+        (isinf(x_ub)) && (JuMP.set_upper_bound(x_var, ub))
+    end 
+    return
+end 
+
+"""
     _validate(x, partition)
 
 Variable bounds and partition consistency checker
@@ -175,7 +199,8 @@ function _validate(x::JuMP.VariableRef, partition::Vector{<:Real})
         error("partition upper bound and variable upper bound not equal")
     end
     (isinf(x_lb)) && (JuMP.set_lower_bound(x, lb))
-    return (isinf(x_ub)) && (JuMP.set_upper_bound(x, ub))
+    (isinf(x_ub)) && (JuMP.set_upper_bound(x, ub))
+    return
 end
 
 """
@@ -195,7 +220,8 @@ function _validate(
         )
     end
     _validate(x, x_partition)
-    return _validate(y, y_partition)
+    _validate(y, y_partition)
+    return
 end
 
 """
