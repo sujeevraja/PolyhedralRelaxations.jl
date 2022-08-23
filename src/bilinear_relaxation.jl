@@ -1,5 +1,5 @@
 """
-    function _build_mccormick_relaxation!(m, x, y, z)
+    _build_mccormick_relaxation!(m, x, y, z)
 
 McCormick relaxation of binlinear term 
 ```

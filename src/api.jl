@@ -7,7 +7,7 @@ Add MILP relaxation of `y=f(x)` to given JuMP model and return an object with
 new variables and constraints.
 
 # Mandatory Arguments
-- `m::Jump.Model`: model to which relaxation is to be added.
+- `m::JuMP.Model`: model to which relaxation is to be added.
 - `f::Function`: function or oracle for which a polyhedral relaxation is
     required, usually non-linear.
 - `x::Jump.VariableRef`: JuMP variable for domain of `f`.
@@ -152,23 +152,28 @@ The relaxations are presented in the manuscript: https://arxiv.org/abs/2001.0051
 """
 function construct_multilinear_relaxation!(
     m::JuMP.Model,
-    x::Vector{JuMP.VariableRef}
-    z::JuMP.VariableRef,
-    partitions::Dict{JuMP.VariableRef, Vector{<:Real}},
+    x::Vector{JuMP.VariableRef}z::JuMP.VariableRef,
+    partitions::Dict{JuMP.VariableRef,Vector{<:Real}},
     variable_pre_base_name::AbstractString = "",
 )::FormulationInfo
     _validate(x, partitions)
     lp = all([it -> length(it) for it in values(partitions)])
-    if lp && (length(x) == 2)
-        return _build_mccormick_relaxation!(m, x, y, z)
-    end
-    return _build_bilinear_milp_relaxation!(
+    (lp && (length(x) == 2)) &&
+        (return _build_mccormick_relaxation!(m, x..., z))
+    (lp) && (
+        return _build_multilinear_convex_hull_relaxation!(
+            m,
+            x,
+            z,
+            partitions,
+            variable_pre_base_name,
+        )
+    )
+    return _build_multilinear_milp_relaxation!(
         m,
         x,
-        y,
         z,
-        x_partition,
-        y_partition,
+        partitions,
         variable_pre_base_name,
     )
 end

@@ -1,7 +1,7 @@
 module PolyhedralRelaxations
 
 using DataStructures
-using JuMP
+import JuMP: @variable, @constraint, @objective
 
 import ForwardDiff
 
@@ -26,6 +26,7 @@ include("common.jl")
 include("univariate_lp_relaxation.jl")
 include("univariate_milp_relaxation.jl")
 include("bilinear_relaxation.jl")
+include("multilinear_relaxation.jl")
 include("api.jl")
 
 end
