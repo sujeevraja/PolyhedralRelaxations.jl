@@ -1,5 +1,6 @@
 export construct_univariate_relaxation!,
-    construct_bilinear_relaxation!, construct_multilinear_relaxation!
+    construct_bilinear_relaxation!, construct_multilinear_relaxation!, 
+    add_multilinear_linking_constraints!
 
 """
     construct_univariate_relaxation!(m,f,x,y,x_partition;f_dash=x->ForwardDiff.derivative(f,x),error_tolerance=NaN64,length_tolerance=1e-6,derivative_tolerance=1e-6,num_additional_partitions=0)
@@ -178,4 +179,12 @@ function construct_multilinear_relaxation!(
         partitions,
         variable_pre_base_name,
     )
+end
+
+function add_multilinear_linking_constraints!(
+    m::JuMP.Model, 
+    info::Dict{Tuple{JuMP.VariableRef},Any},
+    partitions::Dict{JuMP.VariableRef,Vector{T}} where {T<:Real}
+)
+
 end
