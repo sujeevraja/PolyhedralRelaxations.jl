@@ -15,6 +15,9 @@
         end
         set_optimizer(m, milp_optimizer)
         optimize!(m)
+        relaxation_obj = round(objective_value(m); digits=4)
+        println(" instance: m_10_3_0_100_1 - Global Optimum: $(gopt_value)")
+        println(" instance: m_10_3_0_100_1 - Root LP Relaxation: $(relaxation_obj)")
         @test objective_value(m) <= gopt_value
     end
 
@@ -36,6 +39,8 @@
         end
         set_optimizer(m, milp_optimizer)
         optimize!(m)
+        relaxation_obj = round(objective_value(m); digits=4)
+        println(" instance: m_10_3_0_100_1 - MILP Relaxation: $(relaxation_obj)")
         @test objective_value(m) <= gopt_value
     end
 end

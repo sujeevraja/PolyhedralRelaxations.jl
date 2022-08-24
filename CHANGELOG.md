@@ -2,6 +2,9 @@ PolyhedralRelaxations.jl Change Log
 =========================
 
 ### staged
+- Add multilinear LP and MILP (SOS-2) relaxations 
+- Add multilinear linking constraints given multiple terms 
+- Add non-uniform partition refinement schemes 
 
 ### v0.3.5 
 - Add compat entries for test dependencies

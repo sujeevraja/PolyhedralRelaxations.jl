@@ -1,22 +1,20 @@
 """
     The following instance is taken from mult3 test suite.
     The original data file ``m_10_3_0_100_1.bar``for this instance 
-    is available in the test/data/baron folder. The lower bounds
-    are randomized to obtain non-trivial objective values. The 
-    updated data file with solve log is also in the data folder. 
+    is available in the test/data/baron folder. 
+    BARON's solve log is also in the data folder. 
 """
 
 function create_multilinear_model(; num_discretizations = [2 for i in 1:10])
     m = Model()
     variables = Dict{Symbol,Any}()
 
-    lb = [0.1, 0.2, 0.1, 0.2, 0.1, 0.2, 0.1, 0.1, 0.2, 0.2]
     variables[:x] =
-        x = @variable(m, [i = 1:10], lower_bound = lb[i], upper_bound = 1.0)
+        x = @variable(m, [1:10], lower_bound = 0.0, upper_bound = 1.0)
     variables[:y] = y = @variable(m, [1:165])
     partitions = Dict(
         x[i] =>
-            range(lower_bound(x[i]), 1.0, length = num_discretizations[i]) |> collect for i in 1:10
+            range(0.0, 1.0, length = num_discretizations[i]) |> collect for i in 1:10
     )
 
     relax = [
@@ -298,6 +296,6 @@ function create_multilinear_model(; num_discretizations = [2 for i in 1:10])
         multilinear_terms = relax,
         partitions = partitions,
         variables = variables,
-        objective = -2.15721,
+        objective = -3.88510,
     )
 end

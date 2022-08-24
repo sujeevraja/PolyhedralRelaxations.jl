@@ -64,23 +64,26 @@
        threads        =       1
        problemisconvex=       F
 ===========================================================================
- Preprocessing found feasible solution with value 0.666660600000     
+ Preprocessing found feasible solution with value  0.00000000000     
  Doing local search
- Preprocessing found feasible solution with value -2.15721160000     
+ Preprocessing found feasible solution with value -3.66420000000     
  Solving bounding LP
  Starting multi-start local search
  Done with local search
 ===========================================================================
   Iteration    Open nodes         Time (s)    Lower bound      Upper bound
-          1             0             0.09    -2.15721         -2.15721    
+*         1             1             0.09    -3.90253         -3.88510    
+          1             0             0.09    -3.88510         -3.88510    
+
+ Calculating duals
 
                          *** Normal completion ***            
 
- Wall clock time:                     0.09
- Total CPU time used:                 0.09
+ Wall clock time:                     0.10
+ Total CPU time used:                 0.10
 
  Total no. of BaR iterations:       1
- Best solution found at node:      -1
+ Best solution found at node:       1
  Max. no. of nodes in memory:       1
  
  All done
