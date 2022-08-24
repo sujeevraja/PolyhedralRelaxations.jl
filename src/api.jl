@@ -1,7 +1,11 @@
-export construct_univariate_relaxation!, construct_bilinear_relaxation!
+export construct_univariate_relaxation!,
+    refine_partition!,
+    construct_bilinear_relaxation!,
+    construct_univariate_on_off_relaxation!
 
 """
-    construct_univariate_relaxation!(m,f,x,y,x_partition;f_dash=x->ForwardDiff.derivative(f,x),error_tolerance=NaN64,length_tolerance=1e-6,derivative_tolerance=1e-6,num_additional_partitions=0)
+    construct_univariate_relaxation!(m,f,x,y,x_partition;f_dash=x->ForwardDiff.derivative(f,x),error_tolerance=NaN64,length_tolerance=1e-6,derivative_tolerance=1e-6,num_additional_partitions=0,
+    constraint_pre_base_name="",variable_pre_base_name="",formulation_info=FormulationInfo())
 
 Add MILP relaxation of `y=f(x)` to given JuMP model and return an object with
 new variables and constraints.
@@ -36,6 +40,10 @@ new variables and constraints.
     relaxation with at most `n+m` partitions.
 - `variable_pre_base_name::AbstractString`: base_name that needs to be added to the auxiliary
     variables for meaningful LP files
+- `constraint_pre_base_name::AbstractString`: base_name that needs to be added to the constraints
+    in the relaxation.
+- `formulation_info::FormulationInfo` : `FormulationInfo` for another univariate function on the 
+    same variable that can be reused for the current relaxation. 
 
 Assume that:
 - `f` is a bounded function of 1 variable.
@@ -59,6 +67,8 @@ function construct_univariate_relaxation!(
     derivative_tolerance::Float64 = EPS,
     num_additional_partitions::Int64 = 0,
     variable_pre_base_name::AbstractString = "",
+    constraint_pre_base_name::AbstractString = "",
+    formulation_info::FormulationInfo = FormulationInfo()
 )::FormulationInfo
     univariate_function_data = UnivariateFunctionData(
         f,
@@ -68,7 +78,7 @@ function construct_univariate_relaxation!(
         length_tolerance,
         derivative_tolerance,
         num_additional_partitions,
-        length(x_partition),
+        length(x_partition)
     )
     _validate(univariate_function_data)
     _validate(x, x_partition)
@@ -76,7 +86,70 @@ function construct_univariate_relaxation!(
     func =
         milp ? _build_univariate_milp_relaxation! :
         _build_univariate_lp_relaxation!
-    return func(m, x, y, univariate_function_data, variable_pre_base_name)
+    return func(
+        m,
+        x,
+        y,
+        univariate_function_data,
+        variable_pre_base_name,
+        constraint_pre_base_name,
+        formulation_info
+    )
+end
+
+"""
+    refine_partition!(f, partition;f_dash=x->ForwardDiff.derivative(f,x),error_tolerance=NaN64,length_tolerance=1e-6,derivative_tolerance=1e-6,num_additional_partitions=0)
+
+Refine the partition (in-place) using bisection scheme for relaxing the function `y=f(x)`. 
+
+# Mandatory Arguments
+- `f::Function`: function or oracle for which a polyhedral relaxation is
+    required, usually non-linear.
+- `partition::Vector{<:Real}`: partition of the domain of `f`.
+
+# Optional Arguments
+- `f_dash::Function`: function or oracle for derivative of `f`, defaults to 
+    the `derivative` function from the `ForwardDiff` package.
+- ` error_tolerance::Float64`: Maximum allowed vertical distance between over
+    and under estimators of `f`, defaults to NaN64.
+- `length_tolerance::Float64`: maximum length of a sub-interval in a partition,
+    defaults to ``1 \\times 10^{-6}``.
+- `derivative_tolerance::Float64`: minimum absolute difference between
+    derivaties at successive elements of a partition for them to be considered
+    different, defaults to ``1 \\times 10^{-6}``. If the difference of a partition sub-interval
+    is smaller than this value, that sub-interval will be refined.
+- `num_additional_partitions::Int64`: budget on number of sub-intervals in
+    partition, defaults to 0. Note that if the number of partitions is `n` and
+    the number of additional partitions is `m`, then the function will return a
+    relaxation with at most `n+m` partitions.
+
+Assume that:
+- `f` is a bounded function of 1 variable.
+- `partition` is a partition of the domain of `f` such that `f` is either
+    convex or concave each sub-interval of the partition.
+- `f_dash` is not equal at two consecutive elements of `x_partition`.
+"""
+function refine_partition!(
+    f::Function,
+    partition::Vector{<:Real};
+    f_dash::Function = x -> ForwardDiff.derivative(f, x),
+    error_tolerance::Float64 = NaN64,
+    length_tolerance::Float64 = EPS,
+    derivative_tolerance::Float64 = EPS,
+    num_additional_partitions::Int64 = 0,
+)
+    univariate_function_data = UnivariateFunctionData(
+        f,
+        f_dash,
+        partition,
+        error_tolerance,
+        length_tolerance,
+        derivative_tolerance,
+        num_additional_partitions,
+        length(partition)
+    )
+    _validate(univariate_function_data)
+    return _refine_partition!(univariate_function_data)
 end
 
 """
@@ -96,6 +169,10 @@ new variables and constraints.
 # Optional Arguments
 - `variable_pre_base_name::AbstractString`: base_name that needs to be added to the auxiliary
     variables for meaningful LP files
+- `constraint_pre_base_name::AbstractString`: base_name that needs to be added to the constraints
+    in the relaxation
+- `formulation_info::FormulationInfo` : `FormulationInfo` for another bilinear function where the 
+    variables that is partitioned has to be same on both; to enable partition variable reuse
 
 
 This function builds an incremental formulation, and currently supports more than 
@@ -114,10 +191,18 @@ function construct_bilinear_relaxation!(
     x_partition::Vector{<:Real},
     y_partition::Vector{<:Real};
     variable_pre_base_name::AbstractString = "",
+    constraint_pre_base_name::AbstractString = "",
+    formulation_info::FormulationInfo = FormulationInfo()
 )::FormulationInfo
     _validate(x, y, x_partition, y_partition)
     if length(x_partition) == 2 && length(y_partition) == 2
-        return _build_mccormick_relaxation!(m, x, y, z)
+        return _build_mccormick_relaxation!(
+            m,
+            x,
+            y,
+            z,
+            constraint_pre_base_name
+        )
     end
     return _build_bilinear_milp_relaxation!(
         m,
@@ -127,5 +212,96 @@ function construct_bilinear_relaxation!(
         x_partition,
         y_partition,
         variable_pre_base_name,
+        constraint_pre_base_name,
+        formulation_info
+    )
+end
+
+"""
+    construct_univariate_on_off_relaxation!(m,x,y,z,x_partition;
+    active_when_z_is_one=true,variable_pre_base_name="",constraint_pre_base_name="")
+
+Add a polyhedral relaxtion for `y = f(x)` when `z = 1` (`z = 0`) and `y = 0` when `z = 0` (`z = 1`).
+The choice of when the constraint should be active can be made using the boolean `active_when_z_is_one`.
+When `active_when_z_is_one` is set to `false`, `y = f(x)` when `z = 0` and `y = 0` when `z = 1`. 
+The function returns an object with new variables and constraints.
+
+# Mandatory Arguments
+- `m::Jump.Model`: model to which relaxation is to be added.
+- `f::Function`: function or oracle for which a polyhedral relaxation is
+    required, usually non-linear.
+- `x::Jump.VariableRef`: JuMP variable for domain of `f`.
+- `y::JuMP.VariableRef`: JuMP variable for evaluation of `f`.
+- `z::JuMP.VariableRef`: on-off JuMP variable 
+- `x_partition::Vector{<:Real}`: partition of the domain of `f`.
+    
+# Optional Arguments
+- `f_dash::Function`: function or oracle for derivative of `f`, defaults to 
+    the `derivative` function from the `ForwardDiff` package.
+- ` error_tolerance::Float64`: Maximum allowed vertical distance between over
+    and under estimators of `f`, defaults to NaN64.
+- `length_tolerance::Float64`: maximum length of a sub-interval in a partition,
+    defaults to ``1 \\times 10^{-6}``.
+- `derivative_tolerance::Float64`: minimum absolute difference between
+    derivaties at successive elements of a partition for them to be considered
+    different, defaults to ``1 \\times 10^{-6}``. If the difference of a partition sub-interval
+    is smaller than this value, that sub-interval will be refined.
+- `num_additional_partitions::Int64`: budget on number of sub-intervals in
+    partition, defaults to 0. Note that if the number of partitions is `n` and
+    the number of additional partitions is `m`, then the function will return a
+    relaxation with at most `n+m` partitions.
+- `active_when_z_is_one::Bool`: `y = f(x)` when `z = 1` (`z = 0`) 
+    and `y = 0` when `z = 0` (`z = 1`) if bool is set to true (false)
+- `variable_pre_base_name::AbstractString`: base_name that needs to be added to the auxiliary
+    variables for meaningful LP files
+- `constraint_pre_base_name::AbstractString`: base_name that needs to be added to the constraints
+    in the relaxation.
+
+Assume that:
+- `f` is a bounded function of 1 variable.
+- `x_partition` is a partition of the domain of `f` such that `f` is either
+    convex or concave each sub-interval of the partition.
+- `f_dash` is not equal at two consecutive elements of `x_partition`.
+    
+"""
+function construct_univariate_on_off_relaxation!(
+    m::JuMP.Model,
+    f::Function,
+    x::JuMP.VariableRef,
+    y::JuMP.VariableRef,
+    z::JuMP.VariableRef,
+    x_partition::Vector{<:Real};
+    f_dash::Function = x -> ForwardDiff.derivative(f, x),
+    error_tolerance::Float64 = NaN64,
+    length_tolerance::Float64 = EPS,
+    derivative_tolerance::Float64 = EPS,
+    num_additional_partitions::Int64 = 0,
+    active_when_z_is_one::Bool = true,
+    variable_pre_base_name::AbstractString = "",
+    constraint_pre_base_name::AbstractString = "",
+)::FormulationInfo
+    univariate_function_data = UnivariateFunctionData(
+        f,
+        f_dash,
+        x_partition,
+        error_tolerance,
+        length_tolerance,
+        derivative_tolerance,
+        num_additional_partitions,
+        length(x_partition),
+    )
+    _validate(univariate_function_data)
+    _validate(x, x_partition)
+    _validate(z)
+    _refine_partition!(univariate_function_data)
+    return _build_univariate_on_off_relaxation!(
+        m,
+        x,
+        y,
+        z,
+        univariate_function_data,
+        active_when_z_is_one,
+        variable_pre_base_name,
+        constraint_pre_base_name,
     )
 end

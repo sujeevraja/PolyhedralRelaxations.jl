@@ -160,6 +160,29 @@ function _variable_domain(var::JuMP.VariableRef)
 end
 
 """
+    _validate(x)
+
+Binary variable bounds checker  
+"""
+function _validate(x::JuMP.VariableRef)
+    x_lb, x_ub = _variable_domain(x)
+    if isfinite(x_lb) && x_lb != 0.0
+        Memento.error(
+            _LOGGER,
+            "on-off variable's lower bound is non-zero, set it to zero",
+        )
+    end
+    if isfinite(x_ub) && x_ub != 1.0
+        Memento.error(
+            _LOGGER,
+            "on-off variable's upper bound is not 1, set it to 1",
+        )
+    end
+    (isinf(x_lb)) && (JuMP.set_lower_bound(x, 0.0))
+    return (isinf(x_ub)) && (JuMP.set_upper_bound(x, 1.0))
+end
+
+"""
     _validate(x, partition)
 
 Variable bounds and partition consistency checker
@@ -205,7 +228,7 @@ Input data point validator
 """
 function _validate_point(
     univariate_function_data::UnivariateFunctionData,
-    x::Float64,
+    x::Real,
 )
     if !isfinite(x) || abs(x) >= INF
         error("all partition points must be finite")
@@ -402,7 +425,7 @@ end
 Get error bound of a function with derivative `derivative` in the closed
 interval `[lb,ub]`.
 """
-function _get_error_bound(derivative::Function, lb::Float64, ub::Float64)
+function _get_error_bound(derivative::Function, lb::Real, ub::Real)
     return (ub - lb) * abs(derivative(ub) - derivative(lb)) / 4.0
 end
 

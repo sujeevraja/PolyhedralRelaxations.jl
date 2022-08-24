@@ -14,22 +14,48 @@ function _build_mccormick_relaxation!(
     x::JuMP.VariableRef,
     y::JuMP.VariableRef,
     z::JuMP.VariableRef,
+    constraint_pre_base_name::AbstractString,
 )::FormulationInfo
     x_lb, x_ub = _variable_domain(x)
     y_lb, y_ub = _variable_domain(y)
 
     formulation_info = FormulationInfo()
 
-    formulation_info.constraints[:lb_1] =
-        @constraint(m, z >= x_lb * y + y_lb * x - x_lb * y_lb)
-    formulation_info.constraints[:lb_2] =
-        @constraint(m, z >= x_ub * y + y_ub * x - x_ub * y_ub)
-    formulation_info.constraints[:ub_1] =
-        @constraint(m, z <= x_lb * y + y_ub * x - x_lb * y_ub)
-    formulation_info.constraints[:ub_2] =
-        @constraint(m, z <= x_ub * y + y_lb * x - x_ub * y_lb)
+    formulation_info.constraints[:lb_1] = @constraint(
+        m,
+        z >= x_lb * y + y_lb * x - x_lb * y_lb,
+        base_name = constraint_pre_base_name * "lb_1"
+    )
+    formulation_info.constraints[:lb_2] = @constraint(
+        m,
+        z >= x_ub * y + y_ub * x - x_ub * y_ub,
+        base_name = constraint_pre_base_name * "lb_2"
+    )
+    formulation_info.constraints[:ub_1] = @constraint(
+        m,
+        z <= x_lb * y + y_ub * x - x_lb * y_ub,
+        base_name = constraint_pre_base_name * "ub_1"
+    )
+    formulation_info.constraints[:ub_2] = @constraint(
+        m,
+        z <= x_ub * y + y_lb * x - x_ub * y_lb,
+        base_name = constraint_pre_base_name * "ub_2"
+    )
 
     return formulation_info
+end
+
+"""
+    _check_partition_variable_consistency(formulation_info, num_vars) 
+
+Checks consistency between provided variables and partition sizes 
+"""
+function _check_partition_variable_consistency(formulation_info::FormulationInfo, num_vars)::Bool
+    var = formulation_info.variables
+    if haskey(var, :z_bin)
+        (length(var[:z_bin]) == num_vars) && (return true)
+    end
+    return false
 end
 
 """
@@ -44,12 +70,18 @@ function _build_bilinear_milp_relaxation!(
     z::JuMP.VariableRef,
     x_partition::Vector{<:Real},
     y_partition::Vector{<:Real},
-    pre_base_name::AbstractString,
+    variable_pre_base_name::AbstractString,
+    constraint_pre_base_name::AbstractString,
+    reuse::FormulationInfo
 )::FormulationInfo
     origin_vs, non_origin_vs =
         _collect_bilinear_vertices(x_partition, y_partition)
     formulation_info = FormulationInfo()
     num_vars = max(length(x_partition), length(y_partition)) - 1
+
+    reuse_variables = reuse.variables
+
+    is_consistent = _check_partition_variable_consistency(reuse, num_vars)
 
     # add variables
     delta_1 =
@@ -58,7 +90,7 @@ function _build_bilinear_milp_relaxation!(
             [1:num_vars],
             lower_bound = 0.0,
             upper_bound = 1.0,
-            base_name = pre_base_name * "delta_1"
+            base_name = variable_pre_base_name * "delta_1"
         )
     delta_2 =
         formulation_info.variables[:delta_2] = @variable(
@@ -66,7 +98,7 @@ function _build_bilinear_milp_relaxation!(
             [1:num_vars],
             lower_bound = 0.0,
             upper_bound = 1.0,
-            base_name = pre_base_name * "delta_2"
+            base_name = variable_pre_base_name * "delta_2"
         )
     delta_3 =
         formulation_info.variables[:delta_3] = @variable(
@@ -74,15 +106,17 @@ function _build_bilinear_milp_relaxation!(
             [1:num_vars],
             lower_bound = 0.0,
             upper_bound = 1.0,
-            base_name = pre_base_name * "delta_3"
+            base_name = variable_pre_base_name * "delta_3"
         )
     z_bin =
-        formulation_info.variables[:z_bin] = @variable(
-            m,
-            [1:num_vars],
-            binary = true,
-            base_name = pre_base_name * "z"
+        (is_consistent) ? reuse_variables[:z_bin] :
+        @variable(
+                m,
+                [1:num_vars],
+                binary = true,
+                base_name = variable_pre_base_name * "z"
         )
+    formulation_info.variables[:z_bin] = z_bin
 
     # add x constraints
     formulation_info.constraints[:x] = @constraint(
@@ -93,7 +127,8 @@ function _build_bilinear_milp_relaxation!(
             delta_2[i] * (non_origin_vs[i+1][1] - origin_vs[i][1]) +
             delta_3[i] * (origin_vs[i+1][1] - origin_vs[i][1]) for
             i in 1:num_vars
-        )
+        ),
+        base_name = constraint_pre_base_name * "x"
     )
 
     # add y constraints
@@ -105,7 +140,8 @@ function _build_bilinear_milp_relaxation!(
             delta_2[i] * (non_origin_vs[i+1][2] - origin_vs[i][2]) +
             delta_3[i] * (origin_vs[i+1][2] - origin_vs[i][2]) for
             i in 1:num_vars
-        )
+        ),
+        base_name = constraint_pre_base_name * "y"
     )
 
     # add z constraints
@@ -117,21 +153,30 @@ function _build_bilinear_milp_relaxation!(
             delta_2[i] * (non_origin_vs[i+1][3] - origin_vs[i][3]) +
             delta_3[i] * (origin_vs[i+1][3] - origin_vs[i][3]) for
             i in 1:num_vars
-        )
+        ),
+        base_name = constraint_pre_base_name * "z_bin"
     )
 
     # add first delta constraint
-    formulation_info.constraints[:first_delta] =
-        @constraint(m, delta_1[1] + delta_2[1] + delta_3[1] <= 1)
+    formulation_info.constraints[:first_delta] = @constraint(
+        m,
+        delta_1[1] + delta_2[1] + delta_3[1] <= 1,
+        base_name = constraint_pre_base_name * "first_delta"
+    )
 
     # add linking constraints between delta_1, delta_2 and z
     formulation_info.constraints[:below_z] = @constraint(
         m,
         [i = 2:num_vars],
-        delta_1[i] + delta_2[i] + delta_3[i] <= z_bin[i-1]
+        delta_1[i] + delta_2[i] + delta_3[i] <= z_bin[i-1],
+        base_name = constraint_pre_base_name * "below_z"
     )
-    formulation_info.constraints[:above_z] =
-        @constraint(m, [i = 2:num_vars], z_bin[i-1] <= delta_3[i-1])
+    formulation_info.constraints[:above_z] = @constraint(
+        m,
+        [i = 2:num_vars],
+        z_bin[i-1] <= delta_3[i-1],
+        base_name = constraint_pre_base_name * "above_z"
+    )
 
     return formulation_info
 end
