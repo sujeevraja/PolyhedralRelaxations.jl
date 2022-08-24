@@ -32,7 +32,7 @@ function _build_univariate_lp_relaxation!(
 
     # add variables 
     lambda =
-        formulation_info.variables[:lambda] = @variable(
+        formulation_info.variables[:lambda] = JuMP.@variable(
             m,
             [1:num_vars],
             lower_bound = 0.0,
@@ -42,11 +42,16 @@ function _build_univariate_lp_relaxation!(
     formulation_info.variables[:lambda] = lambda
 
     # add constraints 
-    formulation_info.constraints[:sum_lambda] = @constraint(m, sum(lambda) == 1)
-    formulation_info.constraints[:x] =
-        @constraint(m, x == sum(lambda[i] * vertices[i][1] for i in 1:num_vars))
-    formulation_info.constraints[:y] =
-        @constraint(m, y == sum(lambda[i] * vertices[i][2] for i in 1:num_vars))
+    formulation_info.constraints[:sum_lambda] =
+        JuMP.@constraint(m, sum(lambda) == 1)
+    formulation_info.constraints[:x] = JuMP.@constraint(
+        m,
+        x == sum(lambda[i] * vertices[i][1] for i in 1:num_vars)
+    )
+    formulation_info.constraints[:y] = JuMP.@constraint(
+        m,
+        y == sum(lambda[i] * vertices[i][2] for i in 1:num_vars)
+    )
 
     return formulation_info
 end

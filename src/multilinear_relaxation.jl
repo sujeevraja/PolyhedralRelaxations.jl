@@ -7,7 +7,7 @@ function _build_multilinear_convex_hull_relaxation!(
     m::JuMP.Model,
     x::Vector{JuMP.VariableRef},
     z::JuMP.VariableRef,
-    partitions::Dict{JuMP.VariableRef,Vector{<:Real}},
+    partitions::Dict{JuMP.VariableRef,Vector{T}} where {T<:Real},
     pre_base_name::AbstractString,
 )::FormulationInfo
     formulation_info = FormulationInfo()
@@ -29,7 +29,7 @@ function _build_multilinear_convex_hull_relaxation!(
     end
 
     lambda =
-        formulation_info.variables[:lambda] = @variable(
+        formulation_info.variables[:lambda] = JuMP.@variable(
             m,
             [i in 1:num_lambda],
             lower_bound = 0.0,
@@ -38,8 +38,8 @@ function _build_multilinear_convex_hull_relaxation!(
         )
 
     # convex hull constraints
-    @constraint(m, sum(lambda) == 1)
-    @constraint(
+    JuMP.@constraint(m, sum(lambda) == 1)
+    JuMP.@constraint(
         m,
         [x..., z] .==
         sum([lambda[i] * extreme_points[i] for i in 1:num_lambda])
@@ -63,7 +63,7 @@ function _get_slice_indices(
     slice = [(i == var_id) ? slice_id : Base.Colon() for i in 1:dim]
     return cartesian_indices[slice...] |>
            vec |>
-           x -> LinearIndices(shape)[Cartesian_Index.(x)]
+           x -> LinearIndices(shape)[CartesianIndex.(x)]
 end
 
 """
@@ -71,11 +71,11 @@ end
 
 Build a piecewise polyhedral relaxation for  for ``z = prod(x)`` given partition data. 
 """
-function _build_multilinear_convex_hull_relaxation!(
+function _build_multilinear_sos2_relaxation!(
     m::JuMP.Model,
     x::Vector{JuMP.VariableRef},
     z::JuMP.VariableRef,
-    partitions::Dict{JuMP.VariableRef,Vector{<:Real}},
+    partitions::Dict{JuMP.VariableRef,Vector{T}} where {T<:Real},
     pre_base_name::AbstractString,
 )::FormulationInfo
     formulation_info = FormulationInfo()
@@ -95,7 +95,7 @@ function _build_multilinear_convex_hull_relaxation!(
     end
 
     lambda =
-        formulation_info.variables[:lambda] = @variable(
+        formulation_info.variables[:lambda] = JuMP.@variable(
             m,
             [i in 1:num_lambda],
             lower_bound = 0.0,
@@ -105,34 +105,43 @@ function _build_multilinear_convex_hull_relaxation!(
 
     bin = formulation_info.variables[:bin] = Dict{JuMP.VariableRef,Any}()
     for var in x
-        formulation_info.variables[:bin][var] =
-            @variable(m, [j in 1:(length(partitions[var])-1)], binary = true)
+        formulation_info.variables[:bin][var] = JuMP.@variable(
+            m,
+            [j in 1:(length(partitions[var])-1)],
+            binary = true
+        )
     end
 
     # multiplier and binary summation constraints
-    @constraint(m, sum(lambda) == 1)
+    JuMP.@constraint(m, sum(lambda) == 1)
     for var in x
-        @constraint(m, sum(bin[var]) == 1)
+        JuMP.@constraint(m, sum(bin[var]) == 1)
     end
 
     # convex combination constraints
-    @constraint(
+    JuMP.@constraint(
         m,
         [x..., z] .==
         sum([lambda[i] * extreme_points[i] for i in 1:num_lambda])
     )
 
     # SOS-2 constraints 
-    for (variable_id, var) in eachindex(x)
+    for (variable_id, var) in enumerate(x)
         for slice_id in index_ranges[variable_id]
             sliced_indices =
                 _get_slice_indices(variable_id, slice_id, cartesian_indices)
             if slice_id == 1
-                @constraint(m, sum(lambda[sliced_indices]) <= first(bin[var]))
+                JuMP.@constraint(
+                    m,
+                    sum(lambda[sliced_indices]) <= first(bin[var])
+                )
             elseif slice_id == length(index_ranges[variable_id])
-                @constraint(m, sum(lambda[sliced_indices]) <= last(bin[var]))
+                JuMP.@constraint(
+                    m,
+                    sum(lambda[sliced_indices]) <= last(bin[var])
+                )
             else
-                @constraint(
+                JuMP.@constraint(
                     m,
                     sum(lambda[sliced_indices]) <=
                     sum(bin[var][slice_id-1:slice_id])

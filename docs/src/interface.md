@@ -15,14 +15,14 @@ f, partition = x -> x^3, collect(-1.0:0.25:1.0)
 
 # create the MILP relaxation of the univariate function.
 milp = Model(milp_optimizer)
-@variable(milp, -1.0 <= x <= 1.0)
-@variable(milp, y)
+JuMP.@variable(milp, -1.0 <= x <= 1.0)
+JuMP.@variable(milp, y)
 formulation_info_milp = construct_univariate_relaxation!(milp, f, x, y, partition, true)
 
 # create the LP relaxation of the univariate function.
 lp = Model(milp_optimizer)
-@variable(lp, -1.0 <= x_lp <= 1.0)
-@variable(lp, y_lp)
+JuMP.@variable(lp, -1.0 <= x_lp <= 1.0)
+JuMP.@variable(lp, y_lp)
 formulation_info_lp = construct_univariate_relaxation!(milp, f, x_lp, y_lp, partition, false)
 ```
 

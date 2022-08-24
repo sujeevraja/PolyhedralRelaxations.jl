@@ -167,7 +167,7 @@ Variable bounds and partition consistency checker
 """
 function _validate(
     x::Vector{JuMP.VariableRef},
-    partitions::Dict{JuMP.VariableRef,Vector{<:Real}},
+    partitions::Dict{JuMP.VariableRef,Vector{T}} where {T<:Real},
 )
     for x_var in x
         x_lb, x_ub = _variable_domain(x_var)

@@ -1,0 +1,175 @@
+===========================================================================
+ BARON version 22.7.23. Built: OSX-64 Sat Jul 23 23:35:46 EDT 2022
+
+ BARON is a product of The Optimization Firm.
+ For information on BARON, see https://minlp.com/about-baron
+
+ If you use this software, please cite publications from
+ https://minlp.com/baron-publications, such as: 
+
+ Khajavirad, A. and N. V. Sahinidis,
+ A hybrid LP/NLP paradigm for global optimization relaxations,
+ Mathematical Programming Computation, 10, 383-421, 2018.
+===========================================================================
+ This BARON run may utilize the following subsolver(s)
+ For LP/MIP/QP: CLP/CBC                                         
+ For NLP: IPOPT, FILTERSQP
+===========================================================================
+    The options used in solving the problem are as follows:
+       maxtime        =  0.5000E+03
+       maxiter        =      -1
+       numsol         =       1
+       firstfeas      =      -1
+       firstloc       =       F
+       cutoff         =  0.1000E+52
+       target         = -0.1000E+52
+       epsa           =  0.1000E-05
+       epsr           =  0.1000E-05
+       relgaptype     =       1
+       deltaterm      =       0
+       deltaa         =  0.1000E+52
+       deltar         =  0.1000E+01
+       deltat         = -0.1000E+03
+       boxtol         =  0.1000E-07
+       isoltol        =  0.1000E-03
+       absconfeastol  =  0.1000E-04
+       relconfeastol  =  0.0000E+00
+       absintfeastol  =  0.1000E-04
+       relintfeastol  =  0.0000E+00
+       results        =       1
+       summary        =       1
+       times          =       1
+       prtimefreq     =  0.3000E+02
+       prfreq         = 1000000
+       prlevel        =       1
+       lpsol          =       8
+       nlpsol         =      -1
+       allowminos     =       F
+       allowsnopt     =       F
+       allowexternal  =       F
+       allowipopt     =       T
+       allowfiltersd  =       F
+       allowfiltersqp =       T
+       dolocal        =       1
+       numloc         =      20
+       locres         =       0
+       pdo            =      -2
+       brvarstra      =       0
+       brptstra       =       0
+       nodesel        =       0
+       compiis        =       0
+       iisint         =       1
+       iisorder       =      -1
+       images         =      -1
+       threads        =       1
+       problemisconvex=       F
+===========================================================================
+ >>> Preprocessing found feasible solution
+ >>> Objective value is:          0.66666059999999982554897     
+ >>> Corresponding solution vector is:
+ >>> Variable no.              Value
+ >>>       1            0.10000000000000000555112     
+ >>>       2            0.20000000000000001110223     
+ >>>       3            0.10000000000000000555112     
+ >>>       4            0.20000000000000001110223     
+ >>>       5            0.10000000000000000555112     
+ >>>       6            0.20000000000000001110223     
+ >>>       7            0.10000000000000000555112     
+ >>>       8            0.10000000000000000555112     
+ >>>       9            0.20000000000000001110223     
+ >>>      10            0.20000000000000001110223     
+ 
+ >>> No dual information is available
+ >>> Variable no.              Marginal
+ >>>       1             0.0000000000000000000000     
+ >>>       2             0.0000000000000000000000     
+ >>>       3             0.0000000000000000000000     
+ >>>       4             0.0000000000000000000000     
+ >>>       5             0.0000000000000000000000     
+ >>>       6             0.0000000000000000000000     
+ >>>       7             0.0000000000000000000000     
+ >>>       8             0.0000000000000000000000     
+ >>>       9             0.0000000000000000000000     
+ >>>      10             0.0000000000000000000000     
+ 
+ Doing local search
+ >>> Preprocessing found feasible solution
+ >>> Objective value is:          -2.1572116000000005620052     
+ >>> Corresponding solution vector is:
+ >>> Variable no.              Value
+ >>>       1             1.0000000000000000000000     
+ >>>       2            0.20000000000000001110223     
+ >>>       3            0.10000000000000000555112     
+ >>>       4            0.20000000000000001110223     
+ >>>       5             1.0000000000000000000000     
+ >>>       6             1.0000000000000000000000     
+ >>>       7             1.0000000000000000000000     
+ >>>       8            0.10000000000000000555112     
+ >>>       9             1.0000000000000000000000     
+ >>>      10            0.20000000000000001110223     
+ 
+ >>> Corresponding dual solution vector is:
+ >>> Variable no.              Marginal
+ >>>       1            -.32076600000000021761792     
+ >>>       2             4.9522089999999998610747     
+ >>>       3             1.6633039999161969291208     
+ >>>       4             1.4504829999880111124355     
+ >>>       5            -2.1986500001614630583902     
+ >>>       6            -1.8310459999450725554482     
+ >>>       7            -2.7162080003108530767975     
+ >>>       8            0.98693999983964597610964     
+ >>>       9            -2.4813260004232864375240     
+ >>>      10             1.1821020002486959388222     
+ 
+ Solving bounding LP
+ Starting multi-start local search
+ Done with local search
+===========================================================================
+
+
+                         *** Normal completion ***            
+
+
+ >>> Objective value is:          -2.1572116000000005620052     
+ >>> Corresponding solution vector is:
+ >>> Variable no.              Value
+ >>>       1             1.0000000000000000000000     
+ >>>       2            0.20000000000000001110223     
+ >>>       3            0.10000000000000000555112     
+ >>>       4            0.20000000000000001110223     
+ >>>       5             1.0000000000000000000000     
+ >>>       6             1.0000000000000000000000     
+ >>>       7             1.0000000000000000000000     
+ >>>       8            0.10000000000000000555112     
+ >>>       9             1.0000000000000000000000     
+ >>>      10            0.20000000000000001110223     
+ 
+ >>> Corresponding dual solution vector is:
+ >>> Variable no.              Marginal
+ >>>       1            -.32076600000000021761792     
+ >>>       2             4.9522089999999998610747     
+ >>>       3             1.6633039999161969291208     
+ >>>       4             1.4504829999880111124355     
+ >>>       5            -2.1986500001614630583902     
+ >>>       6            -1.8310459999450725554482     
+ >>>       7            -2.7162080003108530767975     
+ >>>       8            0.98693999983964597610964     
+ >>>       9            -2.4813260004232864375240     
+ >>>      10             1.1821020002486959388222     
+ 
+
+The best solution found is:
+
+  variable		xlo			xbest			xup
+  x1			0.1			1			1
+  x2			0.2			0.20000000000000001110223			1
+  x3			0.1			0.10000000000000000555112			1
+  x4			0.2			0.20000000000000001110223			1
+  x5			0.1			1			1
+  x6			0.2			1			1
+  x7			0.1			1			1
+  x8			0.1			0.10000000000000000555112			1
+  x9			0.2			1			1
+  x10			0.2			0.20000000000000001110223			1
+
+The above solution has an objective value of: -2.1572116000000005620052     

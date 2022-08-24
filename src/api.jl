@@ -1,4 +1,5 @@
-export construct_univariate_relaxation!, construct_bilinear_relaxation!
+export construct_univariate_relaxation!,
+    construct_bilinear_relaxation!, construct_multilinear_relaxation!
 
 """
     construct_univariate_relaxation!(m,f,x,y,x_partition;f_dash=x->ForwardDiff.derivative(f,x),error_tolerance=NaN64,length_tolerance=1e-6,derivative_tolerance=1e-6,num_additional_partitions=0)
@@ -10,7 +11,7 @@ new variables and constraints.
 - `m::JuMP.Model`: model to which relaxation is to be added.
 - `f::Function`: function or oracle for which a polyhedral relaxation is
     required, usually non-linear.
-- `x::Jump.VariableRef`: JuMP variable for domain of `f`.
+- `x::JuMP.VariableRef`: JuMP variable for domain of `f`.
 - `y::JuMP.VariableRef`: JuMP variable for evaluation of `f`.
 - `x_partition::Vector{<:Real}`: partition of the domain of `f`.
 - `milp::Bool`: build MILP relaxation if true, LP relaxation otherwise. Note
@@ -152,12 +153,13 @@ The relaxations are presented in the manuscript: https://arxiv.org/abs/2001.0051
 """
 function construct_multilinear_relaxation!(
     m::JuMP.Model,
-    x::Vector{JuMP.VariableRef}z::JuMP.VariableRef,
-    partitions::Dict{JuMP.VariableRef,Vector{<:Real}},
+    x::Vector{JuMP.VariableRef},
+    z::JuMP.VariableRef,
+    partitions::Dict{JuMP.VariableRef,Vector{T}} where {T<:Real},
     variable_pre_base_name::AbstractString = "",
 )::FormulationInfo
     _validate(x, partitions)
-    lp = all([it -> length(it) for it in values(partitions)])
+    lp = all([length(it) == 2 for it in values(partitions)])
     (lp && (length(x) == 2)) &&
         (return _build_mccormick_relaxation!(m, x..., z))
     (lp) && (
@@ -169,7 +171,7 @@ function construct_multilinear_relaxation!(
             variable_pre_base_name,
         )
     )
-    return _build_multilinear_milp_relaxation!(
+    return _build_multilinear_sos2_relaxation!(
         m,
         x,
         z,

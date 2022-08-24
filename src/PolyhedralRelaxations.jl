@@ -1,7 +1,7 @@
 module PolyhedralRelaxations
 
 using DataStructures
-import JuMP: @variable, @constraint, @objective
+import JuMP
 
 import ForwardDiff
 
