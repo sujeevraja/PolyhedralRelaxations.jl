@@ -187,10 +187,13 @@ function add_multilinear_linking_constraints!(
     info::Vector{FormulationInfo},
     partitions::Dict{JuMP.VariableRef,Vector{T}} where {T<:Real};
     max_degree_limit::Union{Nothing,T} where {T<:Int64} = nothing,
+    linking_info::Dict = Dict()
 )::FormulationInfo
-    is_needed = check_if_linking_constraints_are_needed(info, max_degree_limit)
-    (~is_needed.needed) && (return FormulationInfo())
-
-    linking_info = is_needed.linking_info
-    return FormulationInfo()
+    if isempty(linking_info)
+        is_needed = check_if_linking_constraints_are_needed(info, max_degree_limit)
+        (~is_needed.needed) && (return FormulationInfo())
+        linking_info = is_needed.linking_info
+    end 
+    
+    return _add_multilinear_linking_constraints!(m, info, partitions, linking_info)
 end

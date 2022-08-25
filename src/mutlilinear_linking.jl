@@ -31,3 +31,13 @@ function _check_if_linking_constraints_are_needed(
     (isempty(linking_info)) && (return (linking_info = nothing, needed = false))
     return (linking_info = linking_info, needed = true)
 end
+
+function _add_multilinear_linking_constraints!(
+    m::JuMP.Model,
+    info::Vector{FormulationInfo},
+    partitions::Dict{JuMP.VariableRef,Vector{T}} where {T<:Real};
+    linking_info::Dict
+)::FormulationInfo 
+
+    return FormulationInfo()
+end 

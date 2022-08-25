@@ -56,15 +56,17 @@
         y = instance.variables[:y]
         partitions = instance.partitions
         multilinear_terms = instance.multilinear_terms
-        linking_info = []
+        info = []
         gopt_value = instance.objective
         for term in multilinear_terms
             z = first(term)
             vars = last(term)
             formulation_info =
                 construct_multilinear_relaxation!(m, vars, z, partitions)
-            push!(linking_info, formulation_info)
+            push!(info, formulation_info)
         end
+        add_multilinear_linking_constraints!(m, info, partitions, linking_info = Dict())
+        @test !isempty(linking_info)
         set_optimizer(m, milp_optimizer)
         optimize!(m)
         relaxation_obj = round(objective_value(m); digits = 4)
