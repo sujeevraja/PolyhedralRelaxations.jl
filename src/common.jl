@@ -11,12 +11,12 @@ references and the other for constraint references.
 struct FormulationInfo
     variables::Dict{Symbol,Any}
     constraints::Dict{Symbol,Any}
-    indices::Dict{Symbol,Any}
+    indices::Dict{Any,Any}
 end
 
 "Empty contructor for struct `FormulationInfo`"
 FormulationInfo()::FormulationInfo =
-    FormulationInfo(Dict{Symbol,Any}(), Dict{Symbol,Any}(), Dict{Symbol,Any}())
+    FormulationInfo(Dict{Symbol,Any}(), Dict{Symbol,Any}(), Dict{Any,Any}())
 
 """
 The struct `UnivariateFunctionData` holds the inputs provided by the user. It

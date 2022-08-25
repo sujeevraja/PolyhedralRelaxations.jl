@@ -183,8 +183,8 @@ end
 
 function add_multilinear_linking_constraints!(
     m::JuMP.Model, 
-    info::Dict{Tuple{JuMP.VariableRef},Any},
+    info::Vector{FormulationInfo},
     partitions::Dict{JuMP.VariableRef,Vector{T}} where {T<:Real}
 )
-
+    
 end
