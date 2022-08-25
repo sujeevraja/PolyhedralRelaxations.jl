@@ -9,6 +9,7 @@ ForwardDiff = "f6369f11-7733-5829-9624-2563aa707210"
 JuMP = "4076af6c-e467-56ae-b986-b466b2749572"
 Logging = "56ddb016-857b-54e1-b83d-db4d58db5568"
 LoggingExtras = "e6f89c97-d47a-5376-807f-9c37f3926c36"
+Combinatorics = "861a8166-3701-5b0c-9a16-15d98fcdc6aa"
 
 [compat]
 DataStructures = "~0.17, ~0.18"
@@ -17,6 +18,7 @@ HiGHS = "~0.3, ~1"
 Ipopt = "~0.8, ~0.9, ~1"
 JuMP = "^0.21.0, ~0.22, ~0.23, ~1.0, 1"
 LoggingExtras = "0.4.7, 0.5"
+Combinatorics = "~1"
 julia = "1"
 
 [extras]

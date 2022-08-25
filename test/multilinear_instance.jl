@@ -13,8 +13,8 @@ function create_multilinear_model(; num_discretizations = [2 for i in 1:10])
         x = @variable(m, [1:10], lower_bound = 0.0, upper_bound = 1.0)
     variables[:y] = y = @variable(m, [1:165])
     partitions = Dict(
-        x[i] =>
-            range(0.0, 1.0, length = num_discretizations[i]) |> collect for i in 1:10
+        x[i] => range(0.0, 1.0, length = num_discretizations[i]) |> collect
+        for i in 1:10
     )
 
     relax = [

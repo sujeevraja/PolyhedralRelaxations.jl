@@ -1,5 +1,6 @@
 export construct_univariate_relaxation!,
-    construct_bilinear_relaxation!, construct_multilinear_relaxation!, 
+    construct_bilinear_relaxation!,
+    construct_multilinear_relaxation!,
     add_multilinear_linking_constraints!
 
 """
@@ -182,9 +183,14 @@ function construct_multilinear_relaxation!(
 end
 
 function add_multilinear_linking_constraints!(
-    m::JuMP.Model, 
+    m::JuMP.Model,
     info::Vector{FormulationInfo},
-    partitions::Dict{JuMP.VariableRef,Vector{T}} where {T<:Real}
-)
-    
+    partitions::Dict{JuMP.VariableRef,Vector{T}} where {T<:Real};
+    max_degree_limit::Union{Nothing,T} where {T<:Int64} = nothing,
+)::FormulationInfo
+    is_needed = check_if_linking_constraints_are_needed(info, max_degree_limit)
+    (~is_needed.needed) && (return FormulationInfo())
+
+    linking_info = is_needed.linking_info
+    return FormulationInfo()
 end
