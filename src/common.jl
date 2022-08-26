@@ -216,7 +216,7 @@ function _validate(
 )
     if length(x_partition) > 2 && length(y_partition) > 2
         error(
-            "package does not support bilinear relaxations with > 2 partitions on both variables",
+            "package does not support bilinear relaxations with > 2 partitions on both variables, use multilinear relaxation API to relax with partitions on both variables",
         )
     end
     _validate(x, x_partition)

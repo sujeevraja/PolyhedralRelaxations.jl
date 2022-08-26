@@ -20,7 +20,8 @@
             abs(relaxation_obj - gopt_value) / abs(gopt_value) * 100.0;
             digits = 2,
         )
-        @info "Relative gap (LP): $(gap)%"
+        time = round(solve_time(m); digits = 2)
+        @info "Relative gap (LP): $(gap)%, time: $(time) sec."
         @test objective_value(m) <= gopt_value
     end
 
@@ -47,12 +48,13 @@
             abs(relaxation_obj - gopt_value) / abs(gopt_value) * 100.0;
             digits = 2,
         )
-        @info "Relative gap (MILP): $(gap)%"
+        time = round(solve_time(m); digits = 2)
+        @info "Relative gap (MILP): $(gap)%, time: $(time) sec."
         @test objective_value(m) <= gopt_value
     end
 
     @testset "test multilinear LP relaxation with linking constraints" begin
-        PR.reset_logging_level!()
+        PR.silence!()
         instance = create_multilinear_model()
         m = instance.model
         x = instance.variables[:x]
@@ -77,7 +79,8 @@
             abs(relaxation_obj - gopt_value) / abs(gopt_value) * 100.0;
             digits = 2,
         )
-        @info "Relative gap (Root LP with linking constraints): $(gap)%"
+        time = round(solve_time(m); digits = 2)
+        @info "Relative gap (LP with linking constraints): $(gap)%, time: $(time) sec."
         @test objective_value(m) <= gopt_value
         @test !isempty(formulation_info.extra[:common_subterm_data])
     end
