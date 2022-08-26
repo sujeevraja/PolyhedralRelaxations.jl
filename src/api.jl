@@ -155,15 +155,13 @@ The relaxations are presented in the manuscript: https://arxiv.org/abs/2001.0051
 """
 function construct_multilinear_relaxation!(
     m::JuMP.Model,
-    x::Vector{JuMP.VariableRef},
+    x::Tuple,
     z::JuMP.VariableRef,
     partitions::Dict{JuMP.VariableRef,Vector{T}} where {T<:Real},
     variable_pre_base_name::AbstractString = "",
 )::FormulationInfo
     _validate(x, partitions)
     lp = all([length(it) == 2 for it in values(partitions)])
-    (lp && (length(x) == 2)) &&
-        (return _build_mccormick_relaxation!(m, x..., z))
     (lp) && (
         return _build_multilinear_convex_hull_relaxation!(
             m,
@@ -187,13 +185,22 @@ function add_multilinear_linking_constraints!(
     info::Vector{FormulationInfo},
     partitions::Dict{JuMP.VariableRef,Vector{T}} where {T<:Real};
     max_degree_limit::Union{Nothing,T} where {T<:Int64} = nothing,
-    linking_info::Dict = Dict()
+    helper = Dict()
 )::FormulationInfo
-    if isempty(linking_info)
-        is_needed = check_if_linking_constraints_are_needed(info, max_degree_limit)
+    if isempty(helper)
+        is_needed =
+            _check_if_linking_constraints_are_needed(info, max_degree_limit)
         (~is_needed.needed) && (return FormulationInfo())
-        linking_info = is_needed.linking_info
-    end 
-    
-    return _add_multilinear_linking_constraints!(m, info, partitions, linking_info)
+        linking_constraint_helper = is_needed.linking_constraint_helper
+    end
+
+    formulation_info = _build_linking_constraints!(
+        m,
+        info,
+        partitions,
+        linking_constraint_helper
+    )
+
+    formulation_info.extra[:common_subterm_data] = linking_constraint_helper
+    return formulation_info
 end

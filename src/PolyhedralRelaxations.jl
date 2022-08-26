@@ -2,6 +2,7 @@ module PolyhedralRelaxations
 
 using DataStructures
 import JuMP
+import Combinatorics
 
 import ForwardDiff
 
@@ -27,6 +28,7 @@ include("univariate_lp_relaxation.jl")
 include("univariate_milp_relaxation.jl")
 include("bilinear_relaxation.jl")
 include("multilinear_relaxation.jl")
+include("mutlilinear_linking.jl")
 include("api.jl")
 
 end

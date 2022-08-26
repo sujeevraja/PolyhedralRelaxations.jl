@@ -12,11 +12,16 @@ struct FormulationInfo
     variables::Dict{Symbol,Any}
     constraints::Dict{Symbol,Any}
     indices::Dict{Any,Any}
+    extra::Dict{Symbol,Any}
 end
 
 "Empty contructor for struct `FormulationInfo`"
-FormulationInfo()::FormulationInfo =
-    FormulationInfo(Dict{Symbol,Any}(), Dict{Symbol,Any}(), Dict{Any,Any}())
+FormulationInfo()::FormulationInfo = FormulationInfo(
+    Dict{Symbol,Any}(),
+    Dict{Symbol,Any}(),
+    Dict{Any,Any}(),
+    Dict{Symbol,Any}()
+)
 
 """
 The struct `UnivariateFunctionData` holds the inputs provided by the user. It
@@ -166,24 +171,14 @@ end
 Variable bounds and partition consistency checker
 """
 function _validate(
-    x::Vector{JuMP.VariableRef},
+    x::Tuple,
     partitions::Dict{JuMP.VariableRef,Vector{T}} where {T<:Real},
 )
     for x_var in x
-        x_lb, x_ub = _variable_domain(x_var)
         (!haskey(partitions, x_var)) &&
             (error("no partitions found for JuMP variable"))
         partition = partitions[x_var]
-        lb = partition[1]
-        ub = partition[end]
-        if isfinite(x_lb) && !isapprox(x_lb, lb, rtol = 1e-8)
-            error("partition lower bound and variable lower bound not equal")
-        end
-        if isfinite(x_ub) && !isapprox(x_ub, ub, rtol = 1e-8)
-            error("partition upper bound and variable upper bound not equal")
-        end
-        (isinf(x_lb)) && (JuMP.set_lower_bound(x_var, lb))
-        (isinf(x_ub)) && (JuMP.set_upper_bound(x_var, ub))
+        _validate(x_var, partition)
     end
     return
 end

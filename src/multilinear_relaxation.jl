@@ -5,7 +5,7 @@ Build a convex hull formulation LP for  for ``z = prod(x)`` given partition data
 """
 function _build_multilinear_convex_hull_relaxation!(
     m::JuMP.Model,
-    x::Vector{JuMP.VariableRef},
+    x::Tuple,
     z::JuMP.VariableRef,
     partitions::Dict{JuMP.VariableRef,Vector{T}} where {T<:Real},
     pre_base_name::AbstractString,
@@ -17,7 +17,7 @@ function _build_multilinear_convex_hull_relaxation!(
     indices_iterator = Iterators.product(index_ranges...)
 
     cartesian_indices = CartesianIndices(indices_iterator |> collect)
-    formulation_info.indices[tuple(x)] = Dict(
+    formulation_info.indices[x] = Dict(
         :index_ranges => index_ranges,
         :indices_iterators => indices_iterator,
     )
@@ -76,7 +76,7 @@ Build a piecewise polyhedral relaxation for  for ``z = prod(x)`` given partition
 """
 function _build_multilinear_sos2_relaxation!(
     m::JuMP.Model,
-    x::Vector{JuMP.VariableRef},
+    x::Tuple,
     z::JuMP.VariableRef,
     partitions::Dict{JuMP.VariableRef,Vector{T}} where {T<:Real},
     pre_base_name::AbstractString,
@@ -86,7 +86,7 @@ function _build_multilinear_sos2_relaxation!(
     indices_iterator = Iterators.product(index_ranges...)
 
     cartesian_indices = CartesianIndices(indices_iterator |> collect)
-    formulation_info.indices[tuple(x)] = Dict(
+    formulation_info.indices[x] = Dict(
         :index_ranges => index_ranges,
         :indices_iterators => indices_iterator,
     )
