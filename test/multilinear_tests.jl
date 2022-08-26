@@ -22,7 +22,7 @@
         )
         time = round(solve_time(m); digits = 2)
         @info "Relative gap (LP): $(gap) %, time: $(time) sec."
-        @test objective_value(m) <= gopt_value
+        @test relaxation_obj <= gopt_value
     end
 
     @testset "test multilinear MILP relaxation" begin
@@ -50,7 +50,7 @@
         )
         time = round(solve_time(m); digits = 2)
         @info "Relative gap (MILP): $(gap) %, time: $(time) sec."
-        @test objective_value(m) <= gopt_value
+        @test relaxation_obj <= gopt_value
     end
 
     @testset "test multilinear LP relaxation with linking constraints" begin
@@ -81,7 +81,7 @@
         )
         time = round(solve_time(m); digits = 2)
         @info "Relative gap (LP with linking constraints): $(gap) %, time: $(time) sec."
-        @test objective_value(m) <= gopt_value
+        @test relaxation_obj <= gopt_value
         @test !isempty(formulation_info.extra[:common_subterm_data])
     end
 
@@ -115,7 +115,7 @@
         )
         time = round(solve_time(m); digits = 2)
         @info "Relative gap (MILP with linking constraints): $(gap) %, time: $(time) sec."
-        @test objective_value(m) <= gopt_value
+        @test relaxation_obj <= gopt_value
         @test !isempty(formulation_info.extra[:common_subterm_data])
     end
 end
