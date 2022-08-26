@@ -16,16 +16,17 @@
         set_optimizer(m, milp_optimizer)
         optimize!(m)
         relaxation_obj = round(objective_value(m); digits = 4)
-        println(" instance: m_10_3_0_100_1 - Global Optimum: $(gopt_value)")
-        println(
-            " instance: m_10_3_0_100_1 - Root LP Relaxation: $(relaxation_obj)",
+        gap = round(
+            abs(relaxation_obj - gopt_value) / abs(gopt_value) * 100.0;
+            digits = 2,
         )
+        @info "Relative gap (LP): $(gap)%"
         @test objective_value(m) <= gopt_value
     end
 
     @testset "test multilinear MILP relaxation" begin
         PR.silence!()
-        num_discretizations = [3, 3, 3, 2, 2, 2, 2, 2, 2, 2]
+        num_discretizations = [3, 2, 2, 2, 2, 2, 2, 2, 2, 2]
         instance =
             create_multilinear_model(num_discretizations = num_discretizations)
         m = instance.model
@@ -42,9 +43,11 @@
         set_optimizer(m, milp_optimizer)
         optimize!(m)
         relaxation_obj = round(objective_value(m); digits = 4)
-        println(
-            " instance: m_10_3_0_100_1 - MILP Relaxation: $(relaxation_obj)",
+        gap = round(
+            abs(relaxation_obj - gopt_value) / abs(gopt_value) * 100.0;
+            digits = 2,
         )
+        @info "Relative gap (MILP): $(gap)%"
         @test objective_value(m) <= gopt_value
     end
 
@@ -56,24 +59,26 @@
         y = instance.variables[:y]
         partitions = instance.partitions
         multilinear_terms = instance.multilinear_terms
-        info = [
-            construct_multilinear_relaxation!(
+        info = Dict(
+            last(term) => construct_multilinear_relaxation!(
                 m,
                 last(term),
                 first(term),
                 partitions,
             ) for term in multilinear_terms
-        ]
+        )
         gopt_value = instance.objective
-        formulation_info = add_multilinear_linking_constraints!(m, info, partitions)
-        @test !isempty(formulation_info.extra[:common_subterm_data])
+        formulation_info =
+            add_multilinear_linking_constraints!(m, info, partitions)
         set_optimizer(m, milp_optimizer)
         optimize!(m)
         relaxation_obj = round(objective_value(m); digits = 4)
-        println(" instance: m_10_3_0_100_1 - Global Optimum: $(gopt_value)")
-        println(
-            " instance: m_10_3_0_100_1 - Root LP Relaxation: $(relaxation_obj)",
+        gap = round(
+            abs(relaxation_obj - gopt_value) / abs(gopt_value) * 100.0;
+            digits = 2,
         )
+        @info "Relative gap (Root LP with linking constraints): $(gap)%"
         @test objective_value(m) <= gopt_value
+        @test !isempty(formulation_info.extra[:common_subterm_data])
     end
 end

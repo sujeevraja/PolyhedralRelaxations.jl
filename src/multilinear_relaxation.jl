@@ -19,7 +19,7 @@ function _build_multilinear_convex_hull_relaxation!(
     cartesian_indices = CartesianIndices(indices_iterator |> collect)
     formulation_info.indices[x] = Dict(
         :index_ranges => index_ranges,
-        :indices_iterators => indices_iterator,
+        :indices_iterator => indices_iterator,
     )
     num_lambda = length(indices_iterator)
 
@@ -88,7 +88,7 @@ function _build_multilinear_sos2_relaxation!(
     cartesian_indices = CartesianIndices(indices_iterator |> collect)
     formulation_info.indices[x] = Dict(
         :index_ranges => index_ranges,
-        :indices_iterators => indices_iterator,
+        :indices_iterator => indices_iterator,
     )
     num_lambda = length(indices_iterator)
     extreme_points = []

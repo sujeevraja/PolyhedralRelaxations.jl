@@ -20,7 +20,7 @@ FormulationInfo()::FormulationInfo = FormulationInfo(
     Dict{Symbol,Any}(),
     Dict{Symbol,Any}(),
     Dict{Any,Any}(),
-    Dict{Symbol,Any}()
+    Dict{Symbol,Any}(),
 )
 
 """

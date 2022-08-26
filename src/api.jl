@@ -182,10 +182,10 @@ end
 
 function add_multilinear_linking_constraints!(
     m::JuMP.Model,
-    info::Vector{FormulationInfo},
+    info::Dict{T,FormulationInfo} where {T<:Any},
     partitions::Dict{JuMP.VariableRef,Vector{T}} where {T<:Real};
     max_degree_limit::Union{Nothing,T} where {T<:Int64} = nothing,
-    helper = Dict()
+    helper = Dict(),
 )::FormulationInfo
     if isempty(helper)
         is_needed =
@@ -198,7 +198,7 @@ function add_multilinear_linking_constraints!(
         m,
         info,
         partitions,
-        linking_constraint_helper
+        linking_constraint_helper,
     )
 
     formulation_info.extra[:common_subterm_data] = linking_constraint_helper
