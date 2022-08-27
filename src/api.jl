@@ -141,17 +141,20 @@ new variables and constraints.
 
 # Mandatory Arguments
 - `m::Jump.Model`: model to which relaxation is to be added.
-- `x::Vector{Jump.VariableRef}`: JuMP variable vector `x`.
+- `x::Tuple`: JuMP variables in the multilinear term as a tuple.
 - `z::JuMP.VariableRef`: JuMP variable `z`.
-- `partitions::Dict{JuMP.VariableRef,Vector{<:Real}}`: partition of the domain of the `x` variables.
+- `partitions::Dict{JuMP.VariableRef,Vector{T}} where {T<:Real}`: partition 
+of the domain of the `x` variables.
 
 # Optional Arguments
-- `variable_pre_base_name::AbstractString`: base_name that needs to be added to the auxiliary
-    variables for meaningful LP files
-
+- `variable_pre_base_name::AbstractString`: base_name that needs 
+to be added to the auxiliary variables for meaningful LP files
 
 This function builds an lambda based SOS2 formulation for the piecewise polyhedral relaxation. 
-The relaxations are presented in the manuscript: https://arxiv.org/abs/2001.00514 
+Reference information:
+    Kaarthik Sundar, Harsha Nagarajan, Jeff Linderoth, Site Wang, 
+    Russell Bent, Piecewise Polyhedral Formulations for a Multilinear Term, 
+    https://arxiv.org/abs/2001.00514 
 """
 function construct_multilinear_relaxation!(
     m::JuMP.Model,
@@ -179,6 +182,40 @@ function construct_multilinear_relaxation!(
         variable_pre_base_name,
     )
 end
+
+"""
+    add_multilinear_linking_constraints!(m, info, partitions; max_degree_limit = nothing, 
+        helper = Dict())::FormulationInfo
+
+Add linking constraints for the different multilinear relaxations 
+in the model using the lambda variables for each relaxation. 
+
+Reference information:
+    Jongeun Kim, Jean-Philippe P. Richard, Mohit Tawarmalani, 
+    Piecewise Polyhedral Relaxations of Multilinear Optimization, 
+    http://www.optimization-online.org/DB_HTML/2022/07/8974.html
+
+# Mandatory Arguments
+- `m::Jump.Model`: model to which relaxation is to be added.
+- `info::Dict{T,FormulationInfo} where {T<:Any}`: dictionary keyed 
+by tuple of variables involved in multilinear term whose value is 
+the `FormulationInfo` struct returned by added the multilinear 
+relaxation for that term
+- `partitions::Dict{JuMP.VariableRef,Vector{T}} where {T<:Real}`: partition 
+of the domain of the variables.
+
+# Optional Keyword Arguments
+- `max_degree_limit::Union{Nothing,T} where {T<:Int64}`: this is a 
+control factor for limit the number of linking constraints added. 
+Default value is nothing which will not limit the number of constraints added. 
+- `helper::Dict` - default is the empty dictionary. This dictionary 
+contains the common subterms that are shared between the different 
+multilinear terms. When the function is invoked the first time, 
+the `FormulationInfo` returned contains this dictionary in 
+`extra[:common_subterm_data]`. When invoked the subsequent times, 
+passing this dictionary can save a lot on the computation time required 
+to generate these constraints.  
+"""
 
 function add_multilinear_linking_constraints!(
     m::JuMP.Model,

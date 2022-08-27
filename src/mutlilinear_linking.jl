@@ -38,6 +38,12 @@ function _check_if_linking_constraints_are_needed(
     )
 end
 
+"""
+_build_linking_constraints!(m, info, partitions, helper)
+
+Build a linking constraints using the lamba variables for 
+multilinear terms that share more than 2 variables. 
+"""
 function _build_linking_constraints!(
     m::JuMP.Model,
     info::Dict{T,FormulationInfo} where {T<:Any},
