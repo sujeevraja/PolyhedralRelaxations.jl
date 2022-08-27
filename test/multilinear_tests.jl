@@ -18,7 +18,7 @@
         relaxation_obj = round(objective_value(m); digits = 4)
         gap = round(
             abs(relaxation_obj - gopt_value) / abs(gopt_value) * 100.0;
-            digits = 2
+            digits = 2,
         )
         time = round(solve_time(m); digits = 2)
         @info "Relative gap (LP): $(gap) %, time: $(time) sec."
@@ -46,7 +46,7 @@
         relaxation_obj = round(objective_value(m); digits = 4)
         gap = round(
             abs(relaxation_obj - gopt_value) / abs(gopt_value) * 100.0;
-            digits = 2
+            digits = 2,
         )
         time = round(solve_time(m); digits = 2)
         @info "Relative gap (MILP): $(gap) %, time: $(time) sec."
@@ -77,7 +77,7 @@
         relaxation_obj = round(objective_value(m); digits = 4)
         gap = round(
             abs(relaxation_obj - gopt_value) / abs(gopt_value) * 100.0;
-            digits = 2
+            digits = 2,
         )
         time = round(solve_time(m); digits = 2)
         @info "Relative gap (LP with linking constraints): $(gap) %, time: $(time) sec."
@@ -111,7 +111,7 @@
         relaxation_obj = round(objective_value(m); digits = 4)
         gap = round(
             abs(relaxation_obj - gopt_value) / abs(gopt_value) * 100.0;
-            digits = 2
+            digits = 2,
         )
         time = round(solve_time(m); digits = 2)
         @info "Relative gap (MILP with linking constraints): $(gap) %, time: $(time) sec."
