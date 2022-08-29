@@ -216,7 +216,6 @@ the `FormulationInfo` returned contains this dictionary in
 passing this dictionary can save a lot on the computation time required 
 to generate these constraints.  
 """
-
 function add_multilinear_linking_constraints!(
     m::JuMP.Model,
     info::Dict{T,FormulationInfo} where {T<:Any},
@@ -241,3 +240,10 @@ function add_multilinear_linking_constraints!(
     formulation_info.extra[:common_subterm_data] = linking_constraint_helper
     return formulation_info
 end
+
+"""
+    refine_partition!(
+        partition::Vector{<:Real}, 
+        point::T where {T<:Real};
+    )
+"""
