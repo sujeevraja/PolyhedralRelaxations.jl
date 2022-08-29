@@ -245,10 +245,10 @@ end
     refine_partition!(
         partition::Vector{<:Real}, 
         point::T where {T<:Real};
-        partition_type::REFINEMENT_TYPE = REFINEMENT_TYPE::non_uniform, 
-        refinement_ratio = REFINEMENT_RATIO, 
-        refinement_width_tol = REFINEMENT_WIDTH_TOL
-        refinement_added_point_width_tolerance = REFINEMENT_ADDED_POINT_WIDTH_TOL
+        refinement_type::REFINEMENT_TYPE = REFINEMENT_TYPE::non_uniform, 
+        refinement_ratio::Float64 = REFINEMENT_RATIO, 
+        refinement_width_tol::Float64 = REFINEMENT_WIDTH_TOL
+        refinement_added_point_width_tolerance::Float64 = REFINEMENT_ADDED_POINT_WIDTH_TOL
     )
 
 This function refines a variable domain (refered to as a `partition`) using 
@@ -260,14 +260,14 @@ contained in the variable domain, the function throws an error message.
 - `point::T where {T<:Real}`: a point contained in the domain.
 
 # Optional Keyword Arguments
-- `max_degree_limit::Union{Nothing,T} where {T<:Int64}`: this is a 
-control factor for limit the number of linking constraints added. 
-Default value is nothing which will not limit the number of constraints added. 
-- `helper::Dict` - default is the empty dictionary. This dictionary 
-contains the common subterms that are shared between the different 
-multilinear terms. When the function is invoked the first time, 
-the `FormulationInfo` returned contains this dictionary in 
-`extra[:common_subterm_data]`. When invoked the subsequent times, 
-passing this dictionary can save a lot on the computation time required 
-to generate these constraints.  
+- `refinement_type::REFINEMENT_TYPE`: this variable chooses the type of refinement
+to be done. The choices are `non_uniform`, `bisect`, `at_point`, and `bisect_all`. 
+The default is `non_uniform`
+- `refinement_ratio::Float64 = 0.1`: parameter to perform refinement (do not change unless
+you know what you are doing). This parameter is applicable only for the `non_uniform` choic
+of refinement scheme.  
+- `refinement_width_tol::Float64 = 1E-2`: a width of the partition beyond which it is not refined. 
+- `refinement_added_point_width_tolerance::Float64 = 1E-3` - if the refinement points 
+are within `refinement_added_point_width_tolerance` of the left or the right of the partition 
+containing the `point`, the corresponding refinements are not performed. 
 """
