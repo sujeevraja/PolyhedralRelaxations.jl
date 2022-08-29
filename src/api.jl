@@ -247,8 +247,9 @@ end
         point::T where {T<:Real};
         refinement_type::REFINEMENT_TYPE = REFINEMENT_TYPE::non_uniform, 
         refinement_ratio::Float64 = REFINEMENT_RATIO, 
-        refinement_width_tol::Float64 = REFINEMENT_WIDTH_TOL
-        refinement_added_point_width_tolerance::Float64 = REFINEMENT_ADDED_POINT_WIDTH_TOL
+        refinement_width_tol::Float64 = REFINEMENT_WIDTH_TOL,
+        refinement_added_point_width_tolerance::Float64 = REFINEMENT_ADDED_POINT_WIDTH_TOL,
+        refine_largest::Bool = true
     )
 
 This function refines a variable domain (refered to as a `partition`) using 
@@ -270,4 +271,19 @@ of refinement scheme.
 - `refinement_added_point_width_tolerance::Float64 = 1E-3` - if the refinement points 
 are within `refinement_added_point_width_tolerance` of the left or the right of the partition 
 containing the `point`, the corresponding refinements are not performed. 
+- `refine_largest::Bool = true`: bisects the largest sub-interval if a refinement 
+on the partition where the `point` lies cannot be performed. 
 """
+
+function refine_partition!(
+    partition::Vector{<:Real}, 
+    point::T where {T<:Real};
+    refinement_type::REFINEMENT_TYPE = REFINEMENT_TYPE::non_uniform, 
+    refinement_ratio::Float64 = REFINEMENT_RATIO, 
+    refinement_width_tol::Float64 = REFINEMENT_WIDTH_TOL,
+    refinement_added_point_width_tolerance::Float64 = REFINEMENT_ADDED_POINT_WIDTH_TOL,
+    refine_largest::Bool = true
+)
+
+    return 
+end
