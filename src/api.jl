@@ -245,5 +245,29 @@ end
     refine_partition!(
         partition::Vector{<:Real}, 
         point::T where {T<:Real};
+        partition_type::REFINEMENT_TYPE = REFINEMENT_TYPE::non_uniform, 
+        refinement_ratio = REFINEMENT_RATIO, 
+        refinement_width_tol = REFINEMENT_WIDTH_TOL
+        refinement_added_point_width_tolerance = REFINEMENT_ADDED_POINT_WIDTH_TOL
     )
+
+This function refines a variable domain (refered to as a `partition`) using 
+the `point` that is contained in one of the partitions. If the point is not 
+contained in the variable domain, the function throws an error message. 
+
+# Mandatory Arguments
+- `partition::Vector{<:Real}`: domain of the variable to be refined.
+- `point::T where {T<:Real}`: a point contained in the domain.
+
+# Optional Keyword Arguments
+- `max_degree_limit::Union{Nothing,T} where {T<:Int64}`: this is a 
+control factor for limit the number of linking constraints added. 
+Default value is nothing which will not limit the number of constraints added. 
+- `helper::Dict` - default is the empty dictionary. This dictionary 
+contains the common subterms that are shared between the different 
+multilinear terms. When the function is invoked the first time, 
+the `FormulationInfo` returned contains this dictionary in 
+`extra[:common_subterm_data]`. When invoked the subsequent times, 
+passing this dictionary can save a lot on the computation time required 
+to generate these constraints.  
 """

@@ -20,9 +20,7 @@ function __init__()
     return Logging.global_logger(_LOGGER)
 end
 
-const EPS = 1e-6
-const INF = 1e12
-
+include("constants.jl")
 include("common.jl")
 include("univariate_lp_relaxation.jl")
 include("univariate_milp_relaxation.jl")
