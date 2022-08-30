@@ -32,7 +32,7 @@ end
 
 This scheme adds the point to the partition. 
 """
-function _add_point!(
+function _at_point!(
     partition::Vector{<:Real},
     point::T where {T<:Real},
 )::RefinementInfo
@@ -143,9 +143,11 @@ function _refine_partition!(
         # Checking if the point is effectively equal to one of the endpoints
         # of the subinterval or the point is too close to add a point. 
         # If so, do not further refine the partition
-        (index == 1 && abs(lower - point) <= EPS_ZERO) &&
+        equal_eps =
+            (refinement_type == :at_point) ? refinement_width_tol : EPS_ZERO
+        (index == 1 && abs(lower - point) <= equal_eps) &&
             (return RefinementInfo())
-        (abs(upper - point) <= EPS_ZERO) && (return RefinementInfo())
+        (abs(upper - point) <= equal_eps) && (return RefinementInfo())
 
         # Checking if the point is in the subinterval [lower, upper] if the subinterval
         # containing the point has not yet been found
@@ -190,7 +192,9 @@ function _refine_partition!(
             # Largest subinterval is sufficiently large for further refinement.
             halfway = sum(largest) / 2.0
             sort!(append!(partition, [halfway]))
-            return (RefinementInfo(1, false))
+            return RefinementInfo(1, true)
         end
     end
+
+    return RefinementInfo()
 end

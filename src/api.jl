@@ -246,7 +246,7 @@ end
     refine_partition!(
         partition::Vector{<:Real}, 
         point::T where {T<:Real};
-        refinement_type::REFINEMENT_TYPE = REFINEMENT_TYPE::non_uniform, 
+        refinement_type::Symol = :non_uniform, 
         refinement_ratio::Float64 = REFINEMENT_RATIO, 
         refinement_width_tol::Float64 = REFINEMENT_WIDTH_TOL,
         refinement_added_point_width_tolerance::Float64 = REFINEMENT_ADDED_POINT_WIDTH_TOL,
@@ -262,9 +262,9 @@ contained in the variable domain, the function throws an error message.
 - `point::T where {T<:Real}`: a point contained in the domain.
 
 # Optional Keyword Arguments
-- `refinement_type::REFINEMENT_TYPE`: this variable chooses the type of refinement
-to be done. The choices are `non_uniform`, `bisect`, `at_point`, and `bisect_all`. 
-The default is `non_uniform`
+- `refinement_type::Symbol`: this variable chooses the type of refinement
+to be done. The choices are `:non_uniform`, `:bisect`, `:at_point`, and `:bisect_all`. 
+The default is `:non_uniform`
 - `refinement_ratio::Float64 = 0.1`: parameter to perform refinement (do not change unless
 you know what you are doing). This parameter is applicable only for the `non_uniform` choic
 of refinement scheme.  
