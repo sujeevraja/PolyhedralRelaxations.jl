@@ -53,8 +53,8 @@ function example_trig(; verbose = true)
     for i in 1:length(error_tolerances)
         err_tol = error_tolerances[i]
         milp = Model(milp_optimizer)
-        @variable(milp, -2.0 <= x <= 5.0)
-        @variable(milp, -1.0 <= y[1:5] <= 1.0)
+        JuMP.@variable(milp, -2.0 <= x <= 5.0)
+        JuMP.@variable(milp, -1.0 <= y[1:5] <= 1.0)
 
         # construct MILP relaxations
         for j in 1:5
@@ -70,8 +70,8 @@ function example_trig(; verbose = true)
                 error_tolerance = err_tol,
             )
         end
-        @constraint(milp, 5 * y[1] - x <= 0.0)
-        @objective(milp, Min, y[2] + y[3] - y[4] - y[5])
+        JuMP.@constraint(milp, 5 * y[1] - x <= 0.0)
+        JuMP.@objective(milp, Min, y[2] + y[3] - y[4] - y[5])
         optimize!(milp)
         relaxation_objective = objective_value(milp)
         @test relaxation_objective ≤ best_known_objective
@@ -89,8 +89,8 @@ function example_trig(; verbose = true)
         err_tol = error_tolerances[i]
         # construct LP relaxations
         lp = Model(milp_optimizer)
-        @variable(lp, -2.0 <= x <= 5.0)
-        @variable(lp, -1.0 <= y[1:5] <= 1.0)
+        JuMP.@variable(lp, -2.0 <= x <= 5.0)
+        JuMP.@variable(lp, -1.0 <= y[1:5] <= 1.0)
         for j in 1:5
             f = functions[j]
             p = deepcopy(base_partition[j])
@@ -104,8 +104,8 @@ function example_trig(; verbose = true)
                 error_tolerance = err_tol,
             )
         end
-        @constraint(lp, 5 * y[1] - x <= 0.0)
-        @objective(lp, Min, y[2] + y[3] - y[4] - y[5])
+        JuMP.@constraint(lp, 5 * y[1] - x <= 0.0)
+        JuMP.@objective(lp, Min, y[2] + y[3] - y[4] - y[5])
         optimize!(lp)
         relaxation_objective = objective_value(lp)
         @test relaxation_objective ≤ best_known_objective

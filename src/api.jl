@@ -1,4 +1,8 @@
-export construct_univariate_relaxation!, construct_bilinear_relaxation!
+export construct_univariate_relaxation!,
+    construct_bilinear_relaxation!,
+    construct_multilinear_relaxation!,
+    add_multilinear_linking_constraints!,
+    refine_partition!
 
 """
     construct_univariate_relaxation!(m,f,x,y,x_partition;f_dash=x->ForwardDiff.derivative(f,x),error_tolerance=NaN64,length_tolerance=1e-6,derivative_tolerance=1e-6,num_additional_partitions=0)
@@ -7,10 +11,10 @@ Add MILP relaxation of `y=f(x)` to given JuMP model and return an object with
 new variables and constraints.
 
 # Mandatory Arguments
-- `m::Jump.Model`: model to which relaxation is to be added.
+- `m::JuMP.Model`: model to which relaxation is to be added.
 - `f::Function`: function or oracle for which a polyhedral relaxation is
     required, usually non-linear.
-- `x::Jump.VariableRef`: JuMP variable for domain of `f`.
+- `x::JuMP.VariableRef`: JuMP variable for domain of `f`.
 - `y::JuMP.VariableRef`: JuMP variable for evaluation of `f`.
 - `x_partition::Vector{<:Real}`: partition of the domain of `f`.
 - `milp::Bool`: build MILP relaxation if true, LP relaxation otherwise. Note
@@ -127,5 +131,173 @@ function construct_bilinear_relaxation!(
         x_partition,
         y_partition,
         variable_pre_base_name,
+    )
+end
+
+"""
+    construct_multilinear_relaxation!(m,x,y,z,x_partition,y_partition)
+
+Add polyhedral relaxation of `z = product(x)` to given JuMP model and return an object with
+new variables and constraints.
+
+# Mandatory Arguments
+- `m::Jump.Model`: model to which relaxation is to be added.
+- `x::Tuple`: JuMP variables in the multilinear term as a tuple.
+- `z::JuMP.VariableRef`: JuMP variable `z`.
+- `partitions::Dict{JuMP.VariableRef,Vector{T}} where {T<:Real}`: partition 
+of the domain of the `x` variables.
+
+# Optional Arguments
+- `variable_pre_base_name::AbstractString`: base_name that needs 
+to be added to the auxiliary variables for meaningful LP files
+
+This function builds an lambda based SOS2 formulation for the piecewise polyhedral relaxation. 
+Reference information:
+    Kaarthik Sundar, Harsha Nagarajan, Jeff Linderoth, Site Wang, 
+    Russell Bent, Piecewise Polyhedral Formulations for a Multilinear Term, 
+    https://arxiv.org/abs/2001.00514 
+"""
+function construct_multilinear_relaxation!(
+    m::JuMP.Model,
+    x::Tuple,
+    z::JuMP.VariableRef,
+    partitions::Dict{JuMP.VariableRef,Vector{T}} where {T<:Real},
+    variable_pre_base_name::AbstractString = "",
+)::FormulationInfo
+    _validate(x, partitions)
+    lp = all([length(it) == 2 for it in values(partitions)])
+    (lp) && (
+        return _build_multilinear_convex_hull_relaxation!(
+            m,
+            x,
+            z,
+            partitions,
+            variable_pre_base_name,
+        )
+    )
+    return _build_multilinear_sos2_relaxation!(
+        m,
+        x,
+        z,
+        partitions,
+        variable_pre_base_name,
+    )
+end
+
+"""
+    add_multilinear_linking_constraints!(m, info, partitions; max_degree_limit = nothing, 
+        helper = Dict())::FormulationInfo
+
+Add linking constraints for the different multilinear relaxations 
+in the model using the lambda variables for each relaxation. 
+
+Reference information:
+    Jongeun Kim, Jean-Philippe P. Richard, Mohit Tawarmalani, 
+    Piecewise Polyhedral Relaxations of Multilinear Optimization, 
+    http://www.optimization-online.org/DB_HTML/2022/07/8974.html
+
+# Mandatory Arguments
+- `m::Jump.Model`: model to which relaxation is to be added.
+- `info::Dict{T,FormulationInfo} where {T<:Any}`: dictionary keyed 
+by tuple of variables involved in multilinear term whose value is 
+the `FormulationInfo` struct returned by added the multilinear 
+relaxation for that term
+- `partitions::Dict{JuMP.VariableRef,Vector{T}} where {T<:Real}`: partition 
+of the domain of the variables.
+
+# Optional Keyword Arguments
+- `max_degree_limit::Union{Nothing,T} where {T<:Int64}`: this is a 
+control factor for limit the number of linking constraints added. 
+Default value is nothing which will not limit the number of constraints added. 
+- `helper::Dict` - default is the empty dictionary. This dictionary 
+contains the common subterms that are shared between the different 
+multilinear terms. When the function is invoked the first time, 
+the `FormulationInfo` returned contains this dictionary in 
+`extra[:common_subterm_data]`. When invoked the subsequent times, 
+passing this dictionary can save a lot on the computation time required 
+to generate these constraints.  
+"""
+function add_multilinear_linking_constraints!(
+    m::JuMP.Model,
+    info::Dict{T,FormulationInfo} where {T<:Any},
+    partitions::Dict{JuMP.VariableRef,Vector{T}} where {T<:Real};
+    max_degree_limit::Union{Nothing,T} where {T<:Int64} = nothing,
+    helper = Dict(),
+)::FormulationInfo
+    if isempty(helper)
+        is_needed =
+            _check_if_linking_constraints_are_needed(info, max_degree_limit)
+        (~is_needed.needed) && (return FormulationInfo())
+        linking_constraint_helper = is_needed.linking_constraint_helper
+    end
+
+    formulation_info = _build_linking_constraints!(
+        m,
+        info,
+        partitions,
+        linking_constraint_helper,
+    )
+
+    formulation_info.extra[:common_subterm_data] = linking_constraint_helper
+    return formulation_info
+end
+
+"""
+    refine_partition!(
+        partition::Vector{<:Real}, 
+        point::T where {T<:Real};
+        refinement_type::Symol = :non_uniform, 
+        refinement_ratio::Float64 = REFINEMENT_RATIO, 
+        refinement_width_tol::Float64 = REFINEMENT_WIDTH_TOL,
+        refinement_added_point_width_tolerance::Float64 = REFINEMENT_ADDED_POINT_WIDTH_TOL,
+        refine_largest::Bool = true
+    )
+
+This function refines a variable domain (refered to as a `partition`) using 
+the `point` that is contained in one of the partitions. If the point is not 
+contained in the variable domain, the function throws an error message. 
+
+# Mandatory Arguments
+- `partition::Vector{<:Real}`: domain of the variable to be refined.
+- `point::T where {T<:Real}`: a point contained in the domain.
+
+# Optional Keyword Arguments
+- `refinement_type::Symbol`: this variable chooses the type of refinement
+to be done. The choices are `:non_uniform`, `:bisect`, `:at_point`, and `:bisect_all`. 
+The default is `:non_uniform`
+- `refinement_ratio::Float64 = 0.1`: parameter to perform refinement (do not change unless
+you know what you are doing). This parameter is applicable only for the `non_uniform` choic
+of refinement scheme.  
+- `refinement_width_tol::Float64 = 1E-2`: a width of the partition beyond which it is not refined.
+Also, if `point` is within `refinement_width_tolerance` of  
+- `refinement_added_point_width_tolerance::Float64 = 1E-3` - if the refinement points 
+are within `refinement_added_point_width_tolerance` of the left or the right of the partition 
+containing the `point`, the corresponding refinements are not performed. 
+- `refine_largest::Bool = true`: bisects the largest sub-interval if the width of 
+the partition where the `point` lies is less than `refinement_width_tol` i.e., the 
+sub-interval containing the point is too small for refinement
+"""
+
+function refine_partition!(
+    partition::Vector{<:Real},
+    point::T where {T<:Real};
+    refinement_type::Symbol = :non_uniform,
+    refinement_ratio::Float64 = REFINEMENT_RATIO,
+    refinement_width_tol::Float64 = REFINEMENT_WIDTH_TOL,
+    refinement_added_point_width_tolerance::Float64 = REFINEMENT_ADDED_POINT_WIDTH_TOL,
+    refine_largest::Bool = true,
+)::RefinementInfo
+    if (point < partition[1] || point > partition[end])
+        error("$point is not contained in the variable domain")
+        return RefinementInfo()
+    end
+    return _refine_partition!(
+        partition,
+        point,
+        refinement_type,
+        refinement_ratio,
+        refinement_width_tol,
+        refinement_added_point_width_tolerance,
+        refine_largest,
     )
 end

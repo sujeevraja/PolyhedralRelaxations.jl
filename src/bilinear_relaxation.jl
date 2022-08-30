@@ -1,5 +1,5 @@
 """
-    function _build_mccormick_relaxation!(m, x, y, z)
+    _build_mccormick_relaxation!(m, x, y, z)
 
 McCormick relaxation of binlinear term 
 ```
@@ -21,13 +21,13 @@ function _build_mccormick_relaxation!(
     formulation_info = FormulationInfo()
 
     formulation_info.constraints[:lb_1] =
-        @constraint(m, z >= x_lb * y + y_lb * x - x_lb * y_lb)
+        JuMP.@constraint(m, z >= x_lb * y + y_lb * x - x_lb * y_lb)
     formulation_info.constraints[:lb_2] =
-        @constraint(m, z >= x_ub * y + y_ub * x - x_ub * y_ub)
+        JuMP.@constraint(m, z >= x_ub * y + y_ub * x - x_ub * y_ub)
     formulation_info.constraints[:ub_1] =
-        @constraint(m, z <= x_lb * y + y_ub * x - x_lb * y_ub)
+        JuMP.@constraint(m, z <= x_lb * y + y_ub * x - x_lb * y_ub)
     formulation_info.constraints[:ub_2] =
-        @constraint(m, z <= x_ub * y + y_lb * x - x_ub * y_lb)
+        JuMP.@constraint(m, z <= x_ub * y + y_lb * x - x_ub * y_lb)
 
     return formulation_info
 end
@@ -53,7 +53,7 @@ function _build_bilinear_milp_relaxation!(
 
     # add variables
     delta_1 =
-        formulation_info.variables[:delta_1] = @variable(
+        formulation_info.variables[:delta_1] = JuMP.@variable(
             m,
             [1:num_vars],
             lower_bound = 0.0,
@@ -61,7 +61,7 @@ function _build_bilinear_milp_relaxation!(
             base_name = pre_base_name * "delta_1"
         )
     delta_2 =
-        formulation_info.variables[:delta_2] = @variable(
+        formulation_info.variables[:delta_2] = JuMP.@variable(
             m,
             [1:num_vars],
             lower_bound = 0.0,
@@ -69,7 +69,7 @@ function _build_bilinear_milp_relaxation!(
             base_name = pre_base_name * "delta_2"
         )
     delta_3 =
-        formulation_info.variables[:delta_3] = @variable(
+        formulation_info.variables[:delta_3] = JuMP.@variable(
             m,
             [1:num_vars],
             lower_bound = 0.0,
@@ -77,7 +77,7 @@ function _build_bilinear_milp_relaxation!(
             base_name = pre_base_name * "delta_3"
         )
     z_bin =
-        formulation_info.variables[:z_bin] = @variable(
+        formulation_info.variables[:z_bin] = JuMP.@variable(
             m,
             [1:num_vars],
             binary = true,
@@ -85,7 +85,7 @@ function _build_bilinear_milp_relaxation!(
         )
 
     # add x constraints
-    formulation_info.constraints[:x] = @constraint(
+    formulation_info.constraints[:x] = JuMP.@constraint(
         m,
         x ==
         origin_vs[1][1] + sum(
@@ -97,7 +97,7 @@ function _build_bilinear_milp_relaxation!(
     )
 
     # add y constraints
-    formulation_info.constraints[:y] = @constraint(
+    formulation_info.constraints[:y] = JuMP.@constraint(
         m,
         y ==
         origin_vs[1][2] + sum(
@@ -109,7 +109,7 @@ function _build_bilinear_milp_relaxation!(
     )
 
     # add z constraints
-    formulation_info.constraints[:z_bin] = @constraint(
+    formulation_info.constraints[:z_bin] = JuMP.@constraint(
         m,
         z ==
         origin_vs[1][3] + sum(
@@ -122,16 +122,16 @@ function _build_bilinear_milp_relaxation!(
 
     # add first delta constraint
     formulation_info.constraints[:first_delta] =
-        @constraint(m, delta_1[1] + delta_2[1] + delta_3[1] <= 1)
+        JuMP.@constraint(m, delta_1[1] + delta_2[1] + delta_3[1] <= 1)
 
     # add linking constraints between delta_1, delta_2 and z
-    formulation_info.constraints[:below_z] = @constraint(
+    formulation_info.constraints[:below_z] = JuMP.@constraint(
         m,
         [i = 2:num_vars],
         delta_1[i] + delta_2[i] + delta_3[i] <= z_bin[i-1]
     )
     formulation_info.constraints[:above_z] =
-        @constraint(m, [i = 2:num_vars], z_bin[i-1] <= delta_3[i-1])
+        JuMP.@constraint(m, [i = 2:num_vars], z_bin[i-1] <= delta_3[i-1])
 
     return formulation_info
 end

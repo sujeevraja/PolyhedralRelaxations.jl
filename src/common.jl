@@ -11,11 +11,17 @@ references and the other for constraint references.
 struct FormulationInfo
     variables::Dict{Symbol,Any}
     constraints::Dict{Symbol,Any}
+    indices::Dict{Any,Any}
+    extra::Dict{Symbol,Any}
 end
 
 "Empty contructor for struct `FormulationInfo`"
-FormulationInfo()::FormulationInfo =
-    FormulationInfo(Dict{Symbol,Any}(), Dict{Symbol,Any}())
+FormulationInfo()::FormulationInfo = FormulationInfo(
+    Dict{Symbol,Any}(),
+    Dict{Symbol,Any}(),
+    Dict{Any,Any}(),
+    Dict{Symbol,Any}(),
+)
 
 """
 The struct `UnivariateFunctionData` holds the inputs provided by the user. It
@@ -160,6 +166,24 @@ function _variable_domain(var::JuMP.VariableRef)
 end
 
 """
+    _validate(x, partitions) 
+
+Variable bounds and partition consistency checker
+"""
+function _validate(
+    x::Tuple,
+    partitions::Dict{JuMP.VariableRef,Vector{T}} where {T<:Real},
+)
+    for x_var in x
+        (!haskey(partitions, x_var)) &&
+            (error("no partitions found for JuMP variable"))
+        partition = partitions[x_var]
+        _validate(x_var, partition)
+    end
+    return
+end
+
+"""
     _validate(x, partition)
 
 Variable bounds and partition consistency checker
@@ -175,7 +199,8 @@ function _validate(x::JuMP.VariableRef, partition::Vector{<:Real})
         error("partition upper bound and variable upper bound not equal")
     end
     (isinf(x_lb)) && (JuMP.set_lower_bound(x, lb))
-    return (isinf(x_ub)) && (JuMP.set_upper_bound(x, ub))
+    (isinf(x_ub)) && (JuMP.set_upper_bound(x, ub))
+    return
 end
 
 """
@@ -191,11 +216,12 @@ function _validate(
 )
     if length(x_partition) > 2 && length(y_partition) > 2
         error(
-            "package does not support bilinear relaxations with > 2 partitions on both variables",
+            "package does not support bilinear relaxations with > 2 partitions on both variables, use multilinear relaxation API to relax with partitions on both variables",
         )
     end
     _validate(x, x_partition)
-    return _validate(y, y_partition)
+    _validate(y, y_partition)
+    return
 end
 
 """

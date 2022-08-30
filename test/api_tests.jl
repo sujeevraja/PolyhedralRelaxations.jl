@@ -49,32 +49,32 @@ end
         x_lb, x_ub = 10 * rand(2) .* [-1, 1]
         y_lb, y_ub = 10 * rand(2) .* [-1, 1]
 
-        m = JuMP.Model(ipopt_optimizer)
-        JuMP.@variable(m, x_lb <= x <= x_ub)
-        JuMP.@variable(m, y_lb <= y <= y_ub)
-        JuMP.@variable(m, z)
-        JuMP.@objective(m, Min, z)
-        JuMP.@constraint(m, x * y == z)
-        status = JuMP.optimize!(m)
+        m = Model(ipopt_optimizer)
+        @variable(m, x_lb <= x <= x_ub)
+        @variable(m, y_lb <= y <= y_ub)
+        @variable(m, z)
+        @objective(m, Min, z)
+        @constraint(m, x * y == z)
+        status = optimize!(m)
 
-        rm = JuMP.Model(milp_optimizer)
-        JuMP.@variable(rm, x_lb <= x <= x_ub)
-        JuMP.@variable(rm, y_lb <= y <= y_ub)
-        JuMP.@variable(rm, z)
-        JuMP.@objective(rm, Min, z)
+        rm = Model(milp_optimizer)
+        @variable(rm, x_lb <= x <= x_ub)
+        @variable(rm, y_lb <= y <= y_ub)
+        @variable(rm, z)
+        @objective(rm, Min, z)
         construct_bilinear_relaxation!(rm, x, y, z, [x_lb, x_ub], [y_lb, y_ub])
-        rstatus = JuMP.optimize!(rm)
+        rstatus = optimize!(rm)
 
-        @test(JuMP.objective_value(rm) <= JuMP.objective_value(m) + tolerance)
+        @test(objective_value(rm) <= objective_value(m) + tolerance)
         @test(rstatus == status)
 
-        JuMP.set_objective_sense(m, MOI.MAX_SENSE)
-        JuMP.set_objective_sense(rm, MOI.MAX_SENSE)
+        set_objective_sense(m, MOI.MAX_SENSE)
+        set_objective_sense(rm, MOI.MAX_SENSE)
 
-        status = JuMP.optimize!(m)
-        rstatus = JuMP.optimize!(rm)
+        status = optimize!(m)
+        rstatus = optimize!(rm)
 
-        @test(JuMP.objective_value(rm) >= JuMP.objective_value(m) - tolerance)
+        @test(objective_value(rm) >= objective_value(m) - tolerance)
         @test(rstatus == status)
     end
 end
@@ -106,19 +106,19 @@ end
         y_lb, y_ub = y_p[1], y_p[end]
         epsilon_x = refine!(x_p, point)
         epsilon_y = 10.0
-        m = JuMP.Model(milp_optimizer)
-        JuMP.@variable(m, x_lb <= x <= x_ub)
-        JuMP.@variable(m, y_lb <= y <= y_ub)
-        JuMP.@variable(m, z)
+        m = Model(milp_optimizer)
+        @variable(m, x_lb <= x <= x_ub)
+        @variable(m, y_lb <= y <= y_ub)
+        @variable(m, z)
         construct_bilinear_relaxation!(m, x, y, z, x_p, [y_lb, y_ub])
-        JuMP.@constraint(m, x == point)
-        JuMP.@constraint(m, y == point)
-        JuMP.@objective(m, Min, z)
-        JuMP.optimize!(m)
-        min_y = JuMP.objective_value(m)
-        JuMP.set_objective_sense(m, MOI.MAX_SENSE)
-        JuMP.optimize!(m)
-        max_y = JuMP.objective_value(m)
+        @constraint(m, x == point)
+        @constraint(m, y == point)
+        @objective(m, Min, z)
+        optimize!(m)
+        min_y = objective_value(m)
+        set_objective_sense(m, MOI.MAX_SENSE)
+        optimize!(m)
+        max_y = objective_value(m)
         @test abs(max_y) ≈ epsilon_x * epsilon_y atol = 1e-5
         @test abs(min_y) ≈ epsilon_x * epsilon_y atol = 1e-5
     end
@@ -127,19 +127,19 @@ end
         y_lb, y_ub = y_p[1], y_p[end]
         epsilon_x = 10.0
         epsilon_y = refine!(y_p, point)
-        m = JuMP.Model(milp_optimizer)
-        JuMP.@variable(m, x_lb <= x <= x_ub)
-        JuMP.@variable(m, y_lb <= y <= y_ub)
-        JuMP.@variable(m, z)
+        m = Model(milp_optimizer)
+        @variable(m, x_lb <= x <= x_ub)
+        @variable(m, y_lb <= y <= y_ub)
+        @variable(m, z)
         construct_bilinear_relaxation!(m, x, y, z, [x_lb, x_ub], y_p)
-        JuMP.@constraint(m, x == point)
-        JuMP.@constraint(m, y == point)
-        JuMP.@objective(m, Min, z)
-        JuMP.optimize!(m)
-        min_x = JuMP.objective_value(m)
-        JuMP.set_objective_sense(m, MOI.MAX_SENSE)
-        JuMP.optimize!(m)
-        max_x = JuMP.objective_value(m)
+        @constraint(m, x == point)
+        @constraint(m, y == point)
+        @objective(m, Min, z)
+        optimize!(m)
+        min_x = objective_value(m)
+        set_objective_sense(m, MOI.MAX_SENSE)
+        optimize!(m)
+        max_x = objective_value(m)
         @test abs(max_x) ≈ epsilon_x * epsilon_y atol = 1e-5
         @test abs(min_x) ≈ epsilon_x * epsilon_y atol = 1e-5
     end

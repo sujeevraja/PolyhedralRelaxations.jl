@@ -18,7 +18,7 @@ function _build_univariate_milp_relaxation!(
     num_vars = length(univariate_function_data.partition) - 1
 
     delta_1 =
-        formulation_info.variables[:delta_1] = @variable(
+        formulation_info.variables[:delta_1] = JuMP.@variable(
             m,
             [1:num_vars],
             lower_bound = 0.0,
@@ -26,7 +26,7 @@ function _build_univariate_milp_relaxation!(
             base_name = pre_base_name * "delta_1"
         )
     delta_2 =
-        formulation_info.variables[:delta_2] = @variable(
+        formulation_info.variables[:delta_2] = JuMP.@variable(
             m,
             [1:num_vars],
             lower_bound = 0.0,
@@ -34,7 +34,7 @@ function _build_univariate_milp_relaxation!(
             base_name = pre_base_name * "delta_2"
         )
     z =
-        formulation_info.variables[:z] = @variable(
+        formulation_info.variables[:z] = JuMP.@variable(
             m,
             [1:num_vars],
             binary = true,
@@ -42,7 +42,7 @@ function _build_univariate_milp_relaxation!(
         )
 
     # add x constraints
-    formulation_info.constraints[:x] = @constraint(
+    formulation_info.constraints[:x] = JuMP.@constraint(
         m,
         x ==
         sec_vs[1][1] + sum(
@@ -52,7 +52,7 @@ function _build_univariate_milp_relaxation!(
     )
 
     # add y constraints
-    formulation_info.constraints[:y] = @constraint(
+    formulation_info.constraints[:y] = JuMP.@constraint(
         m,
         y ==
         sec_vs[1][2] + sum(
@@ -63,13 +63,13 @@ function _build_univariate_milp_relaxation!(
 
     # add first delta constraint
     formulation_info.constraints[:first_delta] =
-        @constraint(m, delta_1[1] + delta_2[1] <= 1)
+        JuMP.@constraint(m, delta_1[1] + delta_2[1] <= 1)
 
     # add linking constraints between delta_1, delta_2 and z
     formulation_info.constraints[:below_z] =
-        @constraint(m, [i = 2:num_vars], delta_1[i] + delta_2[i] <= z[i-1])
+        JuMP.@constraint(m, [i = 2:num_vars], delta_1[i] + delta_2[i] <= z[i-1])
     formulation_info.constraints[:above_z] =
-        @constraint(m, [i = 2:num_vars], z[i-1] <= delta_2[i-1])
+        JuMP.@constraint(m, [i = 2:num_vars], z[i-1] <= delta_2[i-1])
 
     return formulation_info
 end

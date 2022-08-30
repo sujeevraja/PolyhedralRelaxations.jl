@@ -8,8 +8,8 @@ Here is an example illustrating the basic API for univariate functions.
 ```julia 
 using PolyhderalRelaxations, JuMP
 m = Model() 
-@variable(m, -1.0 <= x <= 1.0)
-@variable(m, y)
+JuMP.@variable(m, -1.0 <= x <= 1.0)
+JuMP.@variable(m, y)
 f = x -> x^3
 construct_univariate_relaxation!(m, f, x, y, [-1.0, 0.0, 1.0], true)
 ```
@@ -19,9 +19,9 @@ For bilinear functions, the basic API is as follows:
 ```julia 
 using PolyhderalRelaxations, JuMP
 m = Model() 
-@variable(m, -1.0 <= x <= 1.0)
-@variable(m, -10.0 <= y <= 12.0)
-@variable(m, z)
+JuMP.@variable(m, -1.0 <= x <= 1.0)
+JuMP.@variable(m, -10.0 <= y <= 12.0)
+JuMP.@variable(m, z)
 construct_bilinear_relaxation!(m, x, y, z, [-1.0, 1.0], [-10.0, 12.0])
 ```
 
@@ -30,9 +30,9 @@ If there is only one partition (like above) for each variable, then the function
 ```julia 
 using PolyhderalRelaxations, JuMP
 m = Model() 
-@variable(m, -1.0 <= x1 <= 1.0)
-@variable(m, -1.0 <= x2 <= 1.0)
-@variable(m, z)
+JuMP.@variable(m, -1.0 <= x1 <= 1.0)
+JuMP.@variable(m, -1.0 <= x2 <= 1.0)
+JuMP.@variable(m, z)
 construct_bilinear_relaxation!(m, x1, x2, z, [-1.0, 1.0], [-1.0, -0.25, 0.25, 1.0])
 ```
 

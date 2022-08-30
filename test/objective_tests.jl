@@ -61,7 +61,7 @@
 
             # Verify that the LP relaxation obtained by dropping binary restrictions gives the
             # same objective value as the MILP relaxation.
-            JuMP.relax_integrality(milp)
+            relax_integrality(milp)
             optimize!(milp)
             @test termination_status(milp) == MOI.OPTIMAL
             lp1_obj = objective_value(milp)

@@ -88,10 +88,10 @@
     y_lb, y_ub = 10 * rand(2) .* [-1, 1]
     x_mid = (x_lb + x_ub) / 2.0
     y_mid = (y_lb + y_ub) / 2.0
-    m = JuMP.Model(milp_optimizer)
-    JuMP.@variable(m, x_lb <= x <= x_ub)
-    JuMP.@variable(m, y_lb <= y <= y_ub)
-    JuMP.@variable(m, z)
+    m = Model(milp_optimizer)
+    @variable(m, x_lb <= x <= x_ub)
+    @variable(m, y_lb <= y <= y_ub)
+    @variable(m, z)
     @test_throws ErrorException construct_bilinear_relaxation!(
         m,
         x,
@@ -100,4 +100,6 @@
         [x_lb, x_mid, x_ub],
         [y_lb, y_mid, y_ub],
     )
+
+    @test_throws ErrorException refine_partition!([1.0, 2.0], 0.5)
 end

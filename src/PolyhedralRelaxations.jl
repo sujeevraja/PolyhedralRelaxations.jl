@@ -1,7 +1,8 @@
 module PolyhedralRelaxations
 
 using DataStructures
-using JuMP
+import JuMP
+import Combinatorics
 
 import ForwardDiff
 
@@ -19,13 +20,14 @@ function __init__()
     return Logging.global_logger(_LOGGER)
 end
 
-const EPS = 1e-6
-const INF = 1e12
-
+include("constants.jl")
 include("common.jl")
 include("univariate_lp_relaxation.jl")
 include("univariate_milp_relaxation.jl")
 include("bilinear_relaxation.jl")
+include("multilinear_relaxation.jl")
+include("mutlilinear_linking.jl")
+include("partition_refinement.jl")
 include("api.jl")
 
 end
