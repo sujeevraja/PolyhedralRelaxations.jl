@@ -27,4 +27,5 @@ ipopt_optimizer = JuMP.optimizer_with_attributes(
     include("tolerance_tests.jl")
     include("multilinear_instance.jl")
     include("multilinear_tests.jl")
+    include("partition_refinement_tests.jl")
 end

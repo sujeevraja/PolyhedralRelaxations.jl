@@ -1,7 +1,8 @@
 export construct_univariate_relaxation!,
     construct_bilinear_relaxation!,
     construct_multilinear_relaxation!,
-    add_multilinear_linking_constraints!
+    add_multilinear_linking_constraints!,
+    refine_partition!
 
 """
     construct_univariate_relaxation!(m,f,x,y,x_partition;f_dash=x->ForwardDiff.derivative(f,x),error_tolerance=NaN64,length_tolerance=1e-6,derivative_tolerance=1e-6,num_additional_partitions=0)
@@ -278,18 +279,25 @@ sub-interval containing the point is too small for refinement
 """
 
 function refine_partition!(
-    partition::Vector{<:Real}, 
+    partition::Vector{<:Real},
     point::T where {T<:Real};
-    refinement_type::REFINEMENT_TYPE = REFINEMENT_TYPE::non_uniform, 
-    refinement_ratio::Float64 = REFINEMENT_RATIO, 
+    refinement_type::Symbol = :non_uniform,
+    refinement_ratio::Float64 = REFINEMENT_RATIO,
     refinement_width_tol::Float64 = REFINEMENT_WIDTH_TOL,
     refinement_added_point_width_tolerance::Float64 = REFINEMENT_ADDED_POINT_WIDTH_TOL,
-    refine_largest::Bool = true
+    refine_largest::Bool = true,
 )::RefinementInfo
     if (point < partition[1] || point > partition[end])
         error("$point is not contained in the variable domain")
         return RefinementInfo()
-    end 
-    return _refine_partition!(partition, point, refinement_type, refinement_ratio, 
-    refinement_width_tol, refinement_added_point_width_tolerance, refine_largest)
+    end
+    return _refine_partition!(
+        partition,
+        point,
+        refinement_type,
+        refinement_ratio,
+        refinement_width_tol,
+        refinement_added_point_width_tolerance,
+        refine_largest,
+    )
 end

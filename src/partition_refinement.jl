@@ -1,16 +1,9 @@
-export REFINEMENT_TYPE, RefinementInfo
+export RefinementInfo
 
-@enum REFINEMENT_TYPE begin
-    non_uniform = 0
-    bisect = 1
-    at_point = 2 
-    bisect_all = 3 
-end
-
-struct RefinementInfo 
+struct RefinementInfo
     num_additional_points::Int64
     refined_largest_partition::Bool
-end 
+end
 
 RefinementInfo() = RefinementInfo(0, false)
 
@@ -20,37 +13,47 @@ RefinementInfo() = RefinementInfo(0, false)
 This scheme bisects every partition provided the width of the partition is greater
 than `refinement_width_tol` value.
 """
-function _bisect_all!(partition::Vector{<:Real}, refinement_width_tol::Float64)::RefinementInfo 
+function _bisect_all!(
+    partition::Vector{<:Real},
+    refinement_width_tol::Float64,
+)::RefinementInfo
     additional_points = []
     for i in 1:(length(partition)-1)
         width = partition[i+1] - partition[i]
         (width < refinement_width_tol) && (continue)
         push!(additional_points, partition[i] + 0.5 * width)
-    end 
+    end
     sort!(append!(partition, additional_points))
     return RefinementInfo(length(additional_points), false)
-end 
+end
 
 """
     _at_point!(partition::Vector{<:Real}, point::T where {T<:Real})::RefinementInfo 
 
 This scheme adds the point to the partition. 
-""" 
-function _add_point!(partition::Vector{<:Real}, point::T where {T<:Real})::RefinementInfo
+"""
+function _add_point!(
+    partition::Vector{<:Real},
+    point::T where {T<:Real},
+)::RefinementInfo
     sort!(append!(partition, [point]))
     return RefinementInfo(1, false)
-end 
+end
 
 """ 
     _bisect!(partition::Vector{<:Real}, lower::Float64, upper::Float64)::RefinementInfo
 
 This scheme bisects the partition defined by `lower` and `upper` values.
-""" 
-function _bisect!(partition::Vector{<:Real}, lower::Float64, upper::Float64)::RefinementInfo
-    halfway = (lower + upper) / 2.0 
+"""
+function _bisect!(
+    partition::Vector{<:Real},
+    lower::Float64,
+    upper::Float64,
+)::RefinementInfo
+    halfway = (lower + upper) / 2.0
     sort!(append!(partition, [halfway]))
     return RefinementInfo(1, false)
-end 
+end
 
 """
     _non_uniform!(partition, point, lower, upper, added_point_width_tol, ratio)::RefinementInfo
@@ -59,13 +62,13 @@ This scheme adds a small partition around the `point` using the `ratio` provided
 satisfying the `added_point_width_tolerance`
 """
 function _non_uniform!(
-    partition::Vector{<:Real}, 
+    partition::Vector{<:Real},
     point::T where {T<:Real},
-    lower::Float64, 
-    upper::Float64, 
+    lower::Float64,
+    upper::Float64,
     added_point_width_tol::Float64,
-    ratio::Float64
-)  
+    ratio::Float64,
+)
     # potential points .
     left = point - ratio * (point - lower)
     right = point + ratio * (upper - point)
@@ -88,12 +91,12 @@ function _non_uniform!(
         error("Issue encountered when trying to add points in a subinterval")
     end
     return RefinementInfo
-end 
+end
 
 """
     _refine_partition!(
         partition::Vector{<:Real}, 
-        point::T where {T<:Real};
+        point::T where {T<:Real},
         refinement_type::REFINEMENT_TYPE,
         refinement_ratio::Float64, 
         refinement_width_tol::Float64,
@@ -103,18 +106,18 @@ end
 Internal helper function to help in partition refinement         
 """
 function _refine_partition!(
-    partition::Vector{<:Real}, 
-    point::T where {T<:Real};
-    refinement_type::REFINEMENT_TYPE,
-    refinement_ratio::Float64, 
+    partition::Vector{<:Real},
+    point::T where {T<:Real},
+    refinement_type::Symbol,
+    refinement_ratio::Float64,
     refinement_width_tol::Float64,
     refinement_added_point_width_tolerance::Float64,
-    refine_largest::Bool
+    refine_largest::Bool,
 )::RefinementInfo
-    if (refinement_type == REFINEMENT_TYPE::bisect_all)
-        return _bisect_all(partition, refinement_width_tol)
-    end 
-    
+    if (refinement_type == :bisect_all)
+        return _bisect_all!(partition, refinement_width_tol)
+    end
+
     # Flag indicating if the largest subinterval needs to be refined. This will
     # only happen when the subinterval containing the point is too small for futher
     # refinement
@@ -126,10 +129,10 @@ function _refine_partition!(
     largest = [-Inf, Inf]
 
     # Iterating over all subintervals in the partition
-    for index in 1:length(partition) - 1
+    for index in 1:length(partition)-1
         # Grabbing the lower and upper value of the subinterval
         lower = partition[index]
-        upper = partition[index + 1]
+        upper = partition[index+1]
         # Updating the largest subinterval found
         if upper - lower > width
             # New largest subinterval found
@@ -140,9 +143,10 @@ function _refine_partition!(
         # Checking if the point is effectively equal to one of the endpoints
         # of the subinterval or the point is too close to add a point. 
         # If so, do not further refine the partition
-        (index == 1 && abs(lower - point) <= EPS_ZERO) && (return RefinementInfo())
+        (index == 1 && abs(lower - point) <= EPS_ZERO) &&
+            (return RefinementInfo())
         (abs(upper - point) <= EPS_ZERO) && (return RefinementInfo())
-            
+
         # Checking if the point is in the subinterval [lower, upper] if the subinterval
         # containing the point has not yet been found
         if !found && lower < point && point < upper
@@ -159,13 +163,20 @@ function _refine_partition!(
                 adapt = true
             else
                 # Subinterval is sufficiently large for further refinement. 
-                if refinement_type == REFINEMENT_TYPE::at_point
+                if refinement_type == :at_point
                     return _at_point!(partition, point)
-                elseif refinement_type == REFINEMENT_TYPE::bisect 
-                    return _bisect!(partition, lower, upper )
-                else 
-                    return _non_uniform!(partition, point, lower, upper, refinement_added_point_width_tolerance, refinement_ratio)
-                end 
+                elseif refinement_type == :bisect
+                    return _bisect!(partition, lower, upper)
+                else
+                    return _non_uniform!(
+                        partition,
+                        point,
+                        lower,
+                        upper,
+                        refinement_added_point_width_tolerance,
+                        refinement_ratio,
+                    )
+                end
             end
         end
     end
@@ -182,4 +193,4 @@ function _refine_partition!(
             return (RefinementInfo(1, false))
         end
     end
-end 
+end

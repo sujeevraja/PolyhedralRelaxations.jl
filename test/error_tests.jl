@@ -100,4 +100,6 @@
         [x_lb, x_mid, x_ub],
         [y_lb, y_mid, y_ub],
     )
+
+    @test_throws ErrorException refine_partition!([1.0, 2.0], 0.5)
 end
