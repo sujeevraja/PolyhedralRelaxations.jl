@@ -27,6 +27,7 @@ include("univariate_milp_relaxation.jl")
 include("bilinear_relaxation.jl")
 include("multilinear_relaxation.jl")
 include("mutlilinear_linking.jl")
+include("partition_refinement.jl")
 include("api.jl")
 
 end

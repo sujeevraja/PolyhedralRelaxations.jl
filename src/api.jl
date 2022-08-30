@@ -267,12 +267,14 @@ The default is `non_uniform`
 - `refinement_ratio::Float64 = 0.1`: parameter to perform refinement (do not change unless
 you know what you are doing). This parameter is applicable only for the `non_uniform` choic
 of refinement scheme.  
-- `refinement_width_tol::Float64 = 1E-2`: a width of the partition beyond which it is not refined. 
+- `refinement_width_tol::Float64 = 1E-2`: a width of the partition beyond which it is not refined.
+Also, if `point` is within `refinement_width_tolerance` of  
 - `refinement_added_point_width_tolerance::Float64 = 1E-3` - if the refinement points 
 are within `refinement_added_point_width_tolerance` of the left or the right of the partition 
 containing the `point`, the corresponding refinements are not performed. 
-- `refine_largest::Bool = true`: bisects the largest sub-interval if a refinement 
-on the partition where the `point` lies cannot be performed. 
+- `refine_largest::Bool = true`: bisects the largest sub-interval if the width of 
+the partition where the `point` lies is less than `refinement_width_tol` i.e., the 
+sub-interval containing the point is too small for refinement
 """
 
 function refine_partition!(
@@ -283,7 +285,11 @@ function refine_partition!(
     refinement_width_tol::Float64 = REFINEMENT_WIDTH_TOL,
     refinement_added_point_width_tolerance::Float64 = REFINEMENT_ADDED_POINT_WIDTH_TOL,
     refine_largest::Bool = true
-)
-
-    return 
+)::RefinementInfo
+    if (point < partition[1] || point > partition[end])
+        error("$point is not contained in the variable domain")
+        return RefinementInfo()
+    end 
+    return _refine_partition!(partition, point, refinement_type, refinement_ratio, 
+    refinement_width_tol, refinement_added_point_width_tolerance, refine_largest)
 end
