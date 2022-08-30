@@ -20,14 +20,10 @@ function _build_mccormick_relaxation!(
 
     formulation_info = FormulationInfo()
 
-    formulation_info.constraints[:lb_1] =
-        JuMP.@constraint(m, z >= x_lb * y + y_lb * x - x_lb * y_lb)
-    formulation_info.constraints[:lb_2] =
-        JuMP.@constraint(m, z >= x_ub * y + y_ub * x - x_ub * y_ub)
-    formulation_info.constraints[:ub_1] =
-        JuMP.@constraint(m, z <= x_lb * y + y_ub * x - x_lb * y_ub)
-    formulation_info.constraints[:ub_2] =
-        JuMP.@constraint(m, z <= x_ub * y + y_lb * x - x_ub * y_lb)
+    JuMP.@constraint(m, z >= x_lb * y + y_lb * x - x_lb * y_lb)
+    JuMP.@constraint(m, z >= x_ub * y + y_ub * x - x_ub * y_ub)
+    JuMP.@constraint(m, z <= x_lb * y + y_ub * x - x_lb * y_ub)
+    JuMP.@constraint(m, z <= x_ub * y + y_lb * x - x_ub * y_lb)
 
     return formulation_info
 end
@@ -85,7 +81,7 @@ function _build_bilinear_milp_relaxation!(
         )
 
     # add x constraints
-    formulation_info.constraints[:x] = JuMP.@constraint(
+    JuMP.@constraint(
         m,
         x ==
         origin_vs[1][1] + sum(
@@ -97,7 +93,7 @@ function _build_bilinear_milp_relaxation!(
     )
 
     # add y constraints
-    formulation_info.constraints[:y] = JuMP.@constraint(
+    JuMP.@constraint(
         m,
         y ==
         origin_vs[1][2] + sum(
@@ -109,7 +105,7 @@ function _build_bilinear_milp_relaxation!(
     )
 
     # add z constraints
-    formulation_info.constraints[:z_bin] = JuMP.@constraint(
+    JuMP.@constraint(
         m,
         z ==
         origin_vs[1][3] + sum(
@@ -121,17 +117,15 @@ function _build_bilinear_milp_relaxation!(
     )
 
     # add first delta constraint
-    formulation_info.constraints[:first_delta] =
-        JuMP.@constraint(m, delta_1[1] + delta_2[1] + delta_3[1] <= 1)
+    JuMP.@constraint(m, delta_1[1] + delta_2[1] + delta_3[1] <= 1)
 
     # add linking constraints between delta_1, delta_2 and z
-    formulation_info.constraints[:below_z] = JuMP.@constraint(
+    JuMP.@constraint(
         m,
         [i = 2:num_vars],
         delta_1[i] + delta_2[i] + delta_3[i] <= z_bin[i-1]
     )
-    formulation_info.constraints[:above_z] =
-        JuMP.@constraint(m, [i = 2:num_vars], z_bin[i-1] <= delta_3[i-1])
+    JuMP.@constraint(m, [i = 2:num_vars], z_bin[i-1] <= delta_3[i-1])
 
     return formulation_info
 end
