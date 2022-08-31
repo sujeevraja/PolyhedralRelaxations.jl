@@ -185,7 +185,10 @@ function construct_multilinear_relaxation!(
     z::JuMP.VariableRef,
     partitions::Dict{JuMP.VariableRef,Vector{T}} where {T<:Real};
     variable_pre_base_name::AbstractString = "",
-    binary_variables::Dict{JuMP.VariableRef,T} where {T<:Any} = Dict{JuMP.VariableRef,Any}()
+    binary_variables::Dict{JuMP.VariableRef,T} where {T<:Any} = Dict{
+        JuMP.VariableRef,
+        Any,
+    }(),
 )::FormulationInfo
     _validate(x, partitions)
     lp = all([length(it) == 2 for it in values(partitions)])

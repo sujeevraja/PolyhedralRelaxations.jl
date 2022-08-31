@@ -112,16 +112,21 @@ function _build_multilinear_sos2_relaxation!(
     bin = formulation_info.variables[:bin] = Dict{JuMP.VariableRef,Any}()
     for var in x
         if haskey(binary_variables, var)
-            vars = binary_variables[var]  
+            vars = binary_variables[var]
             if (length(vars) != length(partitions[var]) - 1)
-                error("number of binary variables for variable $var inconsistent with number of partitions")
-            end 
-            formulation_info.variables[:bin][var] = vars 
+                error(
+                    "number of binary variables for variable $var inconsistent with number of partitions",
+                )
+            end
+            formulation_info.variables[:bin][var] = vars
             continue
         end
-        binary_variables[var] = 
-        formulation_info.variables[:bin][var] = 
-                JuMP.@variable(m, [j in 1:(length(partitions[var])-1)], binary = true)
+        binary_variables[var] =
+            formulation_info.variables[:bin][var] = JuMP.@variable(
+                m,
+                [j in 1:(length(partitions[var])-1)],
+                binary = true
+            )
         # binary summation constraints
         JuMP.@constraint(m, sum(bin[var]) == 1)
     end

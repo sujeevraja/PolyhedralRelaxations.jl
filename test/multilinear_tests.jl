@@ -40,7 +40,13 @@
         for term in multilinear_terms
             z = first(term)
             vars = last(term)
-            construct_multilinear_relaxation!(m, vars, z, partitions, binary_variables = binary_variables)
+            construct_multilinear_relaxation!(
+                m,
+                vars,
+                z,
+                partitions,
+                binary_variables = binary_variables,
+            )
         end
         set_optimizer(m, milp_optimizer)
         optimize!(m)
@@ -103,7 +109,7 @@
                 last(term),
                 first(term),
                 partitions,
-                binary_variables = binary_variables
+                binary_variables = binary_variables,
             ) for term in multilinear_terms
         )
         gopt_value = instance.objective
