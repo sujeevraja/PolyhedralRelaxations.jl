@@ -29,6 +29,21 @@ function _build_mccormick_relaxation!(
 end
 
 """
+    _check_partition_variable_consistency(formulation_info, num_vars) 
+Checks consistency between provided variables and partition sizes 
+"""
+function _check_partition_variable_consistency(
+    formulation_info::FormulationInfo,
+    num_vars,
+)::Bool
+    var = formulation_info.variables
+    if haskey(var, :z_bin)
+        (length(var[:z_bin]) == num_vars) && (return true)
+    end
+    return false
+end
+
+"""
     _build_bilinear_relaxation!(m, x, y, z, x_partition, y_partition, pre_base_name)
 
 Build incremental formulation for ``z = xy`` given partition data.
@@ -40,12 +55,17 @@ function _build_bilinear_milp_relaxation!(
     z::JuMP.VariableRef,
     x_partition::Vector{<:Real},
     y_partition::Vector{<:Real},
-    pre_base_name::AbstractString,
+    variable_pre_base_name::AbstractString,
+    reuse::FormulationInfo,
 )::FormulationInfo
     origin_vs, non_origin_vs =
         _collect_bilinear_vertices(x_partition, y_partition)
     formulation_info = FormulationInfo()
     num_vars = max(length(x_partition), length(y_partition)) - 1
+
+    reuse_variables = reuse.variables
+
+    is_consistent = _check_partition_variable_consistency(reuse, num_vars)
 
     # add variables
     delta_1 =
@@ -54,7 +74,7 @@ function _build_bilinear_milp_relaxation!(
             [1:num_vars],
             lower_bound = 0.0,
             upper_bound = 1.0,
-            base_name = pre_base_name * "delta_1"
+            base_name = variable_pre_base_name * "delta_1"
         )
     delta_2 =
         formulation_info.variables[:delta_2] = JuMP.@variable(
@@ -62,7 +82,7 @@ function _build_bilinear_milp_relaxation!(
             [1:num_vars],
             lower_bound = 0.0,
             upper_bound = 1.0,
-            base_name = pre_base_name * "delta_2"
+            base_name = variable_pre_base_name * "delta_2"
         )
     delta_3 =
         formulation_info.variables[:delta_3] = JuMP.@variable(
@@ -70,15 +90,17 @@ function _build_bilinear_milp_relaxation!(
             [1:num_vars],
             lower_bound = 0.0,
             upper_bound = 1.0,
-            base_name = pre_base_name * "delta_3"
+            base_name = variable_pre_base_name * "delta_3"
         )
     z_bin =
-        formulation_info.variables[:z_bin] = JuMP.@variable(
+        (is_consistent) ? reuse_variables[:z_bin] :
+        JuMP.@variable(
             m,
             [1:num_vars],
             binary = true,
-            base_name = pre_base_name * "z"
+            base_name = variable_pre_base_name * "z"
         )
+    formulation_info.variables[:z_bin] = z_bin
 
     # add x constraints
     JuMP.@constraint(

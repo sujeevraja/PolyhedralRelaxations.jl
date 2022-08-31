@@ -43,7 +43,7 @@
             # Solve MILP relaxation.
             set_objective_sense(milp, s)
             optimize!(milp)
-            @test termination_status(milp) == MOI.OPTIMAL
+            @test termination_status(milp) == OPTIMAL
 
             # Verify that the solution is one of the candidate solutions in `sln_verts`.
             milp_obj = objective_value(milp)
@@ -63,7 +63,7 @@
             # same objective value as the MILP relaxation.
             relax_integrality(milp)
             optimize!(milp)
-            @test termination_status(milp) == MOI.OPTIMAL
+            @test termination_status(milp) == OPTIMAL
             lp1_obj = objective_value(milp)
             @test milp_obj ≈ lp1_obj atol = tol
 

@@ -5,7 +5,7 @@ export construct_univariate_relaxation!,
     refine_partition!
 
 """
-    construct_univariate_relaxation!(m,f,x,y,x_partition;f_dash=x->ForwardDiff.derivative(f,x),error_tolerance=NaN64,length_tolerance=1e-6,derivative_tolerance=1e-6,num_additional_partitions=0)
+    construct_univariate_relaxation!(m,f,x,y,x_partition;f_dash=x->ForwardDiff.derivative(f,x),error_tolerance=NaN64,length_tolerance=1e-6,derivative_tolerance=1e-6,num_additional_partitions=0,variable_pre_base_name="",formulation_info=FormulationInfo())
 
 Add MILP relaxation of `y=f(x)` to given JuMP model and return an object with
 new variables and constraints.
@@ -40,6 +40,8 @@ new variables and constraints.
     relaxation with at most `n+m` partitions.
 - `variable_pre_base_name::AbstractString`: base_name that needs to be added to the auxiliary
     variables for meaningful LP files
+- `formulation_info::FormulationInfo` : `FormulationInfo` for another univariate function on the 
+    same variable that can be reused for the current relaxation. 
 
 Assume that:
 - `f` is a bounded function of 1 variable.
@@ -63,6 +65,7 @@ function construct_univariate_relaxation!(
     derivative_tolerance::Float64 = EPS,
     num_additional_partitions::Int64 = 0,
     variable_pre_base_name::AbstractString = "",
+    formulation_info::FormulationInfo = FormulationInfo(),
 )::FormulationInfo
     univariate_function_data = UnivariateFunctionData(
         f,
@@ -80,7 +83,14 @@ function construct_univariate_relaxation!(
     func =
         milp ? _build_univariate_milp_relaxation! :
         _build_univariate_lp_relaxation!
-    return func(m, x, y, univariate_function_data, variable_pre_base_name)
+    return func(
+        m,
+        x,
+        y,
+        univariate_function_data,
+        variable_pre_base_name,
+        formulation_info,
+    )
 end
 
 """
@@ -100,7 +110,9 @@ new variables and constraints.
 # Optional Arguments
 - `variable_pre_base_name::AbstractString`: base_name that needs to be added to the auxiliary
     variables for meaningful LP files
-
+- `formulation_info::FormulationInfo` : `FormulationInfo` for another bilinear function where the 
+    variables that is partitioned has to be same on both; to enable partition variable reuse
+        
 
 This function builds an incremental formulation, and currently supports more than 
 one partition only on one of the variables `x` or `y` and not on both. It will 
@@ -118,6 +130,7 @@ function construct_bilinear_relaxation!(
     x_partition::Vector{<:Real},
     y_partition::Vector{<:Real};
     variable_pre_base_name::AbstractString = "",
+    formulation_info::FormulationInfo = FormulationInfo(),
 )::FormulationInfo
     _validate(x, y, x_partition, y_partition)
     if length(x_partition) == 2 && length(y_partition) == 2
@@ -131,6 +144,7 @@ function construct_bilinear_relaxation!(
         x_partition,
         y_partition,
         variable_pre_base_name,
+        formulation_info,
     )
 end
 

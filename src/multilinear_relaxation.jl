@@ -121,8 +121,8 @@ function _build_multilinear_sos2_relaxation!(
     JuMP.@constraint(m, sum(lambda) == 1)
     formulation_info.constraints[:bin] = Dict{JuMP.VariableRef,Any}()
     for var in x
-        formulation_info.constraints[:bin][var] = JuMP.@constraint(
-            m, sum(bin[var]) == 1)
+        formulation_info.constraints[:bin][var] =
+            JuMP.@constraint(m, sum(bin[var]) == 1)
     end
 
     # convex combination constraints

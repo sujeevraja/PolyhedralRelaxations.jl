@@ -15,11 +15,6 @@
     @test size(formulation_info.variables[:delta_1])[1] == 2
     @test size(formulation_info.variables[:delta_2])[1] == 2
     @test size(formulation_info.variables[:z])[1] == 2
-    @test haskey(formulation_info.constraints, :x)
-    @test haskey(formulation_info.constraints, :y)
-    @test haskey(formulation_info.constraints, :first_delta)
-    @test haskey(formulation_info.constraints, :below_z)
-    @test haskey(formulation_info.constraints, :above_z)
 end
 
 @testset "test LP relaxation API" begin
@@ -37,9 +32,6 @@ end
     )
 
     @test size(formulation_info.variables[:lambda])[1] == 4
-    @test haskey(formulation_info.constraints, :sum_lambda)
-    @test haskey(formulation_info.constraints, :x)
-    @test haskey(formulation_info.constraints, :y)
 end
 
 @testset "test bilinear relaxation API (McCormick)" begin
