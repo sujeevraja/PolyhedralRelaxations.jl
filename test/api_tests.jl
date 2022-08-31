@@ -14,7 +14,7 @@
 
     @test size(formulation_info.variables[:delta_1])[1] == 2
     @test size(formulation_info.variables[:delta_2])[1] == 2
-    @test size(formulation_info.variables[:z])[1] == 2
+    @test size(formulation_info.variables[:bin])[1] == 2
 end
 
 @testset "test LP relaxation API" begin

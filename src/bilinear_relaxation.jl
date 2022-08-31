@@ -34,8 +34,8 @@ function _check_partition_variable_consistency(
     num_vars,
 )::Bool
     var = formulation_info.variables
-    if haskey(var, :z_bin)
-        (length(var[:z_bin]) == num_vars) && (return true)
+    if haskey(var, :bin)
+        (length(var[:bin]) == num_vars) && (return true)
     end
     return false
 end
@@ -90,14 +90,14 @@ function _build_bilinear_milp_relaxation!(
             base_name = variable_pre_base_name * "delta_3"
         )
     z_bin =
-        (is_consistent) ? reuse_variables[:z_bin] :
+        (is_consistent) ? reuse_variables[:bin] :
         JuMP.@variable(
             m,
             [1:num_vars],
             binary = true,
             base_name = variable_pre_base_name * "z"
         )
-    formulation_info.variables[:z_bin] = z_bin
+    formulation_info.variables[:bin] = z_bin
 
     # add x constraints
     JuMP.@constraint(

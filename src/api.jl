@@ -50,7 +50,9 @@ Assume that:
 - `f_dash` is not equal at two consecutive elements of `x_partition`.
 
 This function builds an incremental formulation, which is the formulation
-presented in the paper.
+presented in the following reference:
+
+    Kaarthik Sundar, Sujeevraja Sanjeevi, and Harsha Nagarajan (2022). Sequence of Polyhedral Relaxations for Nonlinear Univariate Functions, https://arxiv.org/abs/2005.13445.
 """
 function construct_univariate_relaxation!(
     m::JuMP.Model,
@@ -163,6 +165,13 @@ of the domain of the `x` variables.
 # Optional Arguments
 - `variable_pre_base_name::AbstractString`: base_name that needs 
 to be added to the auxiliary variables for meaningful LP files
+- `binary_variables::Dict{JuMP.VariableRef,T} where {T<:Any}`: dictionary
+of binary partitioning variables corresponding to each variable. If this 
+dictionary has the binary variables corresponding to a variable involved 
+in the multilinear term, it will re-use them, else it will create new ones. 
+Everytime, this dictionary is populated with the binary variables that are created.
+So, the user only needs to create an empty dict the first time and keep passing 
+this to the function at every call.
 
 This function builds an lambda based SOS2 formulation for the piecewise polyhedral relaxation. 
 Reference information:
@@ -174,8 +183,9 @@ function construct_multilinear_relaxation!(
     m::JuMP.Model,
     x::Tuple,
     z::JuMP.VariableRef,
-    partitions::Dict{JuMP.VariableRef,Vector{T}} where {T<:Real},
+    partitions::Dict{JuMP.VariableRef,Vector{T}} where {T<:Real};
     variable_pre_base_name::AbstractString = "",
+    binary_variables::Dict{JuMP.VariableRef,T} where {T<:Any} = Dict{JuMP.VariableRef,Any}()
 )::FormulationInfo
     _validate(x, partitions)
     lp = all([length(it) == 2 for it in values(partitions)])
@@ -193,6 +203,7 @@ function construct_multilinear_relaxation!(
         x,
         z,
         partitions,
+        binary_variables,
         variable_pre_base_name,
     )
 end

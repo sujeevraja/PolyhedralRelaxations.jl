@@ -56,7 +56,7 @@ end
             error_tolerance = tol,
             num_additional_partitions = num_vars,
         )
-        @test length(formulation_info.variables[:z]) == num_base + num_vars
+        @test length(formulation_info.variables[:bin]) == num_base + num_vars
     end
 end
 

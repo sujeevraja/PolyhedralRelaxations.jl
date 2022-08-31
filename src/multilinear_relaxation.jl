@@ -79,6 +79,7 @@ function _build_multilinear_sos2_relaxation!(
     x::Tuple,
     z::JuMP.VariableRef,
     partitions::Dict{JuMP.VariableRef,Vector{T}} where {T<:Real},
+    binary_variables::Dict{JuMP.VariableRef,T} where {T<:Any},
     pre_base_name::AbstractString,
 )::FormulationInfo
     formulation_info = FormulationInfo()
@@ -110,20 +111,23 @@ function _build_multilinear_sos2_relaxation!(
 
     bin = formulation_info.variables[:bin] = Dict{JuMP.VariableRef,Any}()
     for var in x
-        formulation_info.variables[:bin][var] = JuMP.@variable(
-            m,
-            [j in 1:(length(partitions[var])-1)],
-            binary = true
-        )
+        if haskey(binary_variables, var)
+            vars = binary_variables[var]  
+            if (length(vars) != length(partitions[var]) - 1)
+                error("number of binary variables for variable $var inconsistent with number of partitions")
+            end 
+            formulation_info.variables[:bin][var] = vars 
+            continue
+        end
+        binary_variables[var] = 
+        formulation_info.variables[:bin][var] = 
+                JuMP.@variable(m, [j in 1:(length(partitions[var])-1)], binary = true)
+        # binary summation constraints
+        JuMP.@constraint(m, sum(bin[var]) == 1)
     end
 
-    # multiplier and binary summation constraints
+    # multiplier constraints
     JuMP.@constraint(m, sum(lambda) == 1)
-    formulation_info.constraints[:bin] = Dict{JuMP.VariableRef,Any}()
-    for var in x
-        formulation_info.constraints[:bin][var] =
-            JuMP.@constraint(m, sum(bin[var]) == 1)
-    end
 
     # convex combination constraints
     JuMP.@constraint(

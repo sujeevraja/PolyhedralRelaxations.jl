@@ -51,14 +51,14 @@ function _build_univariate_milp_relaxation!(
             base_name = variable_pre_base_name * "delta_2"
         )
     z =
-        (is_consistent) ? reuse_variables[:z] :
+        (is_consistent) ? reuse_variables[:bin] :
         JuMP.@variable(
             m,
             [1:num_vars],
             binary = true,
             base_name = variable_pre_base_name * "_z"
         )
-    formulation_info.variables[:z] = z
+    formulation_info.variables[:bin] = z
 
     # add x constraints
     JuMP.@constraint(
