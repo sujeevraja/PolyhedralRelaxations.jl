@@ -17,14 +17,11 @@ function _build_mccormick_relaxation!(
 )::FormulationInfo
     x_lb, x_ub = _variable_domain(x)
     y_lb, y_ub = _variable_domain(y)
-
     formulation_info = FormulationInfo()
-
     JuMP.@constraint(m, z >= x_lb * y + y_lb * x - x_lb * y_lb)
     JuMP.@constraint(m, z >= x_ub * y + y_ub * x - x_ub * y_ub)
     JuMP.@constraint(m, z <= x_lb * y + y_ub * x - x_lb * y_ub)
     JuMP.@constraint(m, z <= x_ub * y + y_lb * x - x_ub * y_lb)
-
     return formulation_info
 end
 

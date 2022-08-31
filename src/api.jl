@@ -113,7 +113,6 @@ new variables and constraints.
 - `formulation_info::FormulationInfo` : `FormulationInfo` for another bilinear function where the 
     variables that is partitioned has to be same on both; to enable partition variable reuse
         
-
 This function builds an incremental formulation, and currently supports more than 
 one partition only on one of the variables `x` or `y` and not on both. It will 
 throw an error when more than one partitions are provided on both variables. 
@@ -303,7 +302,6 @@ function refine_partition!(
 )::RefinementInfo
     if (point < partition[1] || point > partition[end])
         error("$point is not contained in the variable domain")
-        return RefinementInfo()
     end
     return _refine_partition!(
         partition,
