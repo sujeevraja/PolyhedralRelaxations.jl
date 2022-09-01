@@ -17,7 +17,7 @@ makedocs(
         mathengine = Documenter.MathJax(),
         assets = [
             asset(
-                "https://fonts.googleapis.com/css?family=Montserrat|Source+Code+Pro&display=swap",
+                "https://fonts.googleapis.com/css?family=Fira+Sans|Source+Code+Pro&display=swap",
                 class = :css,
             ),
         ],
