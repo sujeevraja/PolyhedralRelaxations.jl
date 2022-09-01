@@ -24,7 +24,8 @@ function _build_univariate_lp_relaxation!(
     x::JuMP.VariableRef,
     y::JuMP.VariableRef,
     univariate_function_data::UnivariateFunctionData,
-    pre_base_name::AbstractString,
+    variable_pre_base_name::AbstractString,
+    ::FormulationInfo,
 )::FormulationInfo
     vertices = _get_lp_relaxation_vertices(univariate_function_data)
     num_vars = length(vertices)
@@ -37,18 +38,17 @@ function _build_univariate_lp_relaxation!(
             [1:num_vars],
             lower_bound = 0.0,
             upper_bound = 1.0,
-            base_name = pre_base_name * "_lambda"
+            base_name = variable_pre_base_name * "_lambda"
         )
     formulation_info.variables[:lambda] = lambda
 
     # add constraints 
-    formulation_info.constraints[:sum_lambda] =
-        JuMP.@constraint(m, sum(lambda) == 1)
-    formulation_info.constraints[:x] = JuMP.@constraint(
+    JuMP.@constraint(m, sum(lambda) == 1)
+    JuMP.@constraint(
         m,
         x == sum(lambda[i] * vertices[i][1] for i in 1:num_vars)
     )
-    formulation_info.constraints[:y] = JuMP.@constraint(
+    JuMP.@constraint(
         m,
         y == sum(lambda[i] * vertices[i][2] for i in 1:num_vars)
     )

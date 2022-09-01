@@ -5,6 +5,7 @@ PolyhedralRelaxations.jl Change Log
 - Add multilinear LP and MILP (SOS-2) relaxations 
 - Add multilinear linking constraints given multiple terms 
 - Add partition refinement schemes (:bisect_all, :bisect, :at_point, :non_uniform)
+- Add formulation reuse for univariate and bilinear relaxations
 
 ### v0.3.5 
 - Add compat entries for test dependencies

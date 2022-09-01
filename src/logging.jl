@@ -28,7 +28,7 @@ end
 """
     silence!()
 
-Sets loglevel for PMD to :Error, silencing Info and Warn
+Sets loglevel for PR to :Error, silencing Info and Warn
 """
 function silence!()
     return set_logging_level!(:Error)
@@ -48,7 +48,7 @@ end
 """
     restore_global_logger!()
 
-Restores the global logger to its default state (before PMD was loaded)
+Restores the global logger to its default state (before PR was loaded)
 """
 function restore_global_logger!()
     Logging.global_logger(_DEFAULT_LOGGER)
@@ -70,7 +70,7 @@ end
 """
     _make_filtered_logger(level::Logging.LogLevel)
 
-Helper function to create the filtered logger for PMD
+Helper function to create the filtered logger for PR
 """
 function _make_filtered_logger(level)
     LoggingExtras.EarlyFilteredLogger(_LOGGER) do log

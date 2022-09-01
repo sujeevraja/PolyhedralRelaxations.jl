@@ -17,19 +17,27 @@ function _build_mccormick_relaxation!(
 )::FormulationInfo
     x_lb, x_ub = _variable_domain(x)
     y_lb, y_ub = _variable_domain(y)
-
     formulation_info = FormulationInfo()
-
-    formulation_info.constraints[:lb_1] =
-        JuMP.@constraint(m, z >= x_lb * y + y_lb * x - x_lb * y_lb)
-    formulation_info.constraints[:lb_2] =
-        JuMP.@constraint(m, z >= x_ub * y + y_ub * x - x_ub * y_ub)
-    formulation_info.constraints[:ub_1] =
-        JuMP.@constraint(m, z <= x_lb * y + y_ub * x - x_lb * y_ub)
-    formulation_info.constraints[:ub_2] =
-        JuMP.@constraint(m, z <= x_ub * y + y_lb * x - x_ub * y_lb)
-
+    JuMP.@constraint(m, z >= x_lb * y + y_lb * x - x_lb * y_lb)
+    JuMP.@constraint(m, z >= x_ub * y + y_ub * x - x_ub * y_ub)
+    JuMP.@constraint(m, z <= x_lb * y + y_ub * x - x_lb * y_ub)
+    JuMP.@constraint(m, z <= x_ub * y + y_lb * x - x_ub * y_lb)
     return formulation_info
+end
+
+"""
+    _check_partition_variable_consistency(formulation_info, num_vars) 
+Checks consistency between provided variables and partition sizes 
+"""
+function _check_partition_variable_consistency(
+    formulation_info::FormulationInfo,
+    num_vars,
+)::Bool
+    var = formulation_info.variables
+    if haskey(var, :bin)
+        (length(var[:bin]) == num_vars) && (return true)
+    end
+    return false
 end
 
 """
@@ -44,12 +52,17 @@ function _build_bilinear_milp_relaxation!(
     z::JuMP.VariableRef,
     x_partition::Vector{<:Real},
     y_partition::Vector{<:Real},
-    pre_base_name::AbstractString,
+    variable_pre_base_name::AbstractString,
+    reuse::FormulationInfo,
 )::FormulationInfo
     origin_vs, non_origin_vs =
         _collect_bilinear_vertices(x_partition, y_partition)
     formulation_info = FormulationInfo()
     num_vars = max(length(x_partition), length(y_partition)) - 1
+
+    reuse_variables = reuse.variables
+
+    is_consistent = _check_partition_variable_consistency(reuse, num_vars)
 
     # add variables
     delta_1 =
@@ -58,7 +71,7 @@ function _build_bilinear_milp_relaxation!(
             [1:num_vars],
             lower_bound = 0.0,
             upper_bound = 1.0,
-            base_name = pre_base_name * "delta_1"
+            base_name = variable_pre_base_name * "delta_1"
         )
     delta_2 =
         formulation_info.variables[:delta_2] = JuMP.@variable(
@@ -66,7 +79,7 @@ function _build_bilinear_milp_relaxation!(
             [1:num_vars],
             lower_bound = 0.0,
             upper_bound = 1.0,
-            base_name = pre_base_name * "delta_2"
+            base_name = variable_pre_base_name * "delta_2"
         )
     delta_3 =
         formulation_info.variables[:delta_3] = JuMP.@variable(
@@ -74,18 +87,20 @@ function _build_bilinear_milp_relaxation!(
             [1:num_vars],
             lower_bound = 0.0,
             upper_bound = 1.0,
-            base_name = pre_base_name * "delta_3"
+            base_name = variable_pre_base_name * "delta_3"
         )
     z_bin =
-        formulation_info.variables[:z_bin] = JuMP.@variable(
+        (is_consistent) ? reuse_variables[:bin] :
+        JuMP.@variable(
             m,
             [1:num_vars],
             binary = true,
-            base_name = pre_base_name * "z"
+            base_name = variable_pre_base_name * "z"
         )
+    formulation_info.variables[:bin] = z_bin
 
     # add x constraints
-    formulation_info.constraints[:x] = JuMP.@constraint(
+    JuMP.@constraint(
         m,
         x ==
         origin_vs[1][1] + sum(
@@ -97,7 +112,7 @@ function _build_bilinear_milp_relaxation!(
     )
 
     # add y constraints
-    formulation_info.constraints[:y] = JuMP.@constraint(
+    JuMP.@constraint(
         m,
         y ==
         origin_vs[1][2] + sum(
@@ -109,7 +124,7 @@ function _build_bilinear_milp_relaxation!(
     )
 
     # add z constraints
-    formulation_info.constraints[:z_bin] = JuMP.@constraint(
+    JuMP.@constraint(
         m,
         z ==
         origin_vs[1][3] + sum(
@@ -121,17 +136,15 @@ function _build_bilinear_milp_relaxation!(
     )
 
     # add first delta constraint
-    formulation_info.constraints[:first_delta] =
-        JuMP.@constraint(m, delta_1[1] + delta_2[1] + delta_3[1] <= 1)
+    JuMP.@constraint(m, delta_1[1] + delta_2[1] + delta_3[1] <= 1)
 
     # add linking constraints between delta_1, delta_2 and z
-    formulation_info.constraints[:below_z] = JuMP.@constraint(
+    JuMP.@constraint(
         m,
         [i = 2:num_vars],
         delta_1[i] + delta_2[i] + delta_3[i] <= z_bin[i-1]
     )
-    formulation_info.constraints[:above_z] =
-        JuMP.@constraint(m, [i = 2:num_vars], z_bin[i-1] <= delta_3[i-1])
+    JuMP.@constraint(m, [i = 2:num_vars], z_bin[i-1] <= delta_3[i-1])
 
     return formulation_info
 end

@@ -5,7 +5,7 @@ export construct_univariate_relaxation!,
     refine_partition!
 
 """
-    construct_univariate_relaxation!(m,f,x,y,x_partition;f_dash=x->ForwardDiff.derivative(f,x),error_tolerance=NaN64,length_tolerance=1e-6,derivative_tolerance=1e-6,num_additional_partitions=0)
+    construct_univariate_relaxation!(m,f,x,y,x_partition;f_dash=x->ForwardDiff.derivative(f,x),error_tolerance=NaN64,length_tolerance=1e-6,derivative_tolerance=1e-6,num_additional_partitions=0,variable_pre_base_name="",formulation_info=FormulationInfo())
 
 Add MILP relaxation of `y=f(x)` to given JuMP model and return an object with
 new variables and constraints.
@@ -40,6 +40,8 @@ new variables and constraints.
     relaxation with at most `n+m` partitions.
 - `variable_pre_base_name::AbstractString`: base_name that needs to be added to the auxiliary
     variables for meaningful LP files
+- `formulation_info::FormulationInfo` : `FormulationInfo` for another univariate function on the 
+    same variable that can be reused for the current relaxation. 
 
 Assume that:
 - `f` is a bounded function of 1 variable.
@@ -48,7 +50,9 @@ Assume that:
 - `f_dash` is not equal at two consecutive elements of `x_partition`.
 
 This function builds an incremental formulation, which is the formulation
-presented in the paper.
+presented in the following reference:
+
+    Kaarthik Sundar, Sujeevraja Sanjeevi, and Harsha Nagarajan (2022). Sequence of Polyhedral Relaxations for Nonlinear Univariate Functions, https://arxiv.org/abs/2005.13445.
 """
 function construct_univariate_relaxation!(
     m::JuMP.Model,
@@ -63,6 +67,7 @@ function construct_univariate_relaxation!(
     derivative_tolerance::Float64 = EPS,
     num_additional_partitions::Int64 = 0,
     variable_pre_base_name::AbstractString = "",
+    formulation_info::FormulationInfo = FormulationInfo(),
 )::FormulationInfo
     univariate_function_data = UnivariateFunctionData(
         f,
@@ -80,7 +85,14 @@ function construct_univariate_relaxation!(
     func =
         milp ? _build_univariate_milp_relaxation! :
         _build_univariate_lp_relaxation!
-    return func(m, x, y, univariate_function_data, variable_pre_base_name)
+    return func(
+        m,
+        x,
+        y,
+        univariate_function_data,
+        variable_pre_base_name,
+        formulation_info,
+    )
 end
 
 """
@@ -100,8 +112,9 @@ new variables and constraints.
 # Optional Arguments
 - `variable_pre_base_name::AbstractString`: base_name that needs to be added to the auxiliary
     variables for meaningful LP files
-
-
+- `formulation_info::FormulationInfo` : `FormulationInfo` for another bilinear function where the 
+    variables that is partitioned has to be same on both; to enable partition variable reuse
+        
 This function builds an incremental formulation, and currently supports more than 
 one partition only on one of the variables `x` or `y` and not on both. It will 
 throw an error when more than one partitions are provided on both variables. 
@@ -118,6 +131,7 @@ function construct_bilinear_relaxation!(
     x_partition::Vector{<:Real},
     y_partition::Vector{<:Real};
     variable_pre_base_name::AbstractString = "",
+    formulation_info::FormulationInfo = FormulationInfo(),
 )::FormulationInfo
     _validate(x, y, x_partition, y_partition)
     if length(x_partition) == 2 && length(y_partition) == 2
@@ -131,6 +145,7 @@ function construct_bilinear_relaxation!(
         x_partition,
         y_partition,
         variable_pre_base_name,
+        formulation_info,
     )
 end
 
@@ -150,6 +165,13 @@ of the domain of the `x` variables.
 # Optional Arguments
 - `variable_pre_base_name::AbstractString`: base_name that needs 
 to be added to the auxiliary variables for meaningful LP files
+- `binary_variables::Dict{JuMP.VariableRef,T} where {T<:Any}`: dictionary
+of binary partitioning variables corresponding to each variable. If this 
+dictionary has the binary variables corresponding to a variable involved 
+in the multilinear term, it will re-use them, else it will create new ones. 
+Everytime, this dictionary is populated with the binary variables that are created.
+So, the user only needs to create an empty dict the first time and keep passing 
+this to the function at every call.
 
 This function builds an lambda based SOS2 formulation for the piecewise polyhedral relaxation. 
 Reference information:
@@ -161,8 +183,12 @@ function construct_multilinear_relaxation!(
     m::JuMP.Model,
     x::Tuple,
     z::JuMP.VariableRef,
-    partitions::Dict{JuMP.VariableRef,Vector{T}} where {T<:Real},
+    partitions::Dict{JuMP.VariableRef,Vector{T}} where {T<:Real};
     variable_pre_base_name::AbstractString = "",
+    binary_variables::Dict{JuMP.VariableRef,T} where {T<:Any} = Dict{
+        JuMP.VariableRef,
+        Any,
+    }(),
 )::FormulationInfo
     _validate(x, partitions)
     lp = all([length(it) == 2 for it in values(partitions)])
@@ -180,6 +206,7 @@ function construct_multilinear_relaxation!(
         x,
         z,
         partitions,
+        binary_variables,
         variable_pre_base_name,
     )
 end
@@ -289,7 +316,6 @@ function refine_partition!(
 )::RefinementInfo
     if (point < partition[1] || point > partition[end])
         error("$point is not contained in the variable domain")
-        return RefinementInfo()
     end
     return _refine_partition!(
         partition,

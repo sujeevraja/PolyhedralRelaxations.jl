@@ -27,7 +27,7 @@
 
     @testset "test multilinear MILP relaxation" begin
         PR.silence!()
-        num_discretizations = [3, 2, 2, 2, 2, 2, 2, 2, 2, 2]
+        num_discretizations = [3, 3, 2, 2, 2, 2, 2, 2, 2, 2]
         instance =
             create_multilinear_model(num_discretizations = num_discretizations)
         m = instance.model
@@ -36,10 +36,17 @@
         partitions = instance.partitions
         multilinear_terms = instance.multilinear_terms
         gopt_value = instance.objective
+        binary_variables = Dict{VariableRef,Any}()
         for term in multilinear_terms
             z = first(term)
             vars = last(term)
-            construct_multilinear_relaxation!(m, vars, z, partitions)
+            construct_multilinear_relaxation!(
+                m,
+                vars,
+                z,
+                partitions,
+                binary_variables = binary_variables,
+            )
         end
         set_optimizer(m, milp_optimizer)
         optimize!(m)
@@ -95,12 +102,14 @@
         y = instance.variables[:y]
         partitions = instance.partitions
         multilinear_terms = instance.multilinear_terms
+        binary_variables = Dict{VariableRef,Any}()
         info = Dict(
             last(term) => construct_multilinear_relaxation!(
                 m,
                 last(term),
                 first(term),
                 partitions,
+                binary_variables = binary_variables,
             ) for term in multilinear_terms
         )
         gopt_value = instance.objective
