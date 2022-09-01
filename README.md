@@ -1,20 +1,17 @@
 [![Build Status](https://github.com//sujeevraja/PolyhedralRelaxations.jl/workflows/CI/badge.svg?branch=master)](https://github.com/sujeevraja/PolyhedralRelaxations.jl/actions?query=workflow%3ACI) 
 [![codecov](https://codecov.io/gh/sujeevraja/PolyhedralRelaxations.jl/branch/master/graph/badge.svg)](https://codecov.io/gh/sujeevraja/PolyhedralRelaxations.jl)
 [![](https://img.shields.io/badge/docs-latest-blue.svg)](https://sujeevraja.github.io/PolyhedralRelaxations.jl/stable/)
-[![GitHub commits since tagged version](https://img.shields.io/github/commits-since/sujeevraja/PolyhedralRelaxations.jl/v0.3.5.svg)](https://github.com/sujeevraja/PolyhedralRelaxations.jl)
+[![GitHub commits since tagged version](https://img.shields.io/github/commits-since/sujeevraja/PolyhedralRelaxations.jl/v0.3.5.svg)](https://github.com/sujeevraja/PolyhedralRelaxations.jl/commits/master)
 [![Aqua QA](https://raw.githubusercontent.com/JuliaTesting/Aqua.jl/master/badge.svg)](https://github.com/JuliaTesting/Aqua.jl)
 
 # PolyhedralRelaxations.jl
-PolyhedralRelaxations.jl is a Julia package to construct mixed-integer linear programming and linear programming (MILP and LP) relaxations for (i) univariate, continuous, and differentiable functions whose domain is also bounded (ii) multilinear terms with partitions on one or more variables. For bilinear terms (which is a special case of multilinear terms), we implement (using a separate API) the well known McCormick relaxation when no partitions on both variables are provided and when partitions on one of the variables is provided, we implement an MILP relaxation using an incremental formulation. This incremental formulation is not implemented when partitions on both variables are provided.  
+PolyhedralRelaxations.jl is a Julia package to construct mixed-integer linear programming and linear programming (MILP and LP) relaxations for (i) univariate, continuous, and differentiable functions whose domain is also bounded (ii) multilinear terms involving variables with bounded domain and with domain partitions on one or more variables. For bilinear terms (which is a special case of multilinear terms), we implement (using a separate API) the well known McCormick relaxation when no variable domain partition on both variables are provided and when variable domain partitions on exactly one of the variables is provided, we implement an MILP relaxation using an incremental formulation. This incremental formulation is not implemented when partitions on both variables are provided.  
 
 ## Usage
 
-- Clone the repository.
-- Open a terminal in the repo folder and run `julia --project=.`.
-- Hit `]` to open the project environment and run `test` to run unit tests. If
-  you see an error because of missing packages, run `resolve`.
-
-Check the "examples" folder on how to use this package.
+- Within the Julia REPL, run `using Pkg; Pkg.add("PolyhedralRelaxations")`
+  
+Check the "examples" folder for some examples how to use this package to construct relaxations for NLPs/MINLPs.
 
 ## Bug reports and support
 
@@ -61,7 +58,7 @@ If you find the multilinear relaxations implemented in PolyhedralRelaxations.jl 
 }
 ```
 
-The MILP relaxations for the bilinear term that uses an incremental formulation is not documented any where, but is an extension of the formulation proposed for the univariate MILP relaxation in the above paper. The MILP relaxation for nonlinear, univariate functions is a disjunction of a chain of triangles. For a bilinear term, they can be thought of as a disjunction of a chain of tetrahedrons that share edges (see the [documentation](https://sujeevraja.github.io/PolyhedralRelaxations.jl/stable/) for a visualization).
+The MILP relaxations for the bilinear term that uses an incremental formulation is not documented any where, but is a straightforward extension of the formulation proposed for the univariate MILP relaxation in https://arxiv.org/abs/2005.13445. The MILP relaxation for nonlinear, univariate functions is a disjunction of a chain of triangles. For a bilinear term, they can be thought of as a disjunction of a chain of tetrahedrons that share edges (see the [documentation](https://sujeevraja.github.io/PolyhedralRelaxations.jl/stable/) for a visualization).
 
 
 
