@@ -160,7 +160,7 @@ function _build_multilinear_sos2_relaxation!(
                 JuMP.@constraint(
                     m,
                     sum(lambda[sliced_indices]) <=
-                    sum(bin[var][slice_id-1:slice_id])
+                    sum(bin[var][(slice_id-1):slice_id])
                 )
             end
         end

@@ -77,7 +77,7 @@ end
         error_tolerance = err_tol,
         length_tolerance = len_tol,
     )
-    for i in 1:length(p)-1
+    for i in 1:(length(p)-1)
         @test p[i+1] - p[i] >= len_tol
     end
 end
@@ -100,7 +100,7 @@ end
         derivative_tolerance = der_tol,
     )
 
-    for i in 1:length(p)-1
+    for i in 1:(length(p)-1)
         d = f_dash(p[i])
         d_next = f_dash(p[i+1])
         @test abs(d_next - d) >= der_tol

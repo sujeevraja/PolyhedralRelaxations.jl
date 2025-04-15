@@ -266,12 +266,12 @@ function _validate(univariate_function_data::UnivariateFunctionData)
                 )
             end
             if abs(dx - d_prev) <= univariate_function_data.derivative_tolerance
-               error(
-                   string(
-                       "difference of derivatives at $x and $x_prev less than ",
-                       "$(univariate_function_data.derivative_tolerance)",
-                   ),
-               )
+                error(
+                    string(
+                        "difference of derivatives at $x and $x_prev less than ",
+                        "$(univariate_function_data.derivative_tolerance)",
+                    ),
+                )
             end
         end
         x_prev = x
@@ -316,7 +316,7 @@ function _refine_partition!(univariate_function_data::UnivariateFunctionData)
         indexing.
         """
         num_starts = length(partition)
-        for i in num_starts:-1:start+1
+        for i in num_starts:-1:(start+1)
             error_queue[i] = error_queue[i-1]
         end
 
@@ -328,7 +328,7 @@ function _refine_partition!(univariate_function_data::UnivariateFunctionData)
             _get_error_bound(univariate_function_data.f_dash, x_new, x_end)
 
         # Add `x_new` to `refined_partition`.
-        splice!(partition, start+1:start, x_new)
+        splice!(partition, (start+1):start, x_new)
         num_partitions_added += 1
     end
 end
@@ -404,7 +404,7 @@ function _get_error_queue(
     univariate_function_data::UnivariateFunctionData,
 )::PriorityQueue
     pq = PriorityQueue{Int64,Float64}(Base.Order.Reverse)
-    for i in 1:length(univariate_function_data.partition)-1
+    for i in 1:(length(univariate_function_data.partition)-1)
         lb = univariate_function_data.partition[i]
         ub = univariate_function_data.partition[i+1]
         pq[i] = _get_error_bound(univariate_function_data.f_dash, lb, ub)

@@ -129,7 +129,7 @@ function _refine_partition!(
     largest = [-Inf, Inf]
 
     # Iterating over all subintervals in the partition
-    for index in 1:length(partition)-1
+    for index in 1:(length(partition)-1)
         # Grabbing the lower and upper value of the subinterval
         lower = partition[index]
         upper = partition[index+1]

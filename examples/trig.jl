@@ -34,15 +34,15 @@ Objective: Minimize y[2] + y[3] - y[4] - y[5]
 function example_trig(; verbose = true)
     best_known_objective = -3.76250036
     milp_optimizer =
-    JuMP.optimizer_with_attributes(HiGHS.Optimizer, "presolve" => "on")
+        JuMP.optimizer_with_attributes(HiGHS.Optimizer, "presolve" => "on")
     error_tolerances = [NaN64, 1e-1, 1e-2]
     # base partition holds the inflection points and the end-points for the trigonometric functions
     base_partition = Dict{Int,Vector{Float64}}()
     base_partition[1] = [-2.0, 0.0, π, 5.0]
-    base_partition[2] = [-2.0, collect(-7*π/11:π/11:17*π/11)..., 5.0]
-    base_partition[3] = [-2.0, collect(-15*π/26:π/13:41*π/26)..., 5.0]
-    base_partition[4] = [-2.0, collect(-10*π/17:π/17:27*π/17)..., 5.0]
-    base_partition[5] = [-2.0, collect(-23*π/38:π/19:59*π/38)..., 5.0]
+    base_partition[2] = [-2.0, collect((-7*π/11):(π/11):(17*π/11))..., 5.0]
+    base_partition[3] = [-2.0, collect((-15*π/26):(π/13):(41*π/26))..., 5.0]
+    base_partition[4] = [-2.0, collect((-10*π/17):(π/17):(27*π/17))..., 5.0]
+    base_partition[5] = [-2.0, collect((-23*π/38):(π/19):(59*π/38))..., 5.0]
     # functions
     functions = Dict{Int,Function}()
     functions[1] = x -> sin(x)

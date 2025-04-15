@@ -35,7 +35,7 @@
 
     tol = 1e-5
 
-    for α in collect(π/20:π/20:(2*π/5))
+    for α in collect((π/20):(π/20):(2*π/5))
         set_objective_function(milp, y - x * tan(α))
         set_objective_function(lp, y_lp - x_lp * tan(α))
 
