@@ -12,7 +12,6 @@ makedocs(
         ],
         prettyurls = get(ENV, "CI", nothing) == "true",
     ),
-    strict = true,
     authors = "Sujeevraja Sanjeevi and Kaarthik Sundar",
     pages = [
         "Introduction" => "index.md",
