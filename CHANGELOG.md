@@ -2,6 +2,8 @@ PolyhedralRelaxations.jl Change Log
 =========================
 
 ### v0.4.0
+- Add dependabot support
+- Fix bug due to lack of ``JuMP.is_fixed`` support
 - Add multilinear LP and MILP (SOS-2) relaxations 
 - Add multilinear linking constraints given multiple terms 
 - Add partition refinement schemes (:bisect_all, :bisect, :at_point, :non_uniform)

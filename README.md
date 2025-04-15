@@ -1,8 +1,13 @@
-[![Build Status](https://github.com//sujeevraja/PolyhedralRelaxations.jl/workflows/CI/badge.svg?branch=master)](https://github.com/sujeevraja/PolyhedralRelaxations.jl/actions?query=workflow%3ACI) 
-[![codecov](https://codecov.io/gh/sujeevraja/PolyhedralRelaxations.jl/branch/master/graph/badge.svg)](https://codecov.io/gh/sujeevraja/PolyhedralRelaxations.jl)
-[![](https://img.shields.io/badge/docs-latest-blue.svg)](https://sujeevraja.github.io/PolyhedralRelaxations.jl/stable/)
-[![GitHub commits since tagged version](https://img.shields.io/github/commits-since/sujeevraja/PolyhedralRelaxations.jl/v0.3.5.svg)](https://github.com/sujeevraja/PolyhedralRelaxations.jl/commits/master)
-[![Aqua QA](https://raw.githubusercontent.com/JuliaTesting/Aqua.jl/master/badge.svg)](https://github.com/JuliaTesting/Aqua.jl)
+[![Continuous Integration (Unit Tests)][ci-unit-img]][ci-unit-url]  [![Documentation][docs-img]][docs-url]  [![Code Coverage][codecov-img]][codecov-url]    [![Commits][commits-img]][commits-url]                                          
+
+[docs-img]: https://github.com/sujeevraja/PolyhedralRelaxations.jl//workflows/Documentation/badge.svg "Documentation"
+[docs-url]: https://kaarthiksundar.github.io/GasTranSim.jl/dev/
+[ci-unit-img]: https://github.com/sujeevraja/PolyhedralRelaxations.jl/actions/workflows/ci.yml/badge.svg?branch=master "Continuous Integration (Unit Tests)"
+[ci-unit-url]: https://github.com/sujeevraja/PolyhedralRelaxations.jl/actions/workflows/ci.yml
+[codecov-img]: https://codecov.io/gh/sujeevraja/PolyhedralRelaxations.jl/branch/master/graph/badge.svg "Code Coverage"
+[codecov-url]: https://codecov.io/gh/sujeevraja/PolyhedralRelaxations.jl/branch/master
+[commits-img]: https://img.shields.io/github/commits-since/sujeevraja/PolyhedralRelaxations.jl/v0.3.5.svg "Commits since tagged version"
+[commits-url]: https://github.com/sujeevraja/PolyhedralRelaxations.jl/commits/master
 
 # PolyhedralRelaxations.jl
 PolyhedralRelaxations.jl is a Julia package to construct mixed-integer linear programming and linear programming (MILP and LP) relaxations for (i) univariate, continuous, and differentiable functions whose domain is also bounded (ii) multilinear terms involving variables with bounded domain and with domain partitions on one or more variables. For bilinear terms (which is a special case of multilinear terms), we implement (using a separate API) the well known McCormick relaxation when no variable domain partition on both variables are provided and when variable domain partitions on exactly one of the variables is provided, we implement an MILP relaxation using an incremental formulation. This incremental formulation is not implemented when partitions on both variables are provided.  

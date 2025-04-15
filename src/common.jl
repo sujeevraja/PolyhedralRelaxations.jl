@@ -143,25 +143,15 @@ end
     function _variable_domain(var)
 
 Computes the valid domain of a given JuMP variable taking into account bounds
-and the varaible's implicit bounds (e.g. binary).
+and the variable's implicit bounds (e.g. binary).
 """
 function _variable_domain(var::JuMP.VariableRef)
     lb = -Inf
-    if JuMP.has_lower_bound(var)
-        lb = JuMP.lower_bound(var)
-    end
-    if JuMP.is_binary(var)
-        lb = max(lb, 0.0)
-    end
-
     ub = Inf
-    if JuMP.has_upper_bound(var)
-        ub = JuMP.upper_bound(var)
-    end
-    if JuMP.is_binary(var)
-        ub = min(ub, 1.0)
-    end
-
+    (JuMP.has_lower_bound(var)) && (lb = JuMP.lower_bound(var))
+    (JuMP.has_upper_bound(var)) && (ub = JuMP.upper_bound(var))
+    (JuMP.is_binary(var)) && (lb = max(lb, 0.0), ub = min(ub, 1.0))
+    (JuMP.is_fixed(var)) && (lb = JuMP.fix_value(var); ub = JuMP.fix_value(var))
     return (lower_bound = lb, upper_bound = ub)
 end
 
@@ -276,12 +266,12 @@ function _validate(univariate_function_data::UnivariateFunctionData)
                 )
             end
             if abs(dx - d_prev) <= univariate_function_data.derivative_tolerance
-                error(
-                    string(
-                        "difference of derivatives at $x and $x_prev less than ",
-                        "$(univariate_function_data.derivative_tolerance)",
-                    ),
-                )
+               error(
+                   string(
+                       "difference of derivatives at $x and $x_prev less than ",
+                       "$(univariate_function_data.derivative_tolerance)",
+                   ),
+               )
             end
         end
         x_prev = x
