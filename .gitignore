@@ -29,3 +29,6 @@ examples/Manifest.toml
 
 # bug fixes foler
 bug-fixing/
+
+# Claude Code
+.claude/

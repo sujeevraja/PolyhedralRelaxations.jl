@@ -15,8 +15,23 @@ PolyhedralRelaxations.jl is a Julia package to construct mixed-integer linear pr
 ## Usage
 
 - Within the Julia REPL, run `using Pkg; Pkg.add("PolyhedralRelaxations")`
-  
+
 Check the "examples" folder for some examples how to use this package to construct relaxations for NLPs/MINLPs.
+
+## Running Tests
+
+Run the full test suite using the provided script:
+
+```
+bash scripts/test.sh
+```
+
+To run a specific test file interactively from the Julia REPL:
+
+```julia
+using PolyhedralRelaxations, JuMP, HiGHS, Ipopt, Test
+include("test/api_tests.jl")
+```
 
 ## Bug reports and support
 
