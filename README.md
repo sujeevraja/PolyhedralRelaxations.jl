@@ -1,7 +1,7 @@
 [![Continuous Integration (Unit Tests)][ci-unit-img]][ci-unit-url]  [![Documentation][docs-img]][docs-url]  [![Code Coverage][codecov-img]][codecov-url]    [![Commits][commits-img]][commits-url]                                          
 
 [docs-img]: https://github.com/sujeevraja/PolyhedralRelaxations.jl//workflows/Documentation/badge.svg "Documentation"
-[docs-url]: https://kaarthiksundar.github.io/GasTranSim.jl/dev/
+[docs-url]: https://sujeevraja.github.io/PolyhedralRelaxations.jl/stable/
 [ci-unit-img]: https://github.com/sujeevraja/PolyhedralRelaxations.jl/actions/workflows/ci.yml/badge.svg?branch=master "Continuous Integration (Unit Tests)"
 [ci-unit-url]: https://github.com/sujeevraja/PolyhedralRelaxations.jl/actions/workflows/ci.yml
 [codecov-img]: https://codecov.io/gh/sujeevraja/PolyhedralRelaxations.jl/branch/master/graph/badge.svg "Code Coverage"
@@ -32,6 +32,10 @@ To run a specific test file interactively from the Julia REPL:
 using PolyhedralRelaxations, JuMP, HiGHS, Ipopt, Test
 include("test/api_tests.jl")
 ```
+
+## Repository Branches
+
+The `master` branch contains the package source code. The `gh-pages` branch is an orphan branch (no shared history with `master`) that is automatically maintained by Documenter.jl via the CI Documentation workflow. It holds the built HTML documentation that GitHub Pages serves at the docs URL above. **Do not manually edit `gh-pages`** — every CI run overwrites it.
 
 ## Bug reports and support
 
