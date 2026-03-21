@@ -4,9 +4,12 @@ set -euo pipefail
 # Run from the repo root
 cd "$(dirname "$0")/.."
 
-julia --project=. -e 'using Pkg; Pkg.test(coverage=true)'
+julia --project=. -e 'using Pkg; Pkg.instantiate(); Pkg.test(coverage=true)'
 
-julia --project=. -e '
+julia -e '
+    import Pkg
+    Pkg.activate(; temp=true)
+    Pkg.add("Coverage")
     using Coverage
     coverage = process_folder("src")
     covered, total = get_summary(coverage)
