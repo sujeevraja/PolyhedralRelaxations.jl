@@ -2,6 +2,7 @@ using Documenter, PolyhedralRelaxations
 
 makedocs(
     sitename = "PolyhedralRelaxations",
+    repo = Documenter.Remotes.GitHub("sujeevraja", "PolyhedralRelaxations.jl"),
     format = Documenter.HTML(
         mathengine = Documenter.MathJax(),
         assets = [
