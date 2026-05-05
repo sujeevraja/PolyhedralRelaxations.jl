@@ -14,7 +14,7 @@ LoggingExtras = "e6f89c97-d47a-5376-807f-9c37f3926c36"
 [compat]
 Combinatorics = "1"
 DataStructures = "0.18"
-ForwardDiff = "0.10"
+ForwardDiff = "1"
 HiGHS = "1"
 Ipopt = "1"
 JuMP = "1"
