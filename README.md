@@ -6,7 +6,7 @@
 [ci-unit-url]: https://github.com/sujeevraja/PolyhedralRelaxations.jl/actions/workflows/ci.yml
 [codecov-img]: https://codecov.io/gh/sujeevraja/PolyhedralRelaxations.jl/branch/master/graph/badge.svg "Code Coverage"
 [codecov-url]: https://codecov.io/gh/sujeevraja/PolyhedralRelaxations.jl/branch/master
-[commits-img]: https://img.shields.io/github/commits-since/sujeevraja/PolyhedralRelaxations.jl/v0.4.0.svg "Commits since tagged version"
+[commits-img]: https://img.shields.io/github/commits-since/sujeevraja/PolyhedralRelaxations.jl/v0.3.6.svg "Commits since tagged version"
 [commits-url]: https://github.com/sujeevraja/PolyhedralRelaxations.jl/commits/master
 
 # PolyhedralRelaxations.jl

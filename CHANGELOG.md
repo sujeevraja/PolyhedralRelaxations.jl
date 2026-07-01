@@ -1,7 +1,7 @@
 PolyhedralRelaxations.jl Change Log
 =========================
 
-### v0.4.0
+### v0.3.6
 - Updates versions for packages
 - Add dependabot support
 - Fix bug due to lack of ``JuMP.is_fixed`` support
