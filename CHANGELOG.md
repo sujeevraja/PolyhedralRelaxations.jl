@@ -2,6 +2,7 @@ PolyhedralRelaxations.jl Change Log
 =========================
 
 ### v0.4.0
+- Updates versions for packages
 - Add dependabot support
 - Fix bug due to lack of ``JuMP.is_fixed`` support
 - Add multilinear LP and MILP (SOS-2) relaxations 
